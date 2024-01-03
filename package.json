@@ -1,0 +1,8 @@
+{
+	"scripts": {
+		"dev": "pnpx tailwindcss -i ./statics/css/src/input.css -o ./statics/css/style.css --watch"
+	},
+	"devDependencies": {
+		"tailwindcss": "^3.4.0"
+	}
+}
