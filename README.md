@@ -1,31 +1,33 @@
 
-# 不蒜子自建后端 API 🗺️
+# Vercount 网站计数器
 
 >  Powered by: 🚀 FastAPI + Redis ✨ + Vercel 
 
-原项目：https://github.com/zkeq/Busuanzi_backend_self
 
-### 安装
-
-待完善
-
-### 使用
-
-- 将 `不蒜子` 官网提供的 `js` 代码里面的网址，改成你的 **即可**
+基于项目：https://github.com/zkeq/Busuanzi_backend_self
 
 
-```javascript
-//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js
+## 快速安装
 
-var bszCaller,bszTag;!function(){var c,d,e,a=!1,b=[];ready=function(c){return a||"interactive"===document.readyState||"complete"===document.readyState?c.call(document):b.push(function(){return c.call(this)}),this},d=function(){for(var a=0,c=b.length;c>a;a++)b[a].apply(document);b=[]},e=function(){a||(a=!0,d.call(window),document.removeEventListener?document.removeEventListener("DOMContentLoaded",e,!1):document.attachEvent&&(document.detachEvent("onreadystatechange",e),window==window.top&&(clearInterval(c),c=null)))},document.addEventListener?document.addEventListener("DOMContentLoaded",e,!1):document.attachEvent&&(document.attachEvent("onreadystatechange",function(){/loaded|complete/.test(document.readyState)&&e()}),window==window.top&&(c=setInterval(function(){try{a||document.documentElement.doScroll("left")}catch(b){return}e()},5)))}(),bszCaller={fetch:function(a,b){var c="BusuanziCallback_"+Math.floor(1099511627776*Math.random());window[c]=this.evalCall(b),a=a.replace("=BusuanziCallback","="+c),scriptTag=document.createElement("SCRIPT"),scriptTag.type="text/javascript",scriptTag.defer=!0,scriptTag.src=a,scriptTag.referrerPolicy="no-referrer-when-downgrade",document.getElementsByTagName("HEAD")[0].appendChild(scriptTag)},evalCall:function(a){return function(b){ready(function(){try{a(b),scriptTag.parentElement.removeChild(scriptTag)}catch(c){bszTag.hides()}})}}},bszCaller.fetch("//busuanzi.ibruce.info/busuanzi?jsonpCallback=BusuanziCallback",function(a){bszTag.texts(a),bszTag.shows()}),bszTag={bszs:["site_pv","page_pv","site_uv"],texts:function(a){this.bszs.map(function(b){var c=document.getElementById("busuanzi_value_"+b);c&&(c.innerHTML=a[b])})},hides:function(){this.bszs.map(function(a){var b=document.getElementById("busuanzi_container_"+a);b&&(b.style.display="none")})},shows:function(){this.bszs.map(function(a){var b=document.getElementById("busuanzi_container_"+a);b&&(b.style.display="inline")})}};
+将这个 script 添加到你的网站中，
+
+```html
+<script defer src="https://vercount.one/js"></script>
 ```
 
-```
-把里面的这个链接
-//busuanzi.ibruce.info/busuanzi?jsonpCallback=BusuanziCallback
-改成
-你的域名，例如：
-https://counter.busuanzi.icodeq.com/?jsonpCallback=BusuanziCallback
+## 使用
+
+在你的网站中添加上面的 script 之后，和不蒜子一样，你的网站就可以开始统计了，比如。
+
+```html
+本文总阅读量 <span id="busuanzi_page_pv"></span> 次
+本文总访客量 <span id="busuanzi_page_uv"></span> 人
+本站总访问量 <span id="busuanzi_site_pv"></span> 次
+本站总访客数 <span id="busuanzi_site_uv"></span> 人
 ```
 
-- 把你网站引入的 `busuanzi.pure.mini.js` 地址替换为上一步改好的 `js` 文件 ✨
+## 统计方式
+
+对于 page_view 网站访问量, 每访问一次加一.
+
+对于 user_view 访客量, 会通过用户浏览器的 UserAgent 以及用户的IP地址 进行判断.
