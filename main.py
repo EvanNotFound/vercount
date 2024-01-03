@@ -18,12 +18,16 @@ app = FastAPI(docs_url=None, redoc_url=None)
 
 @app.get("/js")
 async def serve_js():
-    return FileResponse("statics/busuanzi.pure.mini.js")
+    return FileResponse("statics/js/busuanzi.pure.mini.js")
+
+@app.get("/css")
+async def serve_css():
+    return FileResponse("statics/css/style.css")
 
 @app.get("/")
 def root(request: Request, referer: str = Header(None), jsonpCallback: str = ""):
     if not referer:
-        return Response(content="Powered by: FastAPI + Redis", media_type="text/plain")
+        return FileResponse("statics/home.html")
 
     client_host = request.client.host
     parsed_url = urlparse(referer)

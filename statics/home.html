@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
+    />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Vercount - A simple website counter</title>
+    <link rel="stylesheet" href="/css" />
+  </head>
+
+  <body class="">
+    <div class="flex flex-col min-h-screen">
+      <header class="px-4 lg:px-6 h-14 flex items-center">
+        <a class="flex items-center justify-center" href="#">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="h-6 w-6"
+          >
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+          <span class="sr-only">Vercount</span>
+        </a>
+        <nav class="ml-auto flex gap-4 sm:gap-6">
+          <a
+            class="text-sm font-medium hover:underline underline-offset-4"
+            href="#features"
+          >
+            Features
+          </a>
+          <a
+            class="text-sm font-medium hover:underline underline-offset-4"
+            href="https://github.com/EvanNotFound/vercount"
+          >
+            GitHub
+          </a>
+<!--          <a-->
+<!--            class="text-sm font-medium hover:underline underline-offset-4"-->
+<!--            href="#"-->
+<!--          >-->
+<!--            Contact-->
+<!--          </a>-->
+        </nav>
+      </header>
+      <main class="flex-1">
+        <section
+          class="w-full py-6 sm:py-12 md:py-24 lg:py-32 xl:py-48 flex justify-center items-center"
+        >
+          <div class="container px-4 md:px-6">
+            <div class="flex justify-center items-center">
+              <div class="flex flex-col justify-center space-y-4 max-w-2xl">
+                <div class="space-y-6">
+                  <h1
+                    class="text-3xl text-left font-bold tracking-tight sm:text-6xl xl:text-7xl/none"
+                  >
+                    <div
+                      class="bg-gradient-to-r from-blue-600 to-indigo-400 text-transparent bg-clip-text"
+                    >
+                      Vercount
+                    </div>
+                    <div>Busuanzi Alternative for Your Website</div>
+                  </h1>
+                  <p class="max-w-[600px] text-gray-500 md:text-xl">
+                    <span class="text-gray-700">
+                      Powered by
+                      <a
+                        href="https://vercel.com/?utm_source=digital-plat&utm_campaign=oss"
+                        class="hover:underline underline-offset-4"
+                        >Vercel</a
+                      >
+                      and
+                      <a
+                        href="https://redis.io/"
+                        class="hover:underline underline-offset-4"
+                        >Redis</a
+                      >.
+                    </span>
+
+                    Vercount is a simple, fast, and secure website counter that
+                    you can use to track your website's visitor count. It's a
+                    great alternative to Busuanzi, and it's completely free to
+                    use.
+                  </p>
+                </div>
+                <div class="flex flex-col gap-2 min-[400px]:flex-row">
+                  <a
+                    class="inline-flex h-10 items-center justify-center rounded-md bg-gray-900 px-8 text-sm font-medium text-gray-50 shadow transition-colors hover:bg-gray-900/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gray-950 disabled:pointer-events-none disabled:opacity-50"
+                    href="#get-started"
+                  >
+                    Get Started
+                  </a>
+                  <a
+                    class="inline-flex h-10 items-center justify-center rounded-md border border-gray-200 bg-white px-8 text-sm font-medium shadow-sm transition-colors hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gray-950 disabled:pointer-events-none disabled:opacity-50"
+                    href="https://github.com/EvanNotFound/vercount"
+                  >
+                    Star on GitHub
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section
+          class="w-full py-12 md:py-24 lg:py-32 bg-gray-100 flex justify-center items-center"
+        >
+          <div class="container px-4 md:px-6">
+            <div
+              class="flex flex-col items-center justify-center space-y-4 text-center"
+            >
+              <div class="space-y-4">
+                <div
+                  class="inline-block rounded-lg bg-gray-100 px-3 py-1 text-sm"
+                >
+                  Key Features
+                </div>
+                <h2 class="text-3xl font-bold tracking-tight sm:text-5xl" id="features">
+                  Why Choose Vercount?
+                </h2>
+                <p
+                  class="!mt-8 max-w-[900px] text-gray-500 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed"
+                >
+                  Vercount is designed to provide you with accurate, real-time
+                  visitor count data for your website. Here are some of the key
+                  features that make Vercount the best choice for your website
+                  analytics needs.
+                </p>
+              </div>
+            </div>
+
+            <div
+              class="mx-auto grid max-w-5xl items-center gap-6 py-12 lg:grid-cols-3 lg:gap-12"
+            >
+              <div
+                class="h-40 flex flex-col space-y-4 bg-white/80 p-4 rounded-2xl border border-gray-800/20 shadow-sm hover:shadow-lg hover:shadow-gray-200 transition-shadow"
+              >
+                <div class="grid gap-1">
+                  <h3 class="text-xl font-bold">Real-time Data</h3>
+                  <p class="text-gray-500 dark:text-gray-400">
+                    Get real-time visitor count data for your website. No more
+                    waiting for data to refresh.
+                  </p>
+                </div>
+              </div>
+              <div
+                class="h-40 flex flex-col space-y-4 bg-white/80 p-4 rounded-2xl border border-gray-800/20 shadow-sm hover:shadow-lg hover:shadow-gray-200 transition-shadow"
+              >
+                <div class="grid gap-1">
+                  <h3 class="text-xl font-bold">Fast Performance</h3>
+                  <p class="text-gray-500 dark:text-gray-400">
+                    Vercount is designed to be fast and efficient, ensuring that
+                    your website's performance is never compromised.
+                  </p>
+                </div>
+              </div>
+              <div
+                class="h-40 flex flex-col space-y-4 bg-white/80 p-4 rounded-2xl border border-gray-800/20 shadow-sm hover:shadow-lg hover:shadow-gray-200 transition-shadow"
+              >
+                <div class="grid gap-1">
+                  <h3 class="text-xl font-bold">Secure Data Storage</h3>
+                  <p class="text-gray-500 dark:text-gray-400">
+                    Your data is stored securely and is never shared with third
+                    parties. You can trust Vercount to keep your data safe.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section
+          class="w-full py-12 md:py-24 lg:py-32 flex items-center justify-center"
+        >
+          <div
+            class="container px-4 md:px-6 lg:grid-cols-2 lg:gap-10 text-center justify-center items-center"
+          >
+            <div class="space-y-2 flex flex-col justify-center items-center">
+              <div
+                class="flex flex-col items-center justify-center space-y-4 text-center"
+              >
+                <div class="space-y-4">
+                  <div
+                    class="inline-block rounded-lg bg-gray-100 px-3 py-1 text-sm"
+                  >
+                    Get Started
+                  </div>
+                  <h2 class="text-3xl font-bold tracking-tight sm:text-5xl" id="get-started">
+                    How to Use Vercount
+                  </h2>
+                  <p
+                    class="!mt-8 max-w-[900px] text-gray-500 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed"
+                  >
+                    Using Vercount is as simple as inserting a script tag and
+                    using a span with the corresponding id.
+                  </p>
+                </div>
+              </div>
+              <ol class="list-decimal list-inside text-left text-lg font-medium !mt-8">
+                <li class="py-2">
+                  Insert the following script tag into your HTML file:
+                  <div class="bg-gray-600/10 border border-gray-600/10 text-black p-4 rounded-2xl mt-3">
+                    <pre><code>&lt;script defer src="https://vercount.one/js"&gt;&lt;/script&gt;</code></pre>
+                  </div>
+                </li>
+                <li class="py-2">
+                  Use the following span tags to display the desired data:
+                  <div class="bg-gray-600/10 border border-gray-600/10 text-black p-4 rounded-2xl mt-3">
+              <pre><code>Total Page View &lt;span id="busuanzi_page_pv"&gt;&lt;/span&gt;
+Total Visitors &lt;span id="busuanzi_page_uv"&gt;&lt;/span&gt;
+Total Visits &lt;span id="busuanzi_site_pv"&gt;&lt;/span&gt;
+Site Total Visitors &lt;span id="busuanzi_site_uv"&gt;&lt;/span&gt;</code></pre>
+                  </div>
+                </li>
+                <li class="py-2">Save your changes and refresh your website to see the visitor count.</li>
+            </div>
+          </div>
+        </section>
+        <footer
+          class="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t"
+        >
+          <p class="text-xs text-gray-500">
+            © EvanNotFound. All rights reserved.
+          </p>
+          <nav class="sm:ml-auto flex gap-4 sm:gap-6">
+            <a class="text-xs hover:underline underline-offset-4" href="#">
+              Privacy Policy
+            </a>
+            <a class="text-xs hover:underline underline-offset-4" href="#">
+              Terms of Service
+            </a>
+            <a class="text-xs hover:underline underline-offset-4" href="#">
+              Contact Us
+            </a>
+          </nav>
+        </footer>
+      </main>
+    </div>
+  </body>
+</html>
