@@ -10,6 +10,7 @@ MAX_RETRIES = 3
 EXPIRATION_TIME = 60 * 60 * 24 * 30  # 30 days
 from redis_connection import redis_client
 
+
 def get_data_from_busuanzi(host):
     url = "https://busuanzi.ibruce.info/busuanzi?jsonpCallback=BusuanziCallback_777487655111"
     headers = {
@@ -29,10 +30,5 @@ def get_data_from_busuanzi(host):
             print(f"Attempt {attempt + 1} failed: {e}")
             time.sleep(1)
 
+    redis_client.set(f"live_site:{host}", 0, ex=EXPIRATION_TIME)
     return {"site_uv": 0, "page_pv": 0, "site_pv": 0}
-
-def store_data_in_redis(host, data):
-    redis_client.set(f"live_site:{host}", data["site_uv"], ex=EXPIRATION_TIME)
-    redis_client.set(f"page_pv:{host}:/", data["page_pv"])
-    redis_client.set(f"site_pv:{host}", data["site_pv"], ex=EXPIRATION_TIME)
-    print("Data stored successfully for host:", host)

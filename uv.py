@@ -19,6 +19,7 @@ def update_site_uv_and_set_expiration(site_name, ip):
 
     # Add IP to the set and get the count of unique visitors
     redis_client.sadd(site_uv_key, ip)
+    redis_client.sadd(live_site_key, ip)
     site_uv_count = redis_client.scard(site_uv_key)
 
     # Set expiration for the unique visitors set and live site key
