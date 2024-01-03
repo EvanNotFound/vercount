@@ -695,6 +695,14 @@ video {
   max-width: 28rem;
 }
 
+.max-w-full {
+  max-width: 100%;
+}
+
+.\!max-w-full {
+  max-width: 100% !important;
+}
+
 .flex-1 {
   flex: 1 1 0%;
 }
@@ -769,6 +777,10 @@ video {
 
 .text-clip {
   text-overflow: clip;
+}
+
+.text-wrap {
+  text-wrap: wrap;
 }
 
 .rounded-lg {
@@ -1141,6 +1153,11 @@ video {
   .sm\:text-6xl {
     font-size: 3.75rem;
     line-height: 1;
+  }
+
+  .sm\:text-sm {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
   }
 }
 
