@@ -1,0 +1,9 @@
+
+*.iml
+*.xml
+*.pyc
+
+venv/*
+venv
+
+.env
