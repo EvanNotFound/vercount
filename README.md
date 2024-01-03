@@ -20,19 +20,22 @@ Vercount 是一个基于 FastAPI + Redis 的网站计数器，它的特点是：
 
 后续会增加更多的功能，比如：自定义网站统计数据等。
 
-## 项目网站
+## 从不蒜子切换到 Vercount
 
-- <a href="https://vercount.one" target="_blank" rel="noreferrer">https://vercount.one</a>
+直接替换不蒜子的 script 标签即可，不需要修改任何代码。
 
-## 快速安装
+```html
+<script defer src="https://vercount.one/js"></script>
+```
+
+
+## 快速使用
 
 将这个 script 添加到你的网站中，
 
 ```html
 <script defer src="https://vercount.one/js"></script>
 ```
-
-## 使用
 
 在你的网站中添加上面的 script 之后，和不蒜子一样，你的网站就可以开始统计了，比如。
 
