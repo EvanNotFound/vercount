@@ -775,6 +775,10 @@ video {
   overflow: hidden;
 }
 
+.overflow-x-scroll {
+  overflow-x: scroll;
+}
+
 .text-clip {
   text-overflow: clip;
 }
