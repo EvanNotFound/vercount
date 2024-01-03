@@ -6,6 +6,7 @@ from urllib.parse import urlparse
 import redis
 import uvicorn
 from fastapi import FastAPI, Request, Header, Response
+from fastapi.responses import FileResponse
 
 from get_before_data import get_data_from_busuanzi
 from pv import pv
@@ -14,6 +15,10 @@ from uv import update_site_uv_and_set_expiration
 from redis_connection import redis_client
 
 app = FastAPI(docs_url=None, redoc_url=None)
+
+@app.get("/js")
+async def serve_js():
+    return FileResponse("statics/busuanzi.pure.mini.js")
 
 @app.get("/")
 def root(request: Request, referer: str = Header(None), jsonpCallback: str = ""):
