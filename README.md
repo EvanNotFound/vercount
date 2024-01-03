@@ -22,7 +22,7 @@ Vercount 是一个基于 FastAPI + Redis 的网站计数器，它的特点是：
 
 ## 项目网站
 
-- https://vercount.one
+- <a href="https://vercount.one" target="_blank">https://vercount.one</a>
 
 ## 快速安装
 
