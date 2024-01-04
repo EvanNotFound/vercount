@@ -2,7 +2,7 @@ from redis_connection import redis_client
 from constants import EXPIRATION_TIME
 
 
-def update_site_uv(site_name, ip):
+async def update_site_uv(site_name, ip):
     """
     Adds an IP to the set of unique visitors (UV) for a site and sets an expiration time.
 

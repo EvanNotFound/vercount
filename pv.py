@@ -4,7 +4,7 @@ from constants import EXPIRATION_TIME
 
 
 
-def update_page_pv(host, path):
+async def update_page_pv(host, path):
     """
     Increments and retrieves the page view (PV) count for a specific page and sets an expiration time.
 
@@ -26,7 +26,7 @@ def update_page_pv(host, path):
     return page_pv
 
 
-def update_site_pv(site_name, ip):
+async def update_site_pv(site_name, ip):
     """
     Adds an IP to the set of unique visitors (UV) for a site and sets an expiration time.
 
