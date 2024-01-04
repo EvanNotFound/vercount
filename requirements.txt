@@ -14,3 +14,4 @@ idna~=3.6
 urllib3~=1.26.18
 setuptools~=68.1.2
 python-dotenv
+httpx
