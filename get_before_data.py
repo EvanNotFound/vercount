@@ -23,6 +23,8 @@ def get_data_from_busuanzi(host):
                 # Safe JSON parsing
                 data_str = response.text[34:-13]
                 data_dict = eval(data_str)
+                site_uv = data_dict["site_uv"]
+                redis_client.set(f"live_site:{host}", site_uv, ex=EXPIRATION_TIME)
                 return data_dict
         except requests.RequestException as e:
             print(f"Attempt {attempt + 1} failed: {e}")
