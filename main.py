@@ -31,7 +31,7 @@ class UrlData(BaseModel):
 
 @app.get("/js")
 async def serve_js():
-    return FileResponse("statics/js/src/client.js")
+    return FileResponse("statics/js/client.min.js")
 
 @app.get("/css")
 async def serve_css():
