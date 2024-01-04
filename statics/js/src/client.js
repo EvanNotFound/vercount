@@ -29,7 +29,7 @@ var visitorCounterCaller, visitorCounterDisplay;
     fetch: async function (callback) {
       try {
         const response = await fetch(
-          "http://localhost:8080/log?jsonpCallback=VisitorCountCallback",
+          "https://vercount.one/log?jsonpCallback=VisitorCountCallback",
           {
             method: "POST",
             headers: {

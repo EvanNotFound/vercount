@@ -1,6 +1,7 @@
 {
 	"scripts": {
-		"dev": "pnpx tailwindcss -i ./statics/css/src/input.css -o ./statics/css/style.css --watch"
+		"dev": "pnpx tailwindcss -i ./statics/css/src/input.css -o ./statics/css/style.css --watch",
+		"build": "pnpx tailwindcss -i ./statics/css/src/input.css -o ./statics/css/style.css --minify && uglifyjs ./statics/js/src/client.js -o ./statics/js/client.min.js --compress --mangle --toplevel"
 	},
 	"devDependencies": {
 		"tailwindcss": "^3.4.0"
