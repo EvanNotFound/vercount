@@ -24,7 +24,7 @@ Vercount 是一个基于 FastAPI + Redis 的网站计数器，它的特点是：
 
 ## 从不蒜子切换到 Vercount
 
-直接替换不蒜子的 script 标签即可，不需要修改任何代码。
+直接替换不蒜子的 script 标签即可，不需要修改任何代码。数据会在初次访问时自动从不蒜子同步。
 
 ```html
 <script defer src="https://vercount.one/js"></script>
