@@ -4,5 +4,8 @@
 	},
 	"devDependencies": {
 		"tailwindcss": "^3.4.0"
+	},
+	"dependencies": {
+		"uglify-js": "^3.17.4"
 	}
 }
