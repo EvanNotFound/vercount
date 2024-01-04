@@ -6,7 +6,7 @@
 不蒜子计数访问慢？总是 502？那就试试 Vercount 吧！完美不蒜子计数替代方案。
 
 Vercount 是一个基于 FastAPI + Redis 的网站计数器，它的特点是：
-- 速度快，响应时间在 10ms 以内
+- 速度快，服务器响应时间在 10ms 以内
 - 使用 POST 请求进行统计，不再使用不蒜子的过时 Referrer 方法进行统计，实现移动端 / Firefox / Safari 等浏览器的准确统计。
 - 使用 Json 回调，不再使用不蒜子的 JSONP 回调方法，防止 CSRF 攻击，详情请看：[JSONP](https://en.wikipedia.org/wiki/JSONP)
 - 初始化自动同步 (site_pv, site_uv, page_pv) 所有不蒜子的数据，无需手动操作
