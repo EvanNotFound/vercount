@@ -1,18 +1,16 @@
 # coding:utf-8
 import json
+import logging
 import os
 from urllib.parse import urlparse
 
-import redis
 import uvicorn
 from fastapi import FastAPI, Request, Header, Response
 from fastapi.responses import FileResponse
 
-from get_before_data import get_data_from_busuanzi
-from pv import pv
-from uv import update_site_uv_and_set_expiration
-
-from redis_connection import redis_client
+from get_before_data import get_page_pv_before, get_site_pv_before, get_site_uv_before
+from pv import update_site_pv, update_page_pv
+from uv import update_site_uv
 
 app = FastAPI(docs_url=None, redoc_url=None)
 
@@ -33,18 +31,20 @@ def root(request: Request, referer: str = Header(None), jsonpCallback: str = "")
     parsed_url = urlparse(referer)
     host = parsed_url.netloc
     path = parsed_url.path.rstrip('/index')
+    logging.debug(f"host: {host}, path: {path}, client_host: {client_host}")
 
-    site_uv_before = redis_client.get(f"live_site:{host}")
-    if site_uv_before is None:
-        site_uv_before = get_data_from_busuanzi(host)["site_uv"]
-    else:
-        site_uv_before = int(site_uv_before.decode())
+    site_uv_before = get_site_uv_before(host, path)
+    site_pv_before = get_site_pv_before(host, path)
+    page_pv_before = get_page_pv_before(host, path)
 
-    uv = update_site_uv_and_set_expiration(host, client_host) + site_uv_before
-    page_pv, site_pv = pv(host, path)
+    logging.debug(f"host: {host}, path: {path}, site_uv_before: {site_uv_before}, site_pv_before: {site_pv_before}, page_pv_before: {page_pv_before}")
+
+    site_uv = update_site_uv(host, client_host) + site_uv_before
+    site_pv = update_site_pv(host, client_host) + site_pv_before
+    page_pv = update_page_pv(host, path) + page_pv_before
 
     dict_data = {
-        "site_uv": uv,
+        "site_uv": site_uv,
         "page_pv": page_pv,
         "site_pv": site_pv,
         "version": 2.4

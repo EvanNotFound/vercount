@@ -1,49 +1,64 @@
-# coding:utf-8
-import time
-import requests
 import logging
 
-# Configure logging
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
-
-# Constants
-REQUEST_TIMEOUT = 3
-MAX_RETRIES = 3
-EXPIRATION_TIME = 60 * 60 * 24 * 30  # 30 days
 from redis_connection import redis_client
+from get_busuanzi_data import get_busuanzi_page_pv_data, get_busuanzi_site_uv_data, get_busuanzi_site_pv_data
 
-def get_data_from_busuanzi(host):
-    logging.info(f"Starting to get data from busuanzi for host: {host}")
-    url = "https://busuanzi.ibruce.info/busuanzi?jsonpCallback=BusuanziCallback_777487655111"
-    headers = {
-        'Referer': f"https://{host}/",
-        'Cookie': 'busuanziId=89D15D1F66D2494F91FB315545BF9C2A'
-    }
+def get_page_pv_before(host, path):
+    """
+    Retrieves the page view (PV) count for a specific page.
 
-    for attempt in range(MAX_RETRIES):
-        logging.debug(f"Attempt {attempt + 1}: Sending request to {url}")
-        try:
-            response = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
-            logging.debug(f"Response received with status code {response.status_code}")
-            if response.status_code == 200:
-                # Safe JSON parsing
-                data_str = response.text[34:-13]
-                data_dict = eval(data_str)
-                site_uv = data_dict["site_uv"]
-                site_pv = data_dict["site_pv"]
-                page_pv = data_dict["page_pv"]
-                redis_client.set(f"live_site:{host}", site_uv, ex=EXPIRATION_TIME)
-                redis_client.set(f"site_pv:{host}", site_pv, ex=EXPIRATION_TIME)
-                logging.info(f"Data successfully retrieved and stored for host {host}")
-                return data_dict
-            else:
-                logging.warning(f"Received non-200 response: {response.status_code}")
-        except requests.RequestException as e:
-            logging.error(f"Attempt {attempt + 1} failed with error: {e}")
-            time.sleep(1)
+    Args:
+    host (str): The host name.
+    path (str): The path of the page.
 
-    redis_client.set(f"live_site:{host}", 0, ex=EXPIRATION_TIME)
-    logging.error(f"Max retries exceeded for host {host}. Defaulting values to 0.")
-    return {"site_uv": 0, "page_pv": 0, "site_pv": 0}
+    Returns:
+    int: The page view count for the page.
+    """
+    page_key = f"live_page_pv:{host}{path}"
+    page_pv = redis_client.get(page_key)
+    logging.debug(f"page_pv: {page_pv}, page_key: {page_key}")
+    if page_pv is None:
+        page_pv = get_busuanzi_page_pv_data(host, path)["page_pv"]
+        return page_pv
+    else:
+        return int(page_pv.decode())
 
-logging.info("Process finished.")
+
+def get_site_pv_before(host, path):
+    """
+    Retrieves the site page view (PV) count for a specific site.
+
+    Args:
+    host (str): The host name.
+    path (str): The path of the page.
+
+    Returns:
+    int: The site page view count for the site.
+    """
+    site_key = f"live_site_pv:{host}"
+    site_pv = redis_client.get(site_key)
+    if site_pv is None:
+        site_pv = get_busuanzi_site_pv_data(host, path)["site_pv"]
+        return site_pv
+    else:
+        return int(site_pv.decode())
+
+
+def get_site_uv_before(host, path):
+    """
+    Retrieves the site unique visitor (UV) count for a specific site.
+
+    Args:
+    host (str): The host name.
+    path (str): The path of the page.
+
+    Returns:
+    int: The site unique visitor count for the site.
+    """
+    site_key = f"live_site_uv:{host}"
+    site_uv = redis_client.get(site_key)
+    if site_uv is None:
+        site_uv = get_busuanzi_site_uv_data(host, path)["site_uv"]
+        return site_uv
+    else:
+        return int(site_uv.decode())

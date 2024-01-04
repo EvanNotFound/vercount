@@ -1,9 +1,8 @@
 from redis_connection import redis_client
+from constants import EXPIRATION_TIME
 
-# Constants
-EXPIRATION_TIME = 60 * 60 * 24 * 30  # 30 days in seconds
 
-def update_site_uv_and_set_expiration(site_name, ip):
+def update_site_uv(site_name, ip):
     """
     Adds an IP to the set of unique visitors (UV) for a site and sets an expiration time.
 
@@ -15,7 +14,7 @@ def update_site_uv_and_set_expiration(site_name, ip):
     int: The number of unique visitors for the site.
     """
     site_uv_key = f"site_uv:{site_name}"
-    live_site_key = f"live_site:{site_name}"
+    live_site_key = f"live_site_uv:{site_name}"
 
     # Add IP to the set and get the count of unique visitors
     redis_client.sadd(site_uv_key, ip)
