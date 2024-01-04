@@ -3,6 +3,10 @@
     "src": "main.py",
     "use": "@vercel/python",
     "config": { "maxLambdaSize": "50mb" }
+  },
+    {
+    "src": "package.json",
+    "use": "@vercel/node"
   }],
   "routes": [{
     "src": "/(.*)",
