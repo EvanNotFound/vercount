@@ -1,8 +1,6 @@
 # coding:utf-8
 import time
 import requests
-import redis
-import os
 
 # Constants
 REQUEST_TIMEOUT = 3
@@ -24,7 +22,7 @@ def get_data_from_busuanzi(host):
             if response.status_code == 200:
                 # Safe JSON parsing
                 data_str = response.text[34:-13]
-                data_dict = response.json(data_str)
+                data_dict = eval(data_str)
                 return data_dict
         except requests.RequestException as e:
             print(f"Attempt {attempt + 1} failed: {e}")
