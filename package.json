@@ -1,12 +1,12 @@
 {
 	"scripts": {
-		"dev": "pnpx tailwindcss -i ./statics/css/src/input.css -o ./statics/css/style.css --watch",
-		"build": "pnpx tailwindcss -i ./statics/css/src/input.css -o ./statics/css/style.css --minify && uglifyjs ./statics/js/src/client.js -o ./statics/js/client.min.js --compress --mangle --toplevel"
+		"dev": "pnpx tailwindcss -i ./statics/css/src/input.css -o ./statics/css/style.css --watch --minify",
+		"build": "pnpx tailwindcss -i ./statics/css/src/input.css -o ./statics/css/style.css --minify && terser ./statics/js/src/client.js -o ./statics/js/client.min.js --compress --timings --mangle --toplevel"
 	},
 	"devDependencies": {
 		"tailwindcss": "^3.4.0"
 	},
 	"dependencies": {
-		"uglify-js": "^3.17.4"
+		"terser": "^5.26.0"
 	}
 }
