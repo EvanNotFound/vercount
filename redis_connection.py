@@ -1,7 +1,9 @@
 import redis
 import os
 from dotenv import load_dotenv
+
 load_dotenv()  # This loads the environment variables from .env
+
 
 def get_redis_client():
     return redis.Redis(
@@ -11,5 +13,6 @@ def get_redis_client():
         db=int(os.environ.get('REDIS_DB', 0)),
         ssl=True
     )
+
 
 redis_client = get_redis_client()

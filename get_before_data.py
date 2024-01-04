@@ -3,6 +3,7 @@ import logging
 from redis_connection import redis_client
 from get_busuanzi_data import get_busuanzi_page_pv_data, get_busuanzi_site_uv_data, get_busuanzi_site_pv_data
 
+
 async def get_page_pv_before(host, path):
     """
     Retrieves the page view (PV) count for a specific page.

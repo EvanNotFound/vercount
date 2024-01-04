@@ -2,8 +2,6 @@ from redis_connection import redis_client
 from constants import EXPIRATION_TIME
 
 
-
-
 async def update_page_pv(host, path):
     """
     Increments and retrieves the page view (PV) count for a specific page and sets an expiration time.
