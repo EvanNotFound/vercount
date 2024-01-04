@@ -109,4 +109,4 @@ async def options_log(request: Request):
     return Response(status_code=204, headers=headers)
 
 if __name__ == "__main__":
-    uvicorn.run("index:app", host="0.0.0.0", port=8080, log_level="info", proxy_headers=True, forwarded_allow_ips="*")
+    uvicorn.run("main:app", host="0.0.0.0", port=8080, log_level="info", proxy_headers=True, forwarded_allow_ips="*")
