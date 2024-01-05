@@ -1,0 +1,1805 @@
+<!doctype html>
+<!-- saved from url=(0014)about:internet -->
+<html lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>Vercount - 不蒜子替代网站流量计数器</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="color-scheme" content="light only" />
+    <meta
+      name="description"
+      content="Vercount 提供一个强大的不蒜子网站流量计数器替代方案。轻松追踪页面浏览量和访客数量。"
+    />
+    <meta
+      name="keywords"
+      content="Vercount, 网站计数器, 不蒜子替代品, 流量分析, 页面浏览量, 访客跟踪"
+    />
+    <script type="application/ld+json">
+      {
+        "@context": "http://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Vercount",
+        "description": "一个全面的网站计数器和分析工具。"
+      }
+    </script>
+    <meta name="robots" content="index, follow" />
+    <link rel="icon" href="/carrd/favicon.png" type="image/x-icon" />
+    <link rel="canonical" href="https://vercount.one" />
+    <meta property="og:title" content="Vercount - 不蒜子替代网站流量计数器" />
+    <meta
+      property="og:description"
+      content="Vercount 提供一个强大的不蒜子网站流量计数器替代方案。轻松追踪页面浏览量和访客数量。"
+    />
+    <meta property="og:image" content="/carrd/og-image.png" />
+    <meta property="og:url" content="https://vercount.one" />
+    <meta property="og:site_name" content="Vercount" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="Vercount" />
+    <meta name="twitter:creator" content="EvanNotFound" />
+    <meta name="twitter:title" content="Vercount - 不蒜子替代网站流量计数器" />
+    <meta
+      name="twitter:description"
+      content="Vercount 提供一个强大的不蒜子网站流量计数器替代方案。轻松追踪页面浏览量和访客数量。"
+    />
+    <meta name="twitter:image" content="/carrd/og-image.png" />
+    <link href="/carrd/css2" rel="stylesheet" type="text/css" />
+    <link href="/carrd/style.css" rel="stylesheet" type="text/css" />
+    <noscript>
+      <style>
+        body {
+          overflow: auto !important;
+        }
+        body:after {
+          display: none !important;
+        }
+        #main > .inner {
+          opacity: 1 !important;
+        }
+        #main {
+          opacity: 1 !important;
+          transform: none !important;
+          transition: none !important;
+          filter: none !important;
+        }
+        #main > .inner > section {
+          opacity: 1 !important;
+          transform: none !important;
+          transition: none !important;
+          filter: none !important;
+        }
+      </style>
+    </noscript>
+    <style></style>
+  </head>
+  <body class="is-ready">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      version="1.1"
+      xmlns:xlink="http://www.w3.org/1999/xlink"
+      viewBox="0 0 40 40"
+      display="none"
+      width="0"
+      height="0"
+    >
+      <symbol id="icon-8a75e9205b2d7697ad826d592ebf05f0" viewBox="0 0 40 40">
+        <path
+          d="M19.8,34.2c-0.3,0-0.3-0.1-0.4-0.1L6.6,21.4c-0.1-0.1-0.1-0.1-0.1-0.4c0-0.3,0.1-0.3,0.1-0.4l1.5-1.5 C8.2,19.1,8.2,19,8.5,19s0.3,0.1,0.4,0.1l9.2,9.2V5.9c0-0.1,0-0.2,0-0.2c0,0,0,0,0,0c0.1-0.1,0.2-0.1,0.4-0.1H21 c0.2,0,0.4,0.1,0.5,0.1c0,0,0,0.1,0,0.2v22.4l9.2-9.2c0.1-0.1,0.1-0.1,0.4-0.1c0.3,0,0.3,0.1,0.4,0.1l1.5,1.5 c0.1,0.1,0.1,0.1,0.1,0.4c0,0.3-0.1,0.3-0.1,0.4L20.2,34.1C20.1,34.1,20.1,34.2,19.8,34.2z"
+        ></path>
+      </symbol>
+      <symbol id="icon-8c4b37645de3c276d895d87df51ba614" viewBox="0 0 40 40">
+        <path
+          d="M36,20.3c0,3.5-1,6.6-3.1,9.4c-2,2.8-4.7,4.7-7.9,5.8c-0.4,0.1-0.6,0-0.8-0.1c-0.2-0.2-0.3-0.4-0.3-0.6v-4.4 c0-1.3-0.4-2.3-1.1-3c0.8-0.1,1.5-0.2,2.1-0.4c0.6-0.2,1.3-0.4,2-0.8c0.7-0.4,1.2-0.8,1.7-1.4c0.5-0.5,0.8-1.3,1.1-2.2 s0.4-2,0.4-3.1c0-1.7-0.5-3.1-1.6-4.3c0.5-1.3,0.5-2.7-0.2-4.2c-0.4-0.1-1,0-1.7,0.2c-0.7,0.3-1.4,0.6-1.9,0.9L24,12.5 c-1.3-0.4-2.6-0.5-4-0.5s-2.7,0.2-4,0.5c-0.2-0.2-0.5-0.3-0.9-0.6c-0.4-0.2-0.9-0.5-1.7-0.8c-0.8-0.3-1.4-0.4-1.8-0.3 c-0.6,1.6-0.7,3-0.1,4.2c-1.1,1.2-1.6,2.6-1.6,4.3c0,1.2,0.1,2.2,0.4,3.1s0.6,1.6,1.1,2.2s1,1,1.7,1.4c0.7,0.4,1.3,0.6,2,0.8 c0.6,0.2,1.3,0.3,2.1,0.4c-0.6,0.5-0.9,1.2-1,2.1c-0.3,0.1-0.6,0.2-0.9,0.3c-0.3,0.1-0.7,0.1-1.2,0.1c-0.5,0-0.9-0.1-1.4-0.4 c-0.5-0.3-0.8-0.7-1.2-1.3c-0.3-0.4-0.6-0.8-1-1.1c-0.4-0.3-0.8-0.4-1-0.5L9,26.5c-0.3,0-0.5,0-0.6,0.1c-0.1,0.1-0.1,0.1-0.1,0.2 c0,0.1,0.1,0.2,0.2,0.3c0.1,0.1,0.2,0.2,0.3,0.2l0.1,0.1c0.3,0.1,0.6,0.4,0.9,0.8s0.5,0.7,0.7,1.1l0.2,0.5c0.2,0.5,0.5,1,0.9,1.3 c0.4,0.3,0.9,0.5,1.4,0.6c0.5,0.1,1,0.1,1.4,0.1c0.5,0,0.9,0,1.2-0.1l0.5-0.1c0,0.5,0,1.1,0,1.9c0,0.7,0,1.1,0,1.1 c0,0.2-0.1,0.5-0.3,0.6c-0.2,0.2-0.5,0.2-0.8,0.1c-3.2-1.1-5.8-3-7.9-5.8S4,23.8,4,20.3c0-2.9,0.7-5.6,2.1-8S9.5,7.8,12,6.4 s5.1-2.1,8-2.1s5.6,0.7,8,2.1s4.4,3.4,5.8,5.8S36,17.4,36,20.3L36,20.3z"
+        ></path>
+      </symbol>
+      <symbol id="icon-c0646d28bbeb18e39eb973f96b44bd0f" viewBox="0 0 40 40">
+        <path
+          d="M34.9,30.5V15.6c-0.4,0.4-0.8,0.9-1.4,1.2c-3.4,2.7-6.2,4.8-8.2,6.6c-0.6,0.5-1.1,0.9-1.6,1.2c-0.4,0.3-0.9,0.6-1.7,0.9 c-0.7,0.3-1.4,0.5-2,0.5l0,0c-0.6,0-1.2-0.2-2-0.5c-0.7-0.3-1.2-0.6-1.7-0.9c-0.4-0.3-0.9-0.7-1.6-1.2c-2.1-1.7-4.8-3.8-8.2-6.6 c-0.5-0.4-0.9-0.8-1.4-1.2v14.9c0,0.2,0.1,0.3,0.2,0.4C5.7,31,5.9,31.1,6,31.1h28.4c0.2,0,0.3-0.1,0.4-0.2 C34.8,30.8,34.9,30.7,34.9,30.5L34.9,30.5z M34.9,10.2V9.7c0,0,0-0.1,0-0.2c0-0.1,0-0.2-0.1-0.2c-0.1,0-0.1,0-0.1-0.2 c0-0.1-0.1-0.2-0.2-0.1c-0.1,0-0.2,0-0.3,0H5.8C5.6,8.9,5.4,9,5.3,9.1C5.2,9.2,5.1,9.3,5.1,9.5c0,2.2,0.9,4,2.8,5.5 c2.5,2,5.1,4,7.7,6.1c0.1,0.1,0.3,0.2,0.7,0.5c0.4,0.3,0.6,0.5,0.9,0.7c0.2,0.2,0.5,0.4,0.8,0.6c0.3,0.2,0.7,0.4,0.9,0.5 c0.3,0.1,0.6,0.2,0.8,0.2l0,0c0.2,0,0.5-0.1,0.8-0.2c0.3-0.1,0.6-0.3,0.9-0.5c0.3-0.2,0.6-0.4,0.8-0.6c0.2-0.2,0.5-0.4,0.9-0.7 c0.4-0.3,0.6-0.5,0.6-0.5c2.7-2.1,5.3-4.2,7.7-6.1c0.7-0.5,1.4-1.2,2-2.2C34.6,11.8,34.9,11,34.9,10.2L34.9,10.2z M37.3,9.5v21 c0,0.8-0.3,1.6-0.9,2.2s-1.4,0.9-2.2,0.9H5.8c-0.8,0-1.6-0.3-2.2-0.9c-0.6-0.6-0.9-1.4-0.9-2.2v-21c0-0.8,0.3-1.6,0.9-2.2 s1.4-0.9,2.2-0.9h28.4c0.8,0,1.6,0.3,2.2,0.9S37.3,8.7,37.3,9.5z"
+        ></path>
+      </symbol>
+    </svg>
+    <div id="wrapper">
+      <div id="main">
+        <div class="inner">
+          <p id="text01" class="style4">introducing</p>
+          <h1 id="text69" class="style2" style="opacity: 1; transform: none">
+            Vercount
+          </h1>
+          <p id="text73" class="style1" style="opacity: 1; transform: none">
+            <span class="p"
+              >Busuanzi Webiste Counter Alternative for Your Website.<br />
+              <em>不蒜子计数完美替代方案。</em></span
+            >
+          </p>
+          <div id="container03" class="style2 container columns">
+            <div class="wrapper">
+              <div class="inner" data-onvisible-trigger="1">
+                <div>
+                  <ul
+                    id="buttons01"
+                    class="style1 buttons"
+                    style="opacity: 1; transform: none"
+                  >
+                    <li>
+                      <a onclick="_nextScrollPoint(event);" class="button n01">
+                        <svg>
+                          <use
+                            xlink:href="#icon-8a75e9205b2d7697ad826d592ebf05f0"
+                          ></use>
+                        </svg>
+                        <span class="label">Get Started</span>
+                      </a>
+                    </li>
+                  </ul>
+                </div>
+                <div>
+                  <ul
+                    id="buttons03"
+                    class="style2 buttons"
+                    style="opacity: 1; transform: none"
+                  >
+                    <li>
+                      <a
+                        href="https://github.com/EvanNotFound/vercount"
+                        class="button n01"
+                      >
+                        <svg>
+                          <use
+                            xlink:href="#icon-8c4b37645de3c276d895d87df51ba614"
+                          ></use>
+                        </svg>
+                        <span class="label">Github</span>
+                      </a>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            id="container01"
+            data-scroll-id="tutorial"
+            data-scroll-behavior="default"
+            data-scroll-offset="0"
+            data-scroll-speed="3"
+            class="style1 container default full screen"
+          >
+            <div class="wrapper">
+              <div class="inner">
+                <h2
+                  id="text02"
+                  class="style2"
+                  style="opacity: 1; transform: none"
+                >
+                  <mark>0</mark>1.
+                </h2>
+                <h2
+                  id="text04"
+                  class="style7"
+                  style="opacity: 0; transform: translateY(0.6375rem)"
+                >
+                  Insert the script tag. <mark>添加以下 HTML 代码.</mark>
+                </h2>
+                <p
+                  id="text07"
+                  class="style1"
+                  style="opacity: 0; transform: translateY(1.6875rem)"
+                >
+                  <span class="p"
+                    ><code
+                      >&lt;script defer
+                      src="https://vercount.one/js"&gt;&lt;/script&gt;<br /> </code
+                  ></span>
+                </p>
+                <hr id="divider05" class="style1" />
+                <h2
+                  id="text08"
+                  class="style2"
+                  style="opacity: 0; transform: translateY(0.6375rem)"
+                >
+                  <mark>0</mark>2.
+                </h2>
+                <h2
+                  id="text10"
+                  class="style7"
+                  style="opacity: 0; transform: translateY(0.6375rem)"
+                >
+                  Insert these IDs. <mark>使用以下 ID.</mark>
+                </h2>
+                <p
+                  id="text11"
+                  class="style1"
+                  style="opacity: 0; transform: translateY(1.6875rem)"
+                >
+                  <span class="p"
+                    ><code
+                      >Total Page View &lt;span
+                      id="busuanzi_page_pv"&gt;&lt;/span&gt;</code
+                    ><br />
+                    <code
+                      >Total Visitors &lt;span
+                      id="busuanzi_page_uv"&gt;&lt;/span&gt;</code
+                    ><br />
+                    <code
+                      >Total Visits &lt;span
+                      id="busuanzi_site_pv"&gt;&lt;/span&gt;</code
+                    ><br />
+                    <code
+                      >Site Total Visitors &lt;span
+                      id="busuanzi_site_uv"&gt;&lt;/span&gt;<br /> </code
+                  ></span>
+                </p>
+                <hr id="divider01" class="style1" />
+                <h2
+                  id="text16"
+                  class="style2"
+                  style="opacity: 0; transform: translateY(0.6375rem)"
+                >
+                  <mark>0</mark>3.
+                </h2>
+                <h2
+                  id="text17"
+                  class="style7"
+                  style="opacity: 0; transform: translateY(0.6375rem)"
+                >
+                  Refresh your website. <mark>刷新网页.</mark>
+                </h2>
+                <p
+                  id="text18"
+                  class="style1"
+                  style="opacity: 0; transform: translateY(1.6875rem)"
+                >
+                  See the numbers appear on your website.
+                </p>
+              </div>
+            </div>
+          </div>
+          <p id="text20" class="style4">Why choose us</p>
+          <h2
+            id="text31"
+            class="style3"
+            style="opacity: 0; transform: translateY(0.6375rem)"
+          >
+            Features
+          </h2>
+          <p
+            id="text46"
+            class="style1"
+            style="opacity: 0; transform: translateY(1.6875rem)"
+          >
+            Vercount 是一个完美的不蒜子计数替代方案.
+          </p>
+          <div id="list02" class="style1 list">
+            <ul>
+              <li style="opacity: 0; transform: translateY(0.9rem)">
+                <p>速度快，服务器响应时间在 10ms 以内</p>
+              </li>
+              <li style="opacity: 0; transform: translateY(0.9rem)">
+                <p>
+                  使用 POST 请求进行统计，不再使用不蒜子的过时 Referrer
+                  方法进行统计，实现移动端 / Firefox / Safari 等浏览器的准确统计
+                </p>
+              </li>
+              <li style="opacity: 0; transform: translateY(0.9rem)">
+                <p>
+                  使用 Json 回调，不再使用不蒜子的 JSONP 回调方法，防止 CSRF
+                  攻击
+                </p>
+              </li>
+              <li style="opacity: 0; transform: translateY(0.9rem)">
+                <p>
+                  初始化自动同步 (site<em>pv, site</em>uv, page_pv)
+                  所有不蒜子的数据，无需手动操作
+                </p>
+              </li>
+              <li style="opacity: 0; transform: translateY(0.9rem)">
+                <p>自动保持和不蒜子的数据同步，每访问一次，数据就会自动同步</p>
+              </li>
+              <li style="opacity: 0; transform: translateY(0.9rem)">
+                <p>兼容不蒜子的 span 标签，可以无缝切换</p>
+              </li>
+              <li style="opacity: 0; transform: translateY(0.9rem)">
+                <p>
+                  使用 Upstash Redis 作为数据存储，数据不会丢失，保证 99.99%
+                  可用性
+                </p>
+              </li>
+              <li style="opacity: 0; transform: translateY(0.9rem)">
+                <p>
+                  使用 Vercel Serverless Functions 作为后端，保证 99.99% 可用性
+                </p>
+              </li>
+              <li style="opacity: 0; transform: translateY(0.9rem)">
+                <p>使用 Vercel 全球 CDN 作为前端，保证 99.99% 可用性</p>
+              </li>
+            </ul>
+          </div>
+          <div id="container02" class="style1 container default full screen">
+            <div class="wrapper">
+              <div class="inner">
+                <p id="text03" class="style4">Opensource</p>
+                <h2
+                  id="text05"
+                  class="style3"
+                  style="opacity: 0; transform: translateY(0.6375rem)"
+                >
+                  GitHub
+                </h2>
+                <p
+                  id="text06"
+                  class="style1"
+                  style="opacity: 0; transform: translateY(1.6875rem)"
+                >
+                  <span class="p"
+                    >This project falls under AGPL-3.0 License.<br />
+                    <mark>本项目基于 AGPL-3.0 协议</mark></span
+                  >
+                </p>
+                <ul
+                  id="buttons04"
+                  class="style3 buttons"
+                  style="opacity: 0; transform: translateY(1.6875rem)"
+                >
+                  <li>
+                    <a
+                      href="https://github.com/EvanNotFound/vercount"
+                      class="button n01"
+                    >
+                      <svg>
+                        <use
+                          xlink:href="#icon-8c4b37645de3c276d895d87df51ba614"
+                        ></use>
+                      </svg>
+                      <span class="label">Star on Github</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <ul id="icons03" class="style1 icons">
+            <li style="opacity: 0; transform: translateY(0.9rem)">
+              <a
+                class="n01"
+                href="https://github.com/EvanNotFound/vercount"
+                aria-label="GitHub"
+              >
+                <svg>
+                  <use
+                    xlink:href="#icon-8c4b37645de3c276d895d87df51ba614"
+                  ></use>
+                </svg>
+                <span class="label">GitHub</span>
+              </a>
+            </li>
+            <li style="opacity: 0; transform: translateY(0.9rem)">
+              <a
+                class="n02"
+                href="mailto:contact@ohevan.com"
+                aria-label="Email"
+              >
+                <svg>
+                  <use
+                    xlink:href="#icon-c0646d28bbeb18e39eb973f96b44bd0f"
+                  ></use>
+                </svg>
+                <span class="label">Email</span>
+              </a>
+            </li>
+          </ul>
+          <p
+            id="text94"
+            class="style1"
+            style="opacity: 0; transform: translateY(1.6875rem)"
+          >
+            2024 © EvanNotFound. All Rights Reserved.
+          </p>
+        </div>
+      </div>
+    </div>
+    <script>
+      (function () {
+        var on = addEventListener,
+          off = removeEventListener,
+          $ = function (q) {
+            return document.querySelector(q);
+          },
+          $$ = function (q) {
+            return document.querySelectorAll(q);
+          },
+          $body = document.body,
+          $inner = $(".inner"),
+          client = (function () {
+            var o = {
+                browser: "other",
+                browserVersion: 0,
+                os: "other",
+                osVersion: 0,
+                mobile: false,
+                canUse: null,
+                flags: { lsdUnits: false },
+              },
+              ua = navigator.userAgent,
+              a,
+              i;
+            a = [
+              ["firefox", /Firefox\/([0-9\.]+)/],
+              ["edge", /Edge\/([0-9\.]+)/],
+              ["safari", /Version\/([0-9\.]+).+Safari/],
+              ["chrome", /Chrome\/([0-9\.]+)/],
+              ["chrome", /CriOS\/([0-9\.]+)/],
+              ["ie", /Trident\/.+rv:([0-9]+)/],
+            ];
+            for (i = 0; i < a.length; i++) {
+              if (ua.match(a[i][1])) {
+                o.browser = a[i][0];
+                o.browserVersion = parseFloat(RegExp.$1);
+                break;
+              }
+            }
+            a = [
+              [
+                "ios",
+                /([0-9_]+) like Mac OS X/,
+                function (v) {
+                  return v.replace("_", ".").replace("_", "");
+                },
+              ],
+              [
+                "ios",
+                /CPU like Mac OS X/,
+                function (v) {
+                  return 0;
+                },
+              ],
+              [
+                "ios",
+                /iPad; CPU/,
+                function (v) {
+                  return 0;
+                },
+              ],
+              ["android", /Android ([0-9\.]+)/, null],
+              [
+                "mac",
+                /Macintosh.+Mac OS X ([0-9_]+)/,
+                function (v) {
+                  return v.replace("_", ".").replace("_", "");
+                },
+              ],
+              ["windows", /Windows NT ([0-9\.]+)/, null],
+              ["undefined", /Undefined/, null],
+            ];
+            for (i = 0; i < a.length; i++) {
+              if (ua.match(a[i][1])) {
+                o.os = a[i][0];
+                o.osVersion = parseFloat(
+                  a[i][2] ? a[i][2](RegExp.$1) : RegExp.$1,
+                );
+                break;
+              }
+            }
+            if (
+              o.os == "mac" &&
+              "ontouchstart" in window &&
+              ((screen.width == 1024 && screen.height == 1366) ||
+                (screen.width == 834 && screen.height == 1112) ||
+                (screen.width == 810 && screen.height == 1080) ||
+                (screen.width == 768 && screen.height == 1024))
+            )
+              o.os = "ios";
+            o.mobile = o.os == "android" || o.os == "ios";
+            var _canUse = document.createElement("div");
+            o.canUse = function (property, value) {
+              var style;
+              style = _canUse.style;
+              if (!(property in style)) return false;
+              if (typeof value !== "undefined") {
+                style[property] = value;
+                if (style[property] == "") return false;
+              }
+              return true;
+            };
+            o.flags.lsdUnits = o.canUse("width", "100dvw");
+            return o;
+          })(),
+          trigger = function (t) {
+            dispatchEvent(new Event(t));
+          },
+          cssRules = function (selectorText) {
+            var ss = document.styleSheets,
+              a = [],
+              f = function (s) {
+                var r = s.cssRules,
+                  i;
+                for (i = 0; i < r.length; i++) {
+                  if (
+                    r[i] instanceof CSSMediaRule &&
+                    matchMedia(r[i].conditionText).matches
+                  )
+                    f(r[i]);
+                  else if (
+                    r[i] instanceof CSSStyleRule &&
+                    r[i].selectorText == selectorText
+                  )
+                    a.push(r[i]);
+                }
+              },
+              x,
+              i;
+            for (i = 0; i < ss.length; i++) f(ss[i]);
+            return a;
+          },
+          thisHash = function () {
+            var h = location.hash ? location.hash.substring(1) : null,
+              a;
+            if (!h) return null;
+            if (h.match(/\?/)) {
+              a = h.split("?");
+              h = a[0];
+              history.replaceState(undefined, undefined, "#" + h);
+              window.location.search = a[1];
+            }
+            if (h.length > 0 && !h.match(/^[a-zA-Z]/)) h = "x" + h;
+            if (typeof h == "string") h = h.toLowerCase();
+            return h;
+          },
+          scrollToElement = function (e, style, duration) {
+            var y, cy, dy, start, easing, offset, f;
+            if (!e) y = 0;
+            else {
+              offset =
+                (e.dataset.scrollOffset
+                  ? parseInt(e.dataset.scrollOffset)
+                  : 0) *
+                parseFloat(getComputedStyle(document.documentElement).fontSize);
+              switch (
+                e.dataset.scrollBehavior ? e.dataset.scrollBehavior : "default"
+              ) {
+                case "default":
+                default:
+                  y = e.offsetTop + offset;
+                  break;
+                case "center":
+                  if (e.offsetHeight < window.innerHeight)
+                    y =
+                      e.offsetTop -
+                      (window.innerHeight - e.offsetHeight) / 2 +
+                      offset;
+                  else y = e.offsetTop - offset;
+                  break;
+                case "previous":
+                  if (e.previousElementSibling)
+                    y =
+                      e.previousElementSibling.offsetTop +
+                      e.previousElementSibling.offsetHeight +
+                      offset;
+                  else y = e.offsetTop + offset;
+                  break;
+              }
+            }
+            if (!style) style = "smooth";
+            if (!duration) duration = 750;
+            if (style == "instant") {
+              window.scrollTo(0, y);
+              return;
+            }
+            start = Date.now();
+            cy = window.scrollY;
+            dy = y - cy;
+            switch (style) {
+              case "linear":
+                easing = function (t) {
+                  return t;
+                };
+                break;
+              case "smooth":
+                easing = function (t) {
+                  return t < 0.5
+                    ? 4 * t * t * t
+                    : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1;
+                };
+                break;
+            }
+            f = function () {
+              var t = Date.now() - start;
+              if (t >= duration) window.scroll(0, y);
+              else {
+                window.scroll(0, cy + dy * easing(t / duration));
+                requestAnimationFrame(f);
+              }
+            };
+            f();
+          },
+          scrollToTop = function () {
+            scrollToElement(null);
+          },
+          loadElements = function (parent) {
+            var a, e, x, i;
+            a = parent.querySelectorAll('iframe[data-src]:not([data-src=""])');
+            for (i = 0; i < a.length; i++) {
+              a[i].contentWindow.location.replace(a[i].dataset.src);
+              a[i].dataset.initialSrc = a[i].dataset.src;
+              a[i].dataset.src = "";
+            }
+            a = parent.querySelectorAll("video[autoplay]");
+            for (i = 0; i < a.length; i++) {
+              if (a[i].paused) a[i].play();
+            }
+            e = parent.querySelector('[data-autofocus="1"]');
+            x = e ? e.tagName : null;
+            switch (x) {
+              case "FORM":
+                e = e.querySelector(
+                  ".field input, .field select, .field textarea",
+                );
+                if (e) e.focus();
+                break;
+              default:
+                break;
+            }
+          },
+          unloadElements = function (parent) {
+            var a, e, x, i;
+            a = parent.querySelectorAll('iframe[data-src=""]');
+            for (i = 0; i < a.length; i++) {
+              if (a[i].dataset.srcUnload === "0") continue;
+              if ("initialSrc" in a[i].dataset)
+                a[i].dataset.src = a[i].dataset.initialSrc;
+              else a[i].dataset.src = a[i].src;
+              a[i].contentWindow.location.replace("about:blank");
+            }
+            a = parent.querySelectorAll("video");
+            for (i = 0; i < a.length; i++) {
+              if (!a[i].paused) a[i].pause();
+            }
+            e = $(":focus");
+            if (e) e.blur();
+          };
+        window._scrollToTop = scrollToTop;
+        var thisUrl = function () {
+          return window.location.href
+            .replace(window.location.search, "")
+            .replace(/#$/, "");
+        };
+        var getVar = function (name) {
+          var a = window.location.search.substring(1).split("&"),
+            b,
+            k;
+          for (k in a) {
+            b = a[k].split("=");
+            if (b[0] == name) return b[1];
+          }
+          return null;
+        };
+        var errors = {
+          handle: function (handler) {
+            window.onerror = function (message, url, line, column, error) {
+              handler(error.message);
+              return true;
+            };
+          },
+          unhandle: function () {
+            window.onerror = null;
+          },
+        };
+        var loaderTimeout = setTimeout(function () {
+          $body.classList.add("with-loader");
+        }, 500);
+        var loadHandler = function () {
+          setTimeout(function () {
+            clearTimeout(loaderTimeout);
+            $body.classList.remove("is-loading");
+            $body.classList.add("is-playing");
+            setTimeout(function () {
+              $body.classList.remove("with-loader");
+              $body.classList.remove("is-playing");
+              $body.classList.add("is-ready");
+            }, 1000);
+          }, 100);
+        };
+        on("load", loadHandler);
+        loadElements(document.body);
+        (function () {
+          var scrollPointParent = function (target) {
+              var inner;
+              inner = $("#main > .inner");
+              while (target && target.parentElement != inner)
+                target = target.parentElement;
+              return target;
+            },
+            scrollPointSpeed = function (scrollPoint) {
+              let x = parseInt(scrollPoint.dataset.scrollSpeed);
+              switch (x) {
+                case 5:
+                  return 250;
+                case 4:
+                  return 500;
+                case 3:
+                  return 750;
+                case 2:
+                  return 1000;
+                case 1:
+                  return 1250;
+                default:
+                  break;
+              }
+              return 750;
+            },
+            doNextScrollPoint = function (event) {
+              var e, target, id;
+              e = scrollPointParent(event.target);
+              if (!e) return;
+              while (e && e.nextElementSibling) {
+                e = e.nextElementSibling;
+                if (e.dataset.scrollId) {
+                  target = e;
+                  id = e.dataset.scrollId;
+                  break;
+                }
+              }
+              if (!target || !id) return;
+              if (target.dataset.scrollInvisible == "1")
+                scrollToElement(target, "smooth", scrollPointSpeed(target));
+              else location.href = "#" + id;
+            },
+            doPreviousScrollPoint = function (e) {
+              var e, target, id;
+              e = scrollPointParent(event.target);
+              if (!e) return;
+              while (e && e.previousElementSibling) {
+                e = e.previousElementSibling;
+                if (e.dataset.scrollId) {
+                  target = e;
+                  id = e.dataset.scrollId;
+                  break;
+                }
+              }
+              if (!target || !id) return;
+              if (target.dataset.scrollInvisible == "1")
+                scrollToElement(target, "smooth", scrollPointSpeed(target));
+              else location.href = "#" + id;
+            },
+            doFirstScrollPoint = function (e) {
+              var e, target, id;
+              e = scrollPointParent(event.target);
+              if (!e) return;
+              while (e && e.previousElementSibling) {
+                e = e.previousElementSibling;
+                if (e.dataset.scrollId) {
+                  target = e;
+                  id = e.dataset.scrollId;
+                }
+              }
+              if (!target || !id) return;
+              if (target.dataset.scrollInvisible == "1")
+                scrollToElement(target, "smooth", scrollPointSpeed(target));
+              else location.href = "#" + id;
+            },
+            doLastScrollPoint = function (e) {
+              var e, target, id;
+              e = scrollPointParent(event.target);
+              if (!e) return;
+              while (e && e.nextElementSibling) {
+                e = e.nextElementSibling;
+                if (e.dataset.scrollId) {
+                  target = e;
+                  id = e.dataset.scrollId;
+                }
+              }
+              if (!target || !id) return;
+              if (target.dataset.scrollInvisible == "1")
+                scrollToElement(target, "smooth", scrollPointSpeed(target));
+              else location.href = "#" + id;
+            };
+          window._nextScrollPoint = doNextScrollPoint;
+          window._previousScrollPoint = doPreviousScrollPoint;
+          window._firstScrollPoint = doFirstScrollPoint;
+          window._lastScrollPoint = doLastScrollPoint;
+          window._scrollToTop = function () {
+            scrollToElement(null);
+            if (window.location.hash) {
+              history.pushState(null, null, ".");
+            }
+          };
+          if ("scrollRestoration" in history)
+            history.scrollRestoration = "manual";
+          on("load", function () {
+            var initialScrollPoint, h;
+            h = thisHash();
+            if (h && !h.match(/^[a-zA-Z0-9\-]+$/)) h = null;
+            initialScrollPoint = $('[data-scroll-id="' + h + '"]');
+            if (initialScrollPoint)
+              scrollToElement(initialScrollPoint, "instant");
+          });
+          on("hashchange", function (event) {
+            var scrollPoint, h, pos;
+            h = thisHash();
+            if (h && !h.match(/^[a-zA-Z0-9\-]+$/)) return false;
+            scrollPoint = $('[data-scroll-id="' + h + '"]');
+            if (scrollPoint)
+              scrollToElement(
+                scrollPoint,
+                "smooth",
+                scrollPointSpeed(scrollPoint),
+              );
+            else scrollToElement(null);
+            return false;
+          });
+          on("click", function (event) {
+            var t = event.target,
+              tagName = t.tagName.toUpperCase(),
+              scrollPoint;
+            switch (tagName) {
+              case "IMG":
+              case "SVG":
+              case "USE":
+              case "U":
+              case "STRONG":
+              case "EM":
+              case "CODE":
+              case "S":
+              case "MARK":
+              case "SPAN":
+                while (!!(t = t.parentElement)) if (t.tagName == "A") break;
+                if (!t) return;
+                break;
+              default:
+                break;
+            }
+            if (
+              t.tagName == "A" &&
+              t.getAttribute("href") !== null &&
+              t.getAttribute("href").substr(0, 1) == "#"
+            ) {
+              if (
+                !!(scrollPoint = $(
+                  '[data-scroll-id="' +
+                    t.hash.substr(1) +
+                    '"][data-scroll-invisible="1"]',
+                ))
+              ) {
+                event.preventDefault();
+                scrollToElement(
+                  scrollPoint,
+                  "smooth",
+                  scrollPointSpeed(scrollPoint),
+                );
+              } else if (t.hash == window.location.hash) {
+                event.preventDefault();
+                history.replaceState(undefined, undefined, "#");
+                location.replace(t.hash);
+              }
+            }
+          });
+        })();
+        var style, sheet, rule;
+        style = document.createElement("style");
+        style.appendChild(document.createTextNode(""));
+        document.head.appendChild(style);
+        sheet = style.sheet;
+        if (client.mobile) {
+          (function () {
+            if (client.flags.lsdUnits) {
+              document.documentElement.style.setProperty(
+                "--viewport-height",
+                "100svh",
+              );
+              document.documentElement.style.setProperty(
+                "--background-height",
+                "100lvh",
+              );
+            } else {
+              var f = function () {
+                document.documentElement.style.setProperty(
+                  "--viewport-height",
+                  window.innerHeight + "px",
+                );
+                document.documentElement.style.setProperty(
+                  "--background-height",
+                  window.innerHeight + 250 + "px",
+                );
+              };
+              on("load", f);
+              on("orientationchange", function () {
+                setTimeout(function () {
+                  f();
+                }, 100);
+              });
+            }
+          })();
+        }
+        if (client.os == "android") {
+          (function () {
+            sheet.insertRule("body::after { }", 0);
+            rule = sheet.cssRules[0];
+            var f = function () {
+              rule.style.cssText =
+                "height: " + Math.max(screen.width, screen.height) + "px";
+            };
+            on("load", f);
+            on("orientationchange", f);
+            on("touchmove", f);
+          })();
+          $body.classList.add("is-touch");
+        } else if (client.os == "ios") {
+          if (client.osVersion <= 11)
+            (function () {
+              sheet.insertRule("body::after { }", 0);
+              rule = sheet.cssRules[0];
+              rule.style.cssText = "-webkit-transform: scale(1.0)";
+            })();
+          if (client.osVersion <= 11)
+            (function () {
+              sheet.insertRule("body.ios-focus-fix::before { }", 0);
+              rule = sheet.cssRules[0];
+              rule.style.cssText = "height: calc(100% + 60px)";
+              on(
+                "focus",
+                function (event) {
+                  $body.classList.add("ios-focus-fix");
+                },
+                true,
+              );
+              on(
+                "blur",
+                function (event) {
+                  $body.classList.remove("ios-focus-fix");
+                },
+                true,
+              );
+            })();
+          $body.classList.add("is-touch");
+        }
+        var scrollEvents = {
+          items: [],
+          add: function (o) {
+            this.items.push({
+              element: o.element,
+              triggerElement:
+                "triggerElement" in o && o.triggerElement
+                  ? o.triggerElement
+                  : o.element,
+              enter: "enter" in o ? o.enter : null,
+              leave: "leave" in o ? o.leave : null,
+              mode: "mode" in o ? o.mode : 4,
+              threshold: "threshold" in o ? o.threshold : 0.25,
+              offset: "offset" in o ? o.offset : 0,
+              initialState: "initialState" in o ? o.initialState : null,
+              state: false,
+            });
+          },
+          handler: function () {
+            var height, top, bottom, scrollPad;
+            if (client.os == "ios") {
+              height = document.documentElement.clientHeight;
+              top = document.body.scrollTop + window.scrollY;
+              bottom = top + height;
+              scrollPad = 125;
+            } else {
+              height = document.documentElement.clientHeight;
+              top = document.documentElement.scrollTop;
+              bottom = top + height;
+              scrollPad = 0;
+            }
+            scrollEvents.items.forEach(function (item) {
+              var elementTop,
+                elementBottom,
+                viewportTop,
+                viewportBottom,
+                bcr,
+                pad,
+                state,
+                a,
+                b;
+              if (!item.enter && !item.leave) return true;
+              if (!item.triggerElement) return true;
+              if (item.triggerElement.offsetParent === null) {
+                if (item.state == true && item.leave) {
+                  item.state = false;
+                  item.leave.apply(item.element);
+                  if (!item.enter) item.leave = null;
+                }
+                return true;
+              }
+              bcr = item.triggerElement.getBoundingClientRect();
+              elementTop = top + Math.floor(bcr.top);
+              elementBottom = elementTop + bcr.height;
+              if (item.initialState !== null) {
+                state = item.initialState;
+                item.initialState = null;
+              } else {
+                switch (item.mode) {
+                  case 1:
+                  default:
+                    state =
+                      bottom > elementTop - item.offset &&
+                      top < elementBottom + item.offset;
+                    break;
+                  case 2:
+                    a = top + height * 0.5;
+                    state =
+                      a > elementTop - item.offset &&
+                      a < elementBottom + item.offset;
+                    break;
+                  case 3:
+                    a = top + height * item.threshold;
+                    if (a - height * 0.375 <= 0) a = 0;
+                    b = top + height * (1 - item.threshold);
+                    if (
+                      b + height * 0.375 >=
+                      document.body.scrollHeight - scrollPad
+                    )
+                      b = document.body.scrollHeight + scrollPad;
+                    state =
+                      b > elementTop - item.offset &&
+                      a < elementBottom + item.offset;
+                    break;
+                  case 4:
+                    pad = height * item.threshold;
+                    viewportTop = top + pad;
+                    viewportBottom = bottom - pad;
+                    if (Math.floor(top) <= pad) viewportTop = top;
+                    if (Math.ceil(bottom) >= document.body.scrollHeight - pad)
+                      viewportBottom = bottom;
+                    if (
+                      viewportBottom - viewportTop >=
+                      elementBottom - elementTop
+                    ) {
+                      state =
+                        (elementTop >= viewportTop &&
+                          elementBottom <= viewportBottom) ||
+                        (elementTop >= viewportTop &&
+                          elementTop <= viewportBottom) ||
+                        (elementBottom >= viewportTop &&
+                          elementBottom <= viewportBottom);
+                    } else
+                      state =
+                        (viewportTop >= elementTop &&
+                          viewportBottom <= elementBottom) ||
+                        (elementTop >= viewportTop &&
+                          elementTop <= viewportBottom) ||
+                        (elementBottom >= viewportTop &&
+                          elementBottom <= viewportBottom);
+                    break;
+                }
+              }
+              if (state != item.state) {
+                item.state = state;
+                if (item.state) {
+                  if (item.enter) {
+                    item.enter.apply(item.element);
+                    if (!item.leave) item.enter = null;
+                  }
+                } else {
+                  if (item.leave) {
+                    item.leave.apply(item.element);
+                    if (!item.enter) item.leave = null;
+                  }
+                }
+              }
+            });
+          },
+          init: function () {
+            on("load", this.handler);
+            on("resize", this.handler);
+            on("scroll", this.handler);
+            this.handler();
+          },
+        };
+        scrollEvents.init();
+        var onvisible = {
+          effects: {
+            "blur-in": {
+              transition: function (speed, delay) {
+                return (
+                  "opacity " +
+                  speed +
+                  "s ease" +
+                  (delay ? " " + delay + "s" : "") +
+                  ", " +
+                  "filter " +
+                  speed +
+                  "s ease" +
+                  (delay ? " " + delay + "s" : "")
+                );
+              },
+              rewind: function (intensity) {
+                this.style.opacity = 0;
+                this.style.filter = "blur(" + 0.25 * intensity + "rem)";
+              },
+              play: function () {
+                this.style.opacity = 1;
+                this.style.filter = "none";
+              },
+            },
+            "zoom-in": {
+              transition: function (speed, delay) {
+                return (
+                  "opacity " +
+                  speed +
+                  "s ease" +
+                  (delay ? " " + delay + "s" : "") +
+                  ", " +
+                  "transform " +
+                  speed +
+                  "s ease" +
+                  (delay ? " " + delay + "s" : "")
+                );
+              },
+              rewind: function (intensity, alt) {
+                this.style.opacity = 0;
+                this.style.transform =
+                  "scale(" + (1 - (alt ? 0.25 : 0.05) * intensity) + ")";
+              },
+              play: function () {
+                this.style.opacity = 1;
+                this.style.transform = "none";
+              },
+            },
+            "zoom-out": {
+              transition: function (speed, delay) {
+                return (
+                  "opacity " +
+                  speed +
+                  "s ease" +
+                  (delay ? " " + delay + "s" : "") +
+                  ", " +
+                  "transform " +
+                  speed +
+                  "s ease" +
+                  (delay ? " " + delay + "s" : "")
+                );
+              },
+              rewind: function (intensity, alt) {
+                this.style.opacity = 0;
+                this.style.transform =
+                  "scale(" + (1 + (alt ? 0.25 : 0.05) * intensity) + ")";
+              },
+              play: function () {
+                this.style.opacity = 1;
+                this.style.transform = "none";
+              },
+            },
+            "slide-left": {
+              transition: function (speed, delay) {
+                return (
+                  "transform " +
+                  speed +
+                  "s ease" +
+                  (delay ? " " + delay + "s" : "")
+                );
+              },
+              rewind: function () {
+                this.style.transform = "translateX(100vw)";
+              },
+              play: function () {
+                this.style.transform = "none";
+              },
+            },
+            "slide-right": {
+              transition: function (speed, delay) {
+                return (
+                  "transform " +
+                  speed +
+                  "s ease" +
+                  (delay ? " " + delay + "s" : "")
+                );
+              },
+              rewind: function () {
+                this.style.transform = "translateX(-100vw)";
+              },
+              play: function () {
+                this.style.transform = "none";
+              },
+            },
+            "flip-forward": {
+              transition: function (speed, delay) {
+                return (
+                  "opacity " +
+                  speed +
+                  "s ease" +
+                  (delay ? " " + delay + "s" : "") +
+                  ", " +
+                  "transform " +
+                  speed +
+                  "s ease" +
+                  (delay ? " " + delay + "s" : "")
+                );
+              },
+              rewind: function (intensity, alt) {
+                this.style.opacity = 0;
+                this.style.transformOrigin = "50% 50%";
+                this.style.transform =
+                  "perspective(1000px) rotateX(" +
+                  (alt ? 45 : 15) * intensity +
+                  "deg)";
+              },
+              play: function () {
+                this.style.opacity = 1;
+                this.style.transform = "none";
+              },
+            },
+            "flip-backward": {
+              transition: function (speed, delay) {
+                return (
+                  "opacity " +
+                  speed +
+                  "s ease" +
+                  (delay ? " " + delay + "s" : "") +
+                  ", " +
+                  "transform " +
+                  speed +
+                  "s ease" +
+                  (delay ? " " + delay + "s" : "")
+                );
+              },
+              rewind: function (intensity, alt) {
+                this.style.opacity = 0;
+                this.style.transformOrigin = "50% 50%";
+                this.style.transform =
+                  "perspective(1000px) rotateX(" +
+                  (alt ? -45 : -15) * intensity +
+                  "deg)";
+              },
+              play: function () {
+                this.style.opacity = 1;
+                this.style.transform = "none";
+              },
+            },
+            "flip-left": {
+              transition: function (speed, delay) {
+                return (
+                  "opacity " +
+                  speed +
+                  "s ease" +
+                  (delay ? " " + delay + "s" : "") +
+                  ", " +
+                  "transform " +
+                  speed +
+                  "s ease" +
+                  (delay ? " " + delay + "s" : "")
+                );
+              },
+              rewind: function (intensity, alt) {
+                this.style.opacity = 0;
+                this.style.transformOrigin = "50% 50%";
+                this.style.transform =
+                  "perspective(1000px) rotateY(" +
+                  (alt ? 45 : 15) * intensity +
+                  "deg)";
+              },
+              play: function () {
+                this.style.opacity = 1;
+                this.style.transform = "none";
+              },
+            },
+            "flip-right": {
+              transition: function (speed, delay) {
+                return (
+                  "opacity " +
+                  speed +
+                  "s ease" +
+                  (delay ? " " + delay + "s" : "") +
+                  ", " +
+                  "transform " +
+                  speed +
+                  "s ease" +
+                  (delay ? " " + delay + "s" : "")
+                );
+              },
+              rewind: function (intensity, alt) {
+                this.style.opacity = 0;
+                this.style.transformOrigin = "50% 50%";
+                this.style.transform =
+                  "perspective(1000px) rotateY(" +
+                  (alt ? -45 : -15) * intensity +
+                  "deg)";
+              },
+              play: function () {
+                this.style.opacity = 1;
+                this.style.transform = "none";
+              },
+            },
+            "tilt-left": {
+              transition: function (speed, delay) {
+                return (
+                  "opacity " +
+                  speed +
+                  "s ease" +
+                  (delay ? " " + delay + "s" : "") +
+                  ", " +
+                  "transform " +
+                  speed +
+                  "s ease" +
+                  (delay ? " " + delay + "s" : "")
+                );
+              },
+              rewind: function (intensity, alt) {
+                this.style.opacity = 0;
+                this.style.transform =
+                  "rotate(" + (alt ? 45 : 5) * intensity + "deg)";
+              },
+              play: function () {
+                this.style.opacity = 1;
+                this.style.transform = "none";
+              },
+            },
+            "tilt-right": {
+              transition: function (speed, delay) {
+                return (
+                  "opacity " +
+                  speed +
+                  "s ease" +
+                  (delay ? " " + delay + "s" : "") +
+                  ", " +
+                  "transform " +
+                  speed +
+                  "s ease" +
+                  (delay ? " " + delay + "s" : "")
+                );
+              },
+              rewind: function (intensity, alt) {
+                this.style.opacity = 0;
+                this.style.transform =
+                  "rotate(" + (alt ? -45 : -5) * intensity + "deg)";
+              },
+              play: function () {
+                this.style.opacity = 1;
+                this.style.transform = "none";
+              },
+            },
+            "fade-right": {
+              transition: function (speed, delay) {
+                return (
+                  "opacity " +
+                  speed +
+                  "s ease" +
+                  (delay ? " " + delay + "s" : "") +
+                  ", " +
+                  "transform " +
+                  speed +
+                  "s ease" +
+                  (delay ? " " + delay + "s" : "")
+                );
+              },
+              rewind: function (intensity) {
+                this.style.opacity = 0;
+                this.style.transform =
+                  "translateX(" + -1.5 * intensity + "rem)";
+              },
+              play: function () {
+                this.style.opacity = 1;
+                this.style.transform = "none";
+              },
+            },
+            "fade-left": {
+              transition: function (speed, delay) {
+                return (
+                  "opacity " +
+                  speed +
+                  "s ease" +
+                  (delay ? " " + delay + "s" : "") +
+                  ", " +
+                  "transform " +
+                  speed +
+                  "s ease" +
+                  (delay ? " " + delay + "s" : "")
+                );
+              },
+              rewind: function (intensity) {
+                this.style.opacity = 0;
+                this.style.transform = "translateX(" + 1.5 * intensity + "rem)";
+              },
+              play: function () {
+                this.style.opacity = 1;
+                this.style.transform = "none";
+              },
+            },
+            "fade-down": {
+              transition: function (speed, delay) {
+                return (
+                  "opacity " +
+                  speed +
+                  "s ease" +
+                  (delay ? " " + delay + "s" : "") +
+                  ", " +
+                  "transform " +
+                  speed +
+                  "s ease" +
+                  (delay ? " " + delay + "s" : "")
+                );
+              },
+              rewind: function (intensity) {
+                this.style.opacity = 0;
+                this.style.transform =
+                  "translateY(" + -1.5 * intensity + "rem)";
+              },
+              play: function () {
+                this.style.opacity = 1;
+                this.style.transform = "none";
+              },
+            },
+            "fade-up": {
+              transition: function (speed, delay) {
+                return (
+                  "opacity " +
+                  speed +
+                  "s ease" +
+                  (delay ? " " + delay + "s" : "") +
+                  ", " +
+                  "transform " +
+                  speed +
+                  "s ease" +
+                  (delay ? " " + delay + "s" : "")
+                );
+              },
+              rewind: function (intensity) {
+                this.style.opacity = 0;
+                this.style.transform = "translateY(" + 1.5 * intensity + "rem)";
+              },
+              play: function () {
+                this.style.opacity = 1;
+                this.style.transform = "none";
+              },
+            },
+            "fade-in": {
+              transition: function (speed, delay) {
+                return (
+                  "opacity " +
+                  speed +
+                  "s ease" +
+                  (delay ? " " + delay + "s" : "")
+                );
+              },
+              rewind: function () {
+                this.style.opacity = 0;
+              },
+              play: function () {
+                this.style.opacity = 1;
+              },
+            },
+            "fade-in-background": {
+              custom: true,
+              transition: function (speed, delay) {
+                this.style.setProperty("--onvisible-speed", speed + "s");
+                if (delay)
+                  this.style.setProperty("--onvisible-delay", delay + "s");
+              },
+              rewind: function () {
+                this.style.removeProperty("--onvisible-background-color");
+              },
+              play: function () {
+                this.style.setProperty(
+                  "--onvisible-background-color",
+                  "rgba(0,0,0,0.001)",
+                );
+              },
+            },
+            "zoom-in-image": {
+              target: "img",
+              transition: function (speed, delay) {
+                return (
+                  "transform " +
+                  speed +
+                  "s ease" +
+                  (delay ? " " + delay + "s" : "")
+                );
+              },
+              rewind: function () {
+                this.style.transform = "scale(1)";
+              },
+              play: function (intensity) {
+                this.style.transform = "scale(" + (1 + 0.1 * intensity) + ")";
+              },
+            },
+            "zoom-out-image": {
+              target: "img",
+              transition: function (speed, delay) {
+                return (
+                  "transform " +
+                  speed +
+                  "s ease" +
+                  (delay ? " " + delay + "s" : "")
+                );
+              },
+              rewind: function (intensity) {
+                this.style.transform = "scale(" + (1 + 0.1 * intensity) + ")";
+              },
+              play: function () {
+                this.style.transform = "none";
+              },
+            },
+            "focus-image": {
+              target: "img",
+              transition: function (speed, delay) {
+                return (
+                  "transform " +
+                  speed +
+                  "s ease" +
+                  (delay ? " " + delay + "s" : "") +
+                  ", " +
+                  "filter " +
+                  speed +
+                  "s ease" +
+                  (delay ? " " + delay + "s" : "")
+                );
+              },
+              rewind: function (intensity) {
+                this.style.transform = "scale(" + (1 + 0.05 * intensity) + ")";
+                this.style.filter = "blur(" + 0.25 * intensity + "rem)";
+              },
+              play: function (intensity) {
+                this.style.transform = "none";
+                this.style.filter = "none";
+              },
+            },
+          },
+          regex: new RegExp(
+            "([a-zA-Z0-9\.\,\-\_\"'\?\!\:\;\#\@\#$\%\&\(\)\{\}]+)",
+            "g",
+          ),
+          add: function (selector, settings) {
+            var _this = this,
+              style = settings.style in this.effects ? settings.style : "fade",
+              speed =
+                parseInt("speed" in settings ? settings.speed : 1000) / 1000,
+              intensity =
+                (parseInt("intensity" in settings ? settings.intensity : 5) /
+                  10) *
+                  1.75 +
+                0.25,
+              delay = parseInt("delay" in settings ? settings.delay : 0) / 1000,
+              replay = "replay" in settings ? settings.replay : false,
+              stagger =
+                "stagger" in settings
+                  ? parseInt(settings.stagger) >= 0
+                    ? parseInt(settings.stagger) / 1000
+                    : false
+                  : false,
+              staggerOrder =
+                "staggerOrder" in settings ? settings.staggerOrder : "default",
+              staggerSelector =
+                "staggerSelector" in settings ? settings.staggerSelector : null,
+              threshold = parseInt(
+                "threshold" in settings ? settings.threshold : 3,
+              ),
+              state = "state" in settings ? settings.state : null,
+              effect = this.effects[style],
+              scrollEventThreshold;
+            if ("CARRD_DISABLE_ANIMATION" in window) {
+              if (style == "fade-in-background")
+                $$(selector).forEach(function (e) {
+                  e.style.setProperty(
+                    "--onvisible-background-color",
+                    "rgba(0,0,0,0.001)",
+                  );
+                });
+              return;
+            }
+            switch (threshold) {
+              case 1:
+                scrollEventThreshold = 0;
+                break;
+              case 2:
+                scrollEventThreshold = 0.125;
+                break;
+              default:
+              case 3:
+                scrollEventThreshold = 0.25;
+                break;
+              case 4:
+                scrollEventThreshold = 0.375;
+                break;
+              case 5:
+                scrollEventThreshold = 0.475;
+                break;
+            }
+            $$(selector).forEach(function (e) {
+              var children, enter, leave, targetElement, triggerElement;
+              if (stagger !== false && staggerSelector == ":scope > *")
+                _this.expandTextNodes(e);
+              children =
+                stagger !== false && staggerSelector
+                  ? e.querySelectorAll(staggerSelector)
+                  : null;
+              enter = function (staggerDelay = 0) {
+                var _this = this,
+                  transitionOrig;
+                if (effect.target) _this = this.querySelector(effect.target);
+                if (!effect.custom) {
+                  transitionOrig = _this.style.transition;
+                  _this.style.setProperty("backface-visibility", "hidden");
+                  _this.style.transition = effect.transition(
+                    speed,
+                    delay + staggerDelay,
+                  );
+                } else
+                  effect.transition.apply(_this, [speed, delay + staggerDelay]);
+                effect.play.apply(_this, [intensity, !!children]);
+                if (!effect.custom)
+                  setTimeout(
+                    function () {
+                      _this.style.removeProperty("backface-visibility");
+                      _this.style.transition = transitionOrig;
+                    },
+                    (speed + delay + staggerDelay) * 1000 * 2,
+                  );
+              };
+              leave = function () {
+                var _this = this,
+                  transitionOrig;
+                if (effect.target) _this = this.querySelector(effect.target);
+                if (!effect.custom) {
+                  transitionOrig = _this.style.transition;
+                  _this.style.setProperty("backface-visibility", "hidden");
+                  _this.style.transition = effect.transition(speed);
+                } else effect.transition.apply(_this, [speed]);
+                effect.rewind.apply(_this, [intensity, !!children]);
+                if (!effect.custom)
+                  setTimeout(
+                    function () {
+                      _this.style.removeProperty("backface-visibility");
+                      _this.style.transition = transitionOrig;
+                    },
+                    speed * 1000 * 2,
+                  );
+              };
+              if (effect.target) targetElement = e.querySelector(effect.target);
+              else targetElement = e;
+              if (children)
+                children.forEach(function (targetElement) {
+                  effect.rewind.apply(targetElement, [intensity, true]);
+                });
+              else effect.rewind.apply(targetElement, [intensity]);
+              triggerElement = e;
+              if (e.parentNode) {
+                if (e.parentNode.dataset.onvisibleTrigger)
+                  triggerElement = e.parentNode;
+                else if (e.parentNode.parentNode) {
+                  if (e.parentNode.parentNode.dataset.onvisibleTrigger)
+                    triggerElement = e.parentNode.parentNode;
+                }
+              }
+              scrollEvents.add({
+                element: e,
+                triggerElement: triggerElement,
+                initialState: state,
+                threshold: scrollEventThreshold,
+                enter: children
+                  ? function () {
+                      var staggerDelay = 0,
+                        childHandler = function (e) {
+                          enter.apply(e, [staggerDelay]);
+                          staggerDelay += stagger;
+                        },
+                        a;
+                      if (staggerOrder == "default") {
+                        children.forEach(childHandler);
+                      } else {
+                        a = Array.from(children);
+                        switch (staggerOrder) {
+                          case "reverse":
+                            a.reverse();
+                            break;
+                          case "random":
+                            a.sort(function () {
+                              return Math.random() - 0.5;
+                            });
+                            break;
+                        }
+                        a.forEach(childHandler);
+                      }
+                    }
+                  : enter,
+                leave: replay
+                  ? children
+                    ? function () {
+                        children.forEach(function (e) {
+                          leave.apply(e);
+                        });
+                      }
+                    : leave
+                  : null,
+              });
+            });
+          },
+          expandTextNodes: function (e) {
+            var s, i, w, x;
+            for (i = 0; i < e.childNodes.length; i++) {
+              x = e.childNodes[i];
+              if (x.nodeType != Node.TEXT_NODE) continue;
+              s = x.nodeValue;
+              s = s.replace(this.regex, function (x, a) {
+                return "<text-node>" + a + "</text-node>";
+              });
+              w = document.createElement("text-node");
+              w.innerHTML = s;
+              x.replaceWith(w);
+              while (w.childNodes.length > 0) {
+                w.parentNode.insertBefore(w.childNodes[0], w);
+              }
+              w.parentNode.removeChild(w);
+            }
+          },
+        };
+        onvisible.add("h1.style2, h2.style2, h3.style2, p.style2", {
+          style: "fade-up",
+          speed: 750,
+          intensity: 1,
+          threshold: 1,
+          delay: 0,
+          replay: false,
+        });
+        onvisible.add("h1.style1, h2.style1, h3.style1, p.style1", {
+          style: "fade-up",
+          speed: 750,
+          intensity: 5,
+          threshold: 3,
+          delay: 125,
+          replay: false,
+        });
+        onvisible.add(".buttons.style1", {
+          style: "fade-up",
+          speed: 750,
+          intensity: 9,
+          threshold: 3,
+          delay: 125,
+          replay: false,
+        });
+        onvisible.add(".buttons.style2", {
+          style: "fade-up",
+          speed: 750,
+          intensity: 9,
+          threshold: 3,
+          delay: 250,
+          replay: false,
+        });
+        onvisible.add("h1.style7, h2.style7, h3.style7, p.style7", {
+          style: "fade-up",
+          speed: 750,
+          intensity: 1,
+          threshold: 1,
+          delay: 0,
+          replay: false,
+        });
+        onvisible.add("h1.style3, h2.style3, h3.style3, p.style3", {
+          style: "fade-up",
+          speed: 750,
+          intensity: 1,
+          threshold: 1,
+          delay: 0,
+          replay: false,
+        });
+        onvisible.add(".list.style1", {
+          style: "fade-up",
+          speed: 500,
+          intensity: 2,
+          threshold: 3,
+          delay: 250,
+          stagger: 125,
+          staggerSelector: ":scope ul > li, :scope ol > li",
+          replay: false,
+        });
+        onvisible.add(".buttons.style3", {
+          style: "fade-up",
+          speed: 750,
+          intensity: 5,
+          threshold: 3,
+          delay: 250,
+          replay: false,
+        });
+        onvisible.add(".icons.style1", {
+          style: "fade-up",
+          speed: 625,
+          intensity: 2,
+          threshold: 3,
+          delay: 125,
+          stagger: 125,
+          staggerSelector: ":scope > li",
+          replay: false,
+        });
+      })();
+    </script>
+  </body>
+</html>

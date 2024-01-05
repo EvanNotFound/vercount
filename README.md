@@ -1,4 +1,6 @@
 
+![](https://github.com/EvanNotFound/vercount/assets/68590232/5d0019ab-c0a7-4f16-8649-76db613015e8)
+
 # Vercount 网站计数器
 
 >  Powered by: 🚀 FastAPI + Redis ✨ + Vercel 

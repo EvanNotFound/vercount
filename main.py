@@ -7,6 +7,7 @@ from pydantic import BaseModel
 import uvicorn
 from fastapi import FastAPI, Request, Header, Response
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
 from get_before_data import get_page_pv_before, get_site_pv_before, get_site_uv_before
@@ -30,19 +31,14 @@ class UrlData(BaseModel):
     url: str
 
 
-@app.get("/js")
-async def serve_js():
-    return FileResponse("statics/js/client.min.js")
+app.mount("/css", StaticFiles(directory="statics/css"), name="statics/css")
 
-
-@app.get("/css")
-async def serve_css():
-    return FileResponse("statics/css/style.css")
+app.mount("/carrd", StaticFiles(directory="statics/carrd"), name="statics/carrd")
 
 
 @app.get("/")
 async def home():
-    return FileResponse("statics/home.html")
+    return FileResponse("statics/home-carrd.html")
 
 
 @app.get("/log")
