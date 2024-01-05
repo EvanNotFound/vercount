@@ -53,10 +53,10 @@ Vercount 是一个基于 FastAPI + Redis 的网站计数器，它的特点是：
 在你的网站中添加上面的 script 之后，和不蒜子一样，你的网站就可以开始统计了，比如。
 
 ```html
-本文总阅读量 <span id="busuanzi_page_pv"></span> 次
-本文总访客量 <span id="busuanzi_page_uv"></span> 人
-本站总访问量 <span id="busuanzi_site_pv"></span> 次
-本站总访客数 <span id="busuanzi_site_uv"></span> 人
+本文总阅读量 <span id="busuanzi_value_page_pv"></span> 次
+本文总访客量 <span id="busuanzi_value_page_uv"></span> 人
+本站总访问量 <span id="busuanzi_value_site_pv"></span> 次
+本站总访客数 <span id="busuanzi_value_site_uv"></span> 人
 ```
 
 ## 统计方式
