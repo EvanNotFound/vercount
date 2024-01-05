@@ -36,6 +36,11 @@ app.mount("/css", StaticFiles(directory="statics/css"), name="statics/css")
 app.mount("/carrd", StaticFiles(directory="statics/carrd"), name="statics/carrd")
 
 
+@app.get("/js")
+async def serve_client():
+    return FileResponse("statics/js/client.min.js")
+
+
 @app.get("/")
 async def home():
     return FileResponse("statics/home-carrd.html")
