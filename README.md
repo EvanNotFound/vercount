@@ -9,6 +9,7 @@
 
 Vercount 是一个基于 FastAPI + Redis 的网站计数器，它的特点是：
 - 速度快，服务器响应时间在 10ms 以内
+- 可选使用中国加速版本（国内访问优化），或者使用 Vercel 全球 CDN，保证 99.99% 可用性
 - 使用 POST 请求进行统计，不再使用不蒜子的过时 Referrer 方法进行统计，实现移动端 / Firefox / Safari 等浏览器的准确统计。
 - 使用 Json 回调，不再使用不蒜子的 JSONP 回调方法，防止 CSRF 攻击，详情请看：[JSONP](https://en.wikipedia.org/wiki/JSONP)
 - 初始化自动同步 (site_pv, site_uv, page_pv) 所有不蒜子的数据，无需手动操作
@@ -16,7 +17,7 @@ Vercount 是一个基于 FastAPI + Redis 的网站计数器，它的特点是：
 - 兼容不蒜子的 span 标签，可以无缝切换
 - 使用 Upstash Redis 作为数据存储，数据不会丢失，保证 99.99% 可用性
 - 使用 Vercel Serverless Functions 作为后端，保证 99.99% 可用性
-- 使用 Vercel 全球 CDN 作为前端，保证 99.99% 可用性
+
 
 ## 为什么要做这个项目？
 
@@ -35,7 +36,15 @@ Vercount 是一个基于 FastAPI + Redis 的网站计数器，它的特点是：
 
 ## 从不蒜子切换到 Vercount
 
-直接替换不蒜子的 script 标签即可，不需要修改任何代码。数据会在初次访问时自动从不蒜子同步。
+直接替换不蒜子的 script 标签即可，其他保持相同。数据会在初次访问时自动从不蒜子同步，使用时，也会自动保持和不蒜子的数据同步（~~当然是在不蒜子不挂的前提下，Vercount 会自动回调给不蒜子~~）。
+
+替换为中国访问优化版本：
+
+```html
+<script defer src="https://cn.vercount.one/js"></script>
+```
+
+或者，替换为海外访问优化版本：
 
 ```html
 <script defer src="https://vercount.one/js"></script>
@@ -44,13 +53,19 @@ Vercount 是一个基于 FastAPI + Redis 的网站计数器，它的特点是：
 
 ## 快速使用
 
-将这个 script 添加到你的网站中，
+将这个 script (中国访问优化) 添加到你的网站中，
+
+```html
+<script defer src="https://cn.vercount.one/js"></script>
+```
+
+或者这个 script (海外访问优化) 添加到你的网站中，
 
 ```html
 <script defer src="https://vercount.one/js"></script>
 ```
 
-在你的网站中添加上面的 script 之后，和不蒜子一样，你的网站就可以开始统计了，比如。
+在你的网站中添加上面其中之一的 script 之后，和不蒜子一样，你的网站就可以开始统计了，比如。
 
 ```html
 本文总阅读量 <span id="busuanzi_value_page_pv">Loading</span> 次
