@@ -25,19 +25,26 @@ var visitorCounterCaller, visitorCounterDisplay;
     readyCallbacks = [];
   }
 
+  const getBaseUrl = () => {
+    const scriptSrc = document.currentScript.src;
+    return scriptSrc.includes("cn.vercount.one")
+      ? "https://cn.vercount.one"
+      : "https://vercount.one";
+  };
+
   visitorCounterCaller = {
     fetch: async function (callback) {
+      const baseUrl = getBaseUrl();
+      const apiUrl = `${baseUrl}/log?jsonpCallback=VisitorCountCallback`;
+
       try {
-        const response = await fetch(
-          "https://vercount.one/log?jsonpCallback=VisitorCountCallback",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ url: window.location.href }),
+        const response = await fetch(apiUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
           },
-        );
+          body: JSON.stringify({ url: window.location.href }),
+        });
 
         const data = await response.json();
         documentReady(() => callback(data));
