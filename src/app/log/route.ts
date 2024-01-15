@@ -15,13 +15,15 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: NextRequest) {
+  const header = headers();
   const data = await req.json();
 
   if (!data.url) {
     return Response.json({ error: "Missing url" }, { status: 400 });
   }
 
-  const clientHost = headers().get("x-forwarded-for")?.split(",")[0];
+  const clientHost =
+    header.get("X-Real-IP") || header.get("X-Forwarded-For")?.split(",")[0];
   if (!clientHost) {
     return Response.json({ error: "Missing host" }, { status: 400 });
   }
