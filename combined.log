@@ -294,3 +294,118 @@
 {"level":"info","message":"Data updated for host: https://redefine.ohevan.com/. site_uv: 11097, site_pv: 51133, page_pv: 31630"}
 {"level":"info","message":"Sending request from busuanzi for host: https://redefine.ohevan.com/"}
 {"level":"info","message":"Request sent successfully for host: https://redefine.ohevan.com/"}
+{"level":"info","message":"host: linfanghou.github.io, path: /, client_host: 103.47.100.209"}
+{"level":"info","message":"site_uv found for host: https://linfanghou.github.io/, site_uv: 1"}
+{"level":"info","message":"page_pv found for host: https://linfanghou.github.io/, page_pv: 3"}
+{"level":"info","message":"site_pv found for host: https://linfanghou.github.io/, site_pv: 2"}
+{"level":"info","message":"site_uv_before: 1, site_pv_before: 2, page_pv_before: 3"}
+{"level":"info","message":"Updating site_uv for host: https://linfanghou.github.io"}
+{"level":"info","message":"Updating site_pv for host: https://linfanghou.github.io"}
+{"level":"info","message":"Updating page_pv for host: https://linfanghou.github.io/"}
+{"level":"info","message":"Site PV updated for host: https://linfanghou.github.io, site_pv: 5"}
+{"level":"info","message":"Page PV updated for host: https://linfanghou.github.io/, page_pv: 4"}
+{"level":"info","message":"Site UV updated for host: https://linfanghou.github.io, site_uv: 2, site_uv_key: 1"}
+{"level":"info","message":"Data updated for host: https://linfanghou.github.io/. site_uv: 3, site_pv: 7, page_pv: 7"}
+{"level":"info","message":"Sending request from busuanzi for host: https://linfanghou.github.io/"}
+{"level":"info","message":"Request sent successfully for host: https://linfanghou.github.io/"}
+{"level":"info","message":"host: x-parker.github.io, path: /, client_host: 132.145.127.134"}
+{"level":"info","message":"site_uv found for host: https://x-parker.github.io/, site_uv: 1"}
+{"level":"info","message":"page_pv found for host: https://x-parker.github.io/, page_pv: 5"}
+{"level":"info","message":"site_pv found for host: https://x-parker.github.io/, site_pv: 2"}
+{"level":"info","message":"site_uv_before: 1, site_pv_before: 2, page_pv_before: 5"}
+{"level":"info","message":"Updating site_uv for host: https://x-parker.github.io"}
+{"level":"info","message":"Updating site_pv for host: https://x-parker.github.io"}
+{"level":"info","message":"Updating page_pv for host: https://x-parker.github.io/"}
+{"level":"info","message":"Site PV updated for host: https://x-parker.github.io, site_pv: 202"}
+{"level":"info","message":"Site UV updated for host: https://x-parker.github.io, site_uv: 3, site_uv_key: 1"}
+{"level":"info","message":"Page PV updated for host: https://x-parker.github.io/, page_pv: 2"}
+{"level":"info","message":"Data updated for host: https://x-parker.github.io/. site_uv: 4, site_pv: 204, page_pv: 7"}
+{"level":"info","message":"Sending request from busuanzi for host: https://x-parker.github.io/"}
+{"level":"info","message":"Request sent successfully for host: https://x-parker.github.io/"}
+{"level":"info","message":"host: x-parker.github.io, path: /2024/01/13/%E9%AB%98%E7%BA%A7%E6%95%B0%E6%8D%AE%E5%BA%93%E6%8A%80%E6%9C%AF-%E5%A4%8D%E4%B9%A0/, client_host: 132.145.127.134"}
+{"level":"info","message":"site_uv found for host: https://x-parker.github.io/2024/01/13/%E9%AB%98%E7%BA%A7%E6%95%B0%E6%8D%AE%E5%BA%93%E6%8A%80%E6%9C%AF-%E5%A4%8D%E4%B9%A0/, site_uv: 1"}
+{"level":"info","message":"page_pv not found for host: https://x-parker.github.io/2024/01/13/%E9%AB%98%E7%BA%A7%E6%95%B0%E6%8D%AE%E5%BA%93%E6%8A%80%E6%9C%AF-%E5%A4%8D%E4%B9%A0/"}
+{"level":"info","message":"site_pv found for host: https://x-parker.github.io/2024/01/13/%E9%AB%98%E7%BA%A7%E6%95%B0%E6%8D%AE%E5%BA%93%E6%8A%80%E6%9C%AF-%E5%A4%8D%E4%B9%A0/, site_pv: 2"}
+{"level":"info","message":"Page PV data retrieved and stored for x-parker.github.io/2024/01/13/%E9%AB%98%E7%BA%A7%E6%95%B0%E6%8D%AE%E5%BA%93%E6%8A%80%E6%9C%AF-%E5%A4%8D%E4%B9%A0/, 2"}
+{"level":"info","message":"site_uv_before: 1, site_pv_before: 2, page_pv_before: 2"}
+{"level":"info","message":"Updating site_uv for host: https://x-parker.github.io"}
+{"level":"info","message":"Updating site_pv for host: https://x-parker.github.io"}
+{"level":"info","message":"Updating page_pv for host: https://x-parker.github.io/2024/01/13/%E9%AB%98%E7%BA%A7%E6%95%B0%E6%8D%AE%E5%BA%93%E6%8A%80%E6%9C%AF-%E5%A4%8D%E4%B9%A0/"}
+{"level":"info","message":"Site PV updated for host: https://x-parker.github.io, site_pv: 203"}
+{"level":"info","message":"Page PV updated for host: https://x-parker.github.io/2024/01/13/%E9%AB%98%E7%BA%A7%E6%95%B0%E6%8D%AE%E5%BA%93%E6%8A%80%E6%9C%AF-%E5%A4%8D%E4%B9%A0/, page_pv: 1"}
+{"level":"info","message":"Site UV updated for host: https://x-parker.github.io, site_uv: 3, site_uv_key: 0"}
+{"level":"info","message":"Data updated for host: https://x-parker.github.io/2024/01/13/%E9%AB%98%E7%BA%A7%E6%95%B0%E6%8D%AE%E5%BA%93%E6%8A%80%E6%9C%AF-%E5%A4%8D%E4%B9%A0/. site_uv: 4, site_pv: 205, page_pv: 3"}
+{"level":"info","message":"Sending request from busuanzi for host: https://x-parker.github.io/2024/01/13/%E9%AB%98%E7%BA%A7%E6%95%B0%E6%8D%AE%E5%BA%93%E6%8A%80%E6%9C%AF-%E5%A4%8D%E4%B9%A0/"}
+{"level":"info","message":"Request sent successfully for host: https://x-parker.github.io/2024/01/13/%E9%AB%98%E7%BA%A7%E6%95%B0%E6%8D%AE%E5%BA%93%E6%8A%80%E6%9C%AF-%E5%A4%8D%E4%B9%A0/"}
+{"level":"info","message":"host: x-parker.github.io, path: /2024/01/11/MapReduce%E9%85%8D%E7%BD%AE%E4%B8%8E%E6%93%8D%E4%BD%9C/, client_host: 132.145.127.134"}
+{"level":"info","message":"host: x-parker.github.io, path: /2024/01/11/MapReduce%E9%85%8D%E7%BD%AE%E4%B8%8E%E6%93%8D%E4%BD%9C/, client_host: 132.145.127.134"}
+{"level":"info","message":"site_uv found for host: https://x-parker.github.io/2024/01/11/MapReduce%E9%85%8D%E7%BD%AE%E4%B8%8E%E6%93%8D%E4%BD%9C/, site_uv: 1"}
+{"level":"info","message":"site_pv found for host: https://x-parker.github.io/2024/01/11/MapReduce%E9%85%8D%E7%BD%AE%E4%B8%8E%E6%93%8D%E4%BD%9C/, site_pv: 2"}
+{"level":"info","message":"site_pv found for host: https://x-parker.github.io/2024/01/11/MapReduce%E9%85%8D%E7%BD%AE%E4%B8%8E%E6%93%8D%E4%BD%9C/, site_pv: 2"}
+{"level":"info","message":"page_pv not found for host: https://x-parker.github.io/2024/01/11/MapReduce%E9%85%8D%E7%BD%AE%E4%B8%8E%E6%93%8D%E4%BD%9C/"}
+{"level":"info","message":"page_pv not found for host: https://x-parker.github.io/2024/01/11/MapReduce%E9%85%8D%E7%BD%AE%E4%B8%8E%E6%93%8D%E4%BD%9C/"}
+{"level":"info","message":"site_uv found for host: https://x-parker.github.io/2024/01/11/MapReduce%E9%85%8D%E7%BD%AE%E4%B8%8E%E6%93%8D%E4%BD%9C/, site_uv: 1"}
+{"level":"info","message":"Page PV data retrieved and stored for x-parker.github.io/2024/01/11/MapReduce%E9%85%8D%E7%BD%AE%E4%B8%8E%E6%93%8D%E4%BD%9C/, 2"}
+{"level":"info","message":"site_uv_before: 1, site_pv_before: 2, page_pv_before: 2"}
+{"level":"info","message":"Updating site_uv for host: https://x-parker.github.io"}
+{"level":"info","message":"Updating site_pv for host: https://x-parker.github.io"}
+{"level":"info","message":"Updating page_pv for host: https://x-parker.github.io/2024/01/11/MapReduce%E9%85%8D%E7%BD%AE%E4%B8%8E%E6%93%8D%E4%BD%9C/"}
+{"level":"info","message":"Page PV data retrieved and stored for x-parker.github.io/2024/01/11/MapReduce%E9%85%8D%E7%BD%AE%E4%B8%8E%E6%93%8D%E4%BD%9C/, 3"}
+{"level":"info","message":"site_uv_before: 1, site_pv_before: 2, page_pv_before: 3"}
+{"level":"info","message":"Updating site_uv for host: https://x-parker.github.io"}
+{"level":"info","message":"Updating site_pv for host: https://x-parker.github.io"}
+{"level":"info","message":"Updating page_pv for host: https://x-parker.github.io/2024/01/11/MapReduce%E9%85%8D%E7%BD%AE%E4%B8%8E%E6%93%8D%E4%BD%9C/"}
+{"level":"info","message":"Site PV updated for host: https://x-parker.github.io, site_pv: 204"}
+{"level":"info","message":"Page PV updated for host: https://x-parker.github.io/2024/01/11/MapReduce%E9%85%8D%E7%BD%AE%E4%B8%8E%E6%93%8D%E4%BD%9C/, page_pv: 1"}
+{"level":"info","message":"Site PV updated for host: https://x-parker.github.io, site_pv: 205"}
+{"level":"info","message":"Site UV updated for host: https://x-parker.github.io, site_uv: 3, site_uv_key: 0"}
+{"level":"info","message":"Page PV updated for host: https://x-parker.github.io/2024/01/11/MapReduce%E9%85%8D%E7%BD%AE%E4%B8%8E%E6%93%8D%E4%BD%9C/, page_pv: 2"}
+{"level":"info","message":"Site UV updated for host: https://x-parker.github.io, site_uv: 3, site_uv_key: 0"}
+{"level":"info","message":"Data updated for host: https://x-parker.github.io/2024/01/11/MapReduce%E9%85%8D%E7%BD%AE%E4%B8%8E%E6%93%8D%E4%BD%9C/. site_uv: 4, site_pv: 207, page_pv: 5"}
+{"level":"info","message":"Sending request from busuanzi for host: https://x-parker.github.io/2024/01/11/MapReduce%E9%85%8D%E7%BD%AE%E4%B8%8E%E6%93%8D%E4%BD%9C/"}
+{"level":"info","message":"Request sent successfully for host: https://x-parker.github.io/2024/01/11/MapReduce%E9%85%8D%E7%BD%AE%E4%B8%8E%E6%93%8D%E4%BD%9C/"}
+{"level":"info","message":"Data updated for host: https://x-parker.github.io/2024/01/11/MapReduce%E9%85%8D%E7%BD%AE%E4%B8%8E%E6%93%8D%E4%BD%9C/. site_uv: 4, site_pv: 206, page_pv: 3"}
+{"level":"info","message":"Sending request from busuanzi for host: https://x-parker.github.io/2024/01/11/MapReduce%E9%85%8D%E7%BD%AE%E4%B8%8E%E6%93%8D%E4%BD%9C/"}
+{"level":"info","message":"Request sent successfully for host: https://x-parker.github.io/2024/01/11/MapReduce%E9%85%8D%E7%BD%AE%E4%B8%8E%E6%93%8D%E4%BD%9C/"}
+{"level":"info","message":"host: cn.vercount.one, path: /, client_host: 37.235.52.160"}
+{"level":"info","message":"site_pv found for host: https://cn.vercount.one/, site_pv: 3"}
+{"level":"info","message":"page_pv found for host: https://cn.vercount.one/, page_pv: 5"}
+{"level":"info","message":"site_uv found for host: https://cn.vercount.one/, site_uv: 1"}
+{"level":"info","message":"site_uv_before: 1, site_pv_before: 3, page_pv_before: 5"}
+{"level":"info","message":"Updating site_uv for host: https://cn.vercount.one"}
+{"level":"info","message":"Updating site_pv for host: https://cn.vercount.one"}
+{"level":"info","message":"Updating page_pv for host: https://cn.vercount.one/"}
+{"level":"info","message":"Site UV updated for host: https://cn.vercount.one, site_uv: 11, site_uv_key: 1"}
+{"level":"info","message":"Page PV updated for host: https://cn.vercount.one/, page_pv: 18"}
+{"level":"info","message":"Site PV updated for host: https://cn.vercount.one, site_pv: 103"}
+{"level":"info","message":"Data updated for host: https://cn.vercount.one/. site_uv: 12, site_pv: 106, page_pv: 23"}
+{"level":"info","message":"Sending request from busuanzi for host: https://cn.vercount.one/"}
+{"level":"info","message":"Request sent successfully for host: https://cn.vercount.one/"}
+{"level":"info","message":"host: x-parker.github.io, path: /, client_host: 132.145.127.134"}
+{"level":"info","message":"site_uv found for host: https://x-parker.github.io/, site_uv: 1"}
+{"level":"info","message":"site_pv found for host: https://x-parker.github.io/, site_pv: 2"}
+{"level":"info","message":"page_pv found for host: https://x-parker.github.io/, page_pv: 5"}
+{"level":"info","message":"site_uv_before: 1, site_pv_before: 2, page_pv_before: 5"}
+{"level":"info","message":"Updating site_uv for host: https://x-parker.github.io"}
+{"level":"info","message":"Updating site_pv for host: https://x-parker.github.io"}
+{"level":"info","message":"Updating page_pv for host: https://x-parker.github.io/"}
+{"level":"info","message":"Site PV updated for host: https://x-parker.github.io, site_pv: 206"}
+{"level":"info","message":"Site UV updated for host: https://x-parker.github.io, site_uv: 3, site_uv_key: 0"}
+{"level":"info","message":"Page PV updated for host: https://x-parker.github.io/, page_pv: 3"}
+{"level":"info","message":"Data updated for host: https://x-parker.github.io/. site_uv: 4, site_pv: 208, page_pv: 8"}
+{"level":"info","message":"Sending request from busuanzi for host: https://x-parker.github.io/"}
+{"level":"info","message":"Request sent successfully for host: https://x-parker.github.io/"}
+{"level":"info","message":"host: cn.vercount.one, path: /, client_host: 37.235.52.160"}
+{"level":"info","message":"site_pv found for host: https://cn.vercount.one/, site_pv: 3"}
+{"level":"info","message":"site_uv found for host: https://cn.vercount.one/, site_uv: 1"}
+{"level":"info","message":"page_pv found for host: https://cn.vercount.one/, page_pv: 5"}
+{"level":"info","message":"site_uv_before: 1, site_pv_before: 3, page_pv_before: 5"}
+{"level":"info","message":"Updating site_uv for host: https://cn.vercount.one"}
+{"level":"info","message":"Updating site_pv for host: https://cn.vercount.one"}
+{"level":"info","message":"Updating page_pv for host: https://cn.vercount.one/"}
+{"level":"info","message":"Page PV updated for host: https://cn.vercount.one/, page_pv: 19"}
+{"level":"info","message":"Site PV updated for host: https://cn.vercount.one, site_pv: 104"}
+{"level":"info","message":"Site UV updated for host: https://cn.vercount.one, site_uv: 11, site_uv_key: 0"}
+{"level":"info","message":"Data updated for host: https://cn.vercount.one/. site_uv: 12, site_pv: 107, page_pv: 24"}
+{"level":"info","message":"Sending request from busuanzi for host: https://cn.vercount.one/"}
+{"level":"info","message":"Request sent successfully for host: https://cn.vercount.one/"}
