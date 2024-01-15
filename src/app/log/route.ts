@@ -14,14 +14,14 @@ export async function GET(req: Request) {
   return redirect("/");
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   const data = await req.json();
 
   if (!data.url) {
     return Response.json({ error: "Missing url" }, { status: 400 });
   }
 
-  const clientHost = headers().get("x-forwarded-for");
+  const clientHost = req.ip || headers().get("x-forwarded-for")?.split(",")[0];
   if (!clientHost) {
     return Response.json({ error: "Missing host" }, { status: 400 });
   }
