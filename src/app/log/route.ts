@@ -8,6 +8,7 @@ import {
 import { updatePagePV, updateSitePV, updateSiteUV } from "@/lib/update-data";
 import syncBusuanziData from "@/lib/sync-busuanzi-data";
 import logger from "@/lib/logger";
+import type { NextRequest } from "next/server";
 
 export async function GET(req: Request) {
   return redirect("/");
@@ -20,7 +21,7 @@ export async function POST(req: Request) {
     return Response.json({ error: "Missing url" }, { status: 400 });
   }
 
-  const clientHost = headers().get("host");
+  const clientHost = headers().get("x-forwarded-for");
   if (!clientHost) {
     return Response.json({ error: "Missing host" }, { status: 400 });
   }
@@ -29,12 +30,17 @@ export async function POST(req: Request) {
     parsedUrl.host,
     parsedUrl.pathname.replace(/\/index$/, ""),
   ];
+  logger.info(`host: ${host}, path: ${path}, client_host: ${clientHost}`);
 
   const [siteUVBefore, sitePVBefore, pagePVBefore] = await Promise.all([
     getSiteUVBeforeData(host, path),
     getSitePVBeforeData(host, path),
     getPagePVBeforeData(host, path),
   ]);
+
+  logger.info(
+    `site_uv_before: ${siteUVBefore}, site_pv_before: ${sitePVBefore}, page_pv_before: ${pagePVBefore}`,
+  );
 
   let [siteUVAfter, sitePVAfter, pagePVAfter] = await Promise.all([
     updateSiteUV(host, clientHost),

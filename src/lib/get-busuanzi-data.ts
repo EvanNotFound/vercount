@@ -16,6 +16,7 @@ async function fetchBusuanziData(url: string, headers: any) {
       if (response.ok) {
         const dataStr = await response.text();
         const dataDict = JSON.parse(dataStr.substring(34, dataStr.length - 13));
+        console.log(dataDict);
         return dataDict;
       } else {
         logger.warn(`Non-200 response: ${response.status}`);
@@ -41,7 +42,7 @@ export async function getBusuanziSiteUVData(host: string, path: string) {
     logger.info(`UV data retrieved and stored for ${host}`);
     return siteUv;
   } else {
-    await kv.set(`live_site_uv:${host}`, JSON.stringify({ site_uv: 0 }), {
+    await kv.set(`live_site_uv:${host}`, 0, {
       ex: EXPIRATION_TIME,
     });
     logger.error(
@@ -60,10 +61,10 @@ export async function getBusuanziSitePVData(host: string) {
   if (data) {
     const sitePv = data.site_pv || 0;
     await kv.set(`live_site_pv:${host}`, sitePv, { ex: EXPIRATION_TIME });
-    logger.info(`PV data retrieved and stored for ${host}`);
+    logger.info(`Site PV data retrieved and stored for ${host}`);
     return sitePv;
   } else {
-    await kv.set(`live_site_pv:${host}`, JSON.stringify({ site_pv: 0 }), {
+    await kv.set(`live_site_pv:${host}`, 0, {
       ex: EXPIRATION_TIME,
     });
     logger.error(
@@ -97,7 +98,9 @@ export async function getBusuanziPagePVData(host: string, path: string) {
     await kv.set(`live_page_pv:${host}${path}`, pagePv, {
       ex: EXPIRATION_TIME,
     });
-    logger.info(`Page PV data retrieved and stored for ${host}${path}`);
+    logger.info(
+      `Page PV data retrieved and stored for ${host}${path}, ${pagePv}`,
+    );
     return pagePv;
   } else if (dataNoSlashResult || dataSlashResult) {
     const pagePv = (dataNoSlashResult || dataSlashResult).page_pv || 0;
