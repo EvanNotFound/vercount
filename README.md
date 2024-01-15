@@ -3,11 +3,11 @@
 
 # Vercount 网站计数器
 
->  Powered by: 🚀 FastAPI + Redis ✨ + Vercel 
+>  Powered by: 🚀 NextJS + Redis ✨ + Vercel
 
 不蒜子计数访问慢？总是 502？那就试试 Vercount 吧！完美不蒜子计数替代方案。
 
-Vercount 是一个基于 FastAPI + Redis 的网站计数器，它的特点是：
+Vercount 是一个基于 NextJS + Redis 的网站计数器，它的特点是：
 - 速度快，服务器响应时间在 10ms 以内
 - 可选使用中国加速版本（国内访问优化），或者使用 Vercel 全球 CDN，保证 99.99% 可用性
 - 使用 POST 请求进行统计，不再使用不蒜子的过时 Referrer 方法进行统计，实现移动端 / Firefox / Safari 等浏览器的准确统计。
@@ -79,12 +79,6 @@ Vercount 是一个基于 FastAPI + Redis 的网站计数器，它的特点是：
 对于 page_view 网站访问量, 每访问一次加一.
 
 对于 user_view 访客量, 会通过用户浏览器的 UserAgent 以及用户的IP地址 进行判断.
-
-## 鸣谢
-
-基于项目：https://github.com/zkeq/Busuanzi_backend_self
-
-非常感谢此项目的作者。
 
 ## Disclaimer
 

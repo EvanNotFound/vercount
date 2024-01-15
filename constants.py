@@ -1,1 +1,0 @@
-EXPIRATION_TIME = 60 * 60 * 24 * 30 * 6
