@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: "Missing url" }, { status: 400 });
   }
 
-  const clientHost = req.ip || headers().get("x-forwarded-for")?.split(",")[0];
+  const clientHost = headers().get("x-forwarded-for")?.split(",")[0];
   if (!clientHost) {
     return Response.json({ error: "Missing host" }, { status: 400 });
   }
