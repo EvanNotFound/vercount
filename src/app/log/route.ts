@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
 
   const clientHost =
     header.get("X-Real-IP") || header.get("X-Forwarded-For")?.split(",")[0];
+  console.log(`client_host: ${clientHost}`);
   if (!clientHost) {
     return Response.json({ error: "Missing host" }, { status: 400 });
   }
