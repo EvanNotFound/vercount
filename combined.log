@@ -196,3 +196,101 @@
 {"level":"info","message":"Data updated for host: https://127.0.0.1:4000/blog. site_uv: 3702021, site_pv: 6331105, page_pv: 25973"}
 {"level":"info","message":"Sending request from busuanzi for host: https://127.0.0.1:4000/blog"}
 {"level":"info","message":"Request sent successfully for host: https://127.0.0.1:4000/blog"}
+{"level":"info","message":"host: 127.0.0.1:4000, path: /blog, client_host: ::ffff:127.0.0.1"}
+{"level":"info","message":"site_uv found for host: https://127.0.0.1:4000/blog, site_uv: 3702019"}
+{"level":"info","message":"page_pv found for host: https://127.0.0.1:4000/blog, page_pv: 25942"}
+{"level":"info","message":"site_pv found for host: https://127.0.0.1:4000/blog, site_pv: 6331074"}
+{"level":"info","message":"site_uv_before: 3702019, site_pv_before: 6331074, page_pv_before: 25942"}
+{"level":"info","message":"Updating site_uv for host: https://127.0.0.1:4000"}
+{"level":"info","message":"Updating site_pv for host: https://127.0.0.1:4000"}
+{"level":"info","message":"Updating page_pv for host: https://127.0.0.1:4000/blog"}
+{"level":"info","message":"Site UV updated for host: https://127.0.0.1:4000, site_uv: 2, site_uv_key: 0"}
+{"level":"info","message":"Site PV updated for host: https://127.0.0.1:4000, site_pv: 32"}
+{"level":"info","message":"Page PV updated for host: https://127.0.0.1:4000/blog, page_pv: 32"}
+{"level":"info","message":"Data updated for host: https://127.0.0.1:4000/blog. site_uv: 3702021, site_pv: 6331106, page_pv: 25974"}
+{"level":"info","message":"Sending request from busuanzi for host: https://127.0.0.1:4000/blog"}
+{"level":"info","message":"Request sent successfully for host: https://127.0.0.1:4000/blog"}
+{"level":"info","message":"host: 127.0.0.1:4000, path: /blog, client_host: ::ffff:127.0.0.1"}
+{"level":"info","message":"page_pv found for host: https://127.0.0.1:4000/blog, page_pv: 25942"}
+{"level":"info","message":"site_pv found for host: https://127.0.0.1:4000/blog, site_pv: 6331074"}
+{"level":"info","message":"site_uv found for host: https://127.0.0.1:4000/blog, site_uv: 3702019"}
+{"level":"info","message":"site_uv_before: 3702019, site_pv_before: 6331074, page_pv_before: 25942"}
+{"level":"info","message":"Updating site_uv for host: https://127.0.0.1:4000"}
+{"level":"info","message":"Updating site_pv for host: https://127.0.0.1:4000"}
+{"level":"info","message":"Updating page_pv for host: https://127.0.0.1:4000/blog"}
+{"level":"info","message":"Site PV updated for host: https://127.0.0.1:4000, site_pv: 33"}
+{"level":"info","message":"Site UV updated for host: https://127.0.0.1:4000, site_uv: 2, site_uv_key: 0"}
+{"level":"info","message":"Page PV updated for host: https://127.0.0.1:4000/blog, page_pv: 33"}
+{"level":"info","message":"Data updated for host: https://127.0.0.1:4000/blog. site_uv: 3702021, site_pv: 6331107, page_pv: 25975"}
+{"level":"info","message":"Sending request from busuanzi for host: https://127.0.0.1:4000/blog"}
+{"level":"info","message":"Request sent successfully for host: https://127.0.0.1:4000/blog"}
+{"level":"info","message":"host: 127.0.0.1:4000, path: /blog, client_host: ::ffff:127.0.0.1"}
+{"level":"info","message":"site_uv found for host: https://127.0.0.1:4000/blog, site_uv: 3702019"}
+{"level":"info","message":"page_pv found for host: https://127.0.0.1:4000/blog, page_pv: 25942"}
+{"level":"info","message":"site_pv found for host: https://127.0.0.1:4000/blog, site_pv: 6331074"}
+{"level":"info","message":"site_uv_before: 3702019, site_pv_before: 6331074, page_pv_before: 25942"}
+{"level":"info","message":"Updating site_uv for host: https://127.0.0.1:4000"}
+{"level":"info","message":"Updating site_pv for host: https://127.0.0.1:4000"}
+{"level":"info","message":"Updating page_pv for host: https://127.0.0.1:4000/blog"}
+{"level":"info","message":"Page PV updated for host: https://127.0.0.1:4000/blog, page_pv: 34"}
+{"level":"info","message":"Site PV updated for host: https://127.0.0.1:4000, site_pv: 34"}
+{"level":"info","message":"Site UV updated for host: https://127.0.0.1:4000, site_uv: 2, site_uv_key: 0"}
+{"level":"info","message":"Data updated for host: https://127.0.0.1:4000/blog. site_uv: 3702021, site_pv: 6331108, page_pv: 25976"}
+{"level":"info","message":"Sending request from busuanzi for host: https://127.0.0.1:4000/blog"}
+{"level":"info","message":"Request sent successfully for host: https://127.0.0.1:4000/blog"}
+{"level":"info","message":"host: redefine.ohevan.com, path: /, client_host: 204.48.95.26"}
+{"level":"info","message":"page_pv found for host: https://redefine.ohevan.com/, page_pv: 31609"}
+{"level":"info","message":"site_pv found for host: https://redefine.ohevan.com/, site_pv: 50123"}
+{"level":"info","message":"site_uv found for host: https://redefine.ohevan.com/, site_uv: 11037"}
+{"level":"info","message":"site_uv_before: 11037, site_pv_before: 50123, page_pv_before: 31609"}
+{"level":"info","message":"Updating site_uv for host: https://redefine.ohevan.com"}
+{"level":"info","message":"Updating site_pv for host: https://redefine.ohevan.com"}
+{"level":"info","message":"Updating page_pv for host: https://redefine.ohevan.com/"}
+{"level":"info","message":"Site UV updated for host: https://redefine.ohevan.com, site_uv: 59, site_uv_key: 1"}
+{"level":"info","message":"Site PV updated for host: https://redefine.ohevan.com, site_pv: 1007"}
+{"level":"info","message":"Page PV updated for host: https://redefine.ohevan.com/, page_pv: 18"}
+{"level":"info","message":"Data updated for host: https://redefine.ohevan.com/. site_uv: 11096, site_pv: 51130, page_pv: 31627"}
+{"level":"info","message":"Sending request from busuanzi for host: https://redefine.ohevan.com/"}
+{"level":"info","message":"Request sent successfully for host: https://redefine.ohevan.com/"}
+{"level":"info","message":"host: redefine.ohevan.com, path: /, client_host: 45.58.81.110"}
+{"level":"info","message":"site_uv found for host: https://redefine.ohevan.com/, site_uv: 11037"}
+{"level":"info","message":"site_pv found for host: https://redefine.ohevan.com/, site_pv: 50123"}
+{"level":"info","message":"page_pv found for host: https://redefine.ohevan.com/, page_pv: 31609"}
+{"level":"info","message":"site_uv_before: 11037, site_pv_before: 50123, page_pv_before: 31609"}
+{"level":"info","message":"Updating site_uv for host: https://redefine.ohevan.com"}
+{"level":"info","message":"Updating site_pv for host: https://redefine.ohevan.com"}
+{"level":"info","message":"Updating page_pv for host: https://redefine.ohevan.com/"}
+{"level":"info","message":"Site UV updated for host: https://redefine.ohevan.com, site_uv: 59, site_uv_key: 0"}
+{"level":"info","message":"Site PV updated for host: https://redefine.ohevan.com, site_pv: 1008"}
+{"level":"info","message":"Page PV updated for host: https://redefine.ohevan.com/, page_pv: 19"}
+{"level":"info","message":"Data updated for host: https://redefine.ohevan.com/. site_uv: 11096, site_pv: 51131, page_pv: 31628"}
+{"level":"info","message":"Sending request from busuanzi for host: https://redefine.ohevan.com/"}
+{"level":"info","message":"Request sent successfully for host: https://redefine.ohevan.com/"}
+{"level":"info","message":"host: redefine.ohevan.com, path: /, client_host: 139.28.178.222"}
+{"level":"info","message":"page_pv found for host: https://redefine.ohevan.com/, page_pv: 31609"}
+{"level":"info","message":"site_pv found for host: https://redefine.ohevan.com/, site_pv: 50123"}
+{"level":"info","message":"site_uv found for host: https://redefine.ohevan.com/, site_uv: 11037"}
+{"level":"info","message":"site_uv_before: 11037, site_pv_before: 50123, page_pv_before: 31609"}
+{"level":"info","message":"Updating site_uv for host: https://redefine.ohevan.com"}
+{"level":"info","message":"Updating site_pv for host: https://redefine.ohevan.com"}
+{"level":"info","message":"Updating page_pv for host: https://redefine.ohevan.com/"}
+{"level":"info","message":"Site PV updated for host: https://redefine.ohevan.com, site_pv: 1009"}
+{"level":"info","message":"Site UV updated for host: https://redefine.ohevan.com, site_uv: 60, site_uv_key: 1"}
+{"level":"info","message":"Page PV updated for host: https://redefine.ohevan.com/, page_pv: 20"}
+{"level":"info","message":"Data updated for host: https://redefine.ohevan.com/. site_uv: 11097, site_pv: 51132, page_pv: 31629"}
+{"level":"info","message":"Sending request from busuanzi for host: https://redefine.ohevan.com/"}
+{"level":"info","message":"Request sent successfully for host: https://redefine.ohevan.com/"}
+{"level":"info","message":"host: redefine.ohevan.com, path: /, client_host: 45.58.81.110"}
+{"level":"info","message":"site_uv found for host: https://redefine.ohevan.com/, site_uv: 11037"}
+{"level":"info","message":"page_pv found for host: https://redefine.ohevan.com/, page_pv: 31609"}
+{"level":"info","message":"site_pv found for host: https://redefine.ohevan.com/, site_pv: 50123"}
+{"level":"info","message":"site_uv_before: 11037, site_pv_before: 50123, page_pv_before: 31609"}
+{"level":"info","message":"Updating site_uv for host: https://redefine.ohevan.com"}
+{"level":"info","message":"Updating site_pv for host: https://redefine.ohevan.com"}
+{"level":"info","message":"Updating page_pv for host: https://redefine.ohevan.com/"}
+{"level":"info","message":"Site PV updated for host: https://redefine.ohevan.com, site_pv: 1010"}
+{"level":"info","message":"Site UV updated for host: https://redefine.ohevan.com, site_uv: 60, site_uv_key: 0"}
+{"level":"info","message":"Page PV updated for host: https://redefine.ohevan.com/, page_pv: 21"}
+{"level":"info","message":"Data updated for host: https://redefine.ohevan.com/. site_uv: 11097, site_pv: 51133, page_pv: 31630"}
+{"level":"info","message":"Sending request from busuanzi for host: https://redefine.ohevan.com/"}
+{"level":"info","message":"Request sent successfully for host: https://redefine.ohevan.com/"}
