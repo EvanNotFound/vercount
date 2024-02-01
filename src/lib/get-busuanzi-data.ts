@@ -38,11 +38,11 @@ export async function getBusuanziSiteUVData(host: string, path: string) {
   const data = await fetchBusuanziData(BUSUANZI_URL, headers);
   if (data) {
     const siteUv = data.site_uv || 0;
-    await kv.set(`live_site_uv:${host}`, siteUv, { ex: EXPIRATION_TIME });
+    await kv.set(`site_uv_live:${host}`, siteUv, { ex: EXPIRATION_TIME });
     logger.info(`UV data retrieved and stored for ${host}`);
     return siteUv;
   } else {
-    await kv.set(`live_site_uv:${host}`, 0, {
+    await kv.set(`site_uv_live:${host}`, 0, {
       ex: EXPIRATION_TIME,
     });
     logger.error(
@@ -60,11 +60,11 @@ export async function getBusuanziSitePVData(host: string) {
   const data = await fetchBusuanziData(BUSUANZI_URL, headers);
   if (data) {
     const sitePv = data.site_pv || 0;
-    await kv.set(`live_site_pv:${host}`, sitePv, { ex: EXPIRATION_TIME });
+    await kv.set(`site_pv_live:${host}`, sitePv, { ex: EXPIRATION_TIME });
     logger.info(`Site PV data retrieved and stored for ${host}`);
     return sitePv;
   } else {
-    await kv.set(`live_site_pv:${host}`, 0, {
+    await kv.set(`site_pv_live:${host}`, 0, {
       ex: EXPIRATION_TIME,
     });
     logger.error(

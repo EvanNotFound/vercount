@@ -117,7 +117,7 @@
 {"level":"info","message":"Sending request from busuanzi for host: https://127.0.0.1:4000/blog"}
 {"level":"info","message":"Request sent successfully for host: https://127.0.0.1:4000/blog"}
 {"level":"info","message":"site_uv found for host: https://127.0.0.1:4000/blog, site_uv: 3702019"}
-{"level":"info","message":"site_pv: 6331074, site_key: live_site_pv:127.0.0.1:4000"}
+{"level":"info","message":"site_pv: 6331074, site_key: site_pv_live:127.0.0.1:4000"}
 {"level":"info","message":"site_pv found for host: https://127.0.0.1:4000/blog, site_pv: 6331074"}
 {"level":"info","message":"page_pv found for host: https://127.0.0.1:4000/blog, page_pv: 25941"}
 {"level":"info","message":"Updating site_uv for host: https://127.0.0.1:4000"}
@@ -126,7 +126,7 @@
 {"level":"info","message":"Data updated for host: https://127.0.0.1:4000/blog. site_uv: 3702020, site_pv: 6331099, page_pv: 25966"}
 {"level":"info","message":"Sending request from busuanzi for host: https://127.0.0.1:4000/blog"}
 {"level":"info","message":"Request sent successfully for host: https://127.0.0.1:4000/blog"}
-{"level":"info","message":"site_pv: 6331074, site_key: live_site_pv:127.0.0.1:4000"}
+{"level":"info","message":"site_pv: 6331074, site_key: site_pv_live:127.0.0.1:4000"}
 {"level":"info","message":"site_pv found for host: https://127.0.0.1:4000/blog, site_pv: 6331074"}
 {"level":"info","message":"page_pv found for host: https://127.0.0.1:4000/blog, page_pv: 25941"}
 {"level":"info","message":"site_uv found for host: https://127.0.0.1:4000/blog, site_uv: 3702019"}

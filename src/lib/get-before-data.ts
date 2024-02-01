@@ -7,7 +7,7 @@ import {
 } from "@/lib/get-busuanzi-data";
 
 export async function getSiteUVBeforeData(host: string, path: string) {
-  const siteKey = `live_site_uv:${host}`;
+  const siteKey = `site_uv_live:${host}`;
   const siteUV = await kv.get(siteKey);
   if (!siteUV) {
     logger.info(`site_uv not found for host: https://${host}${path}`);
@@ -25,7 +25,7 @@ export async function getSiteUVBeforeData(host: string, path: string) {
 }
 
 export async function getSitePVBeforeData(host: string, path: string) {
-  const siteKey = `live_site_pv:${host}`;
+  const siteKey = `site_pv_live:${host}`;
   const sitePV = await kv.get(siteKey);
   if (!sitePV) {
     logger.info(`site_pv not found for host: https://${host}${path}`);

@@ -23,7 +23,7 @@ export async function updatePagePV(host: string, path: string) {
 export async function updateSitePV(host: string) {
   logger.info(`Updating site_pv for host: https://${host}`);
   const siteKey = `site_pv:${host}`;
-  const liveSiteKey = `live_site_pv:${host}`;
+  const liveSiteKey = `site_pv_live:${host}`;
 
   const sitePV = await kv.incr(siteKey);
   logger.info(`Site PV updated for host: https://${host}, site_pv: ${sitePV}`);
@@ -39,7 +39,7 @@ export async function updateSitePV(host: string) {
 export async function updateSiteUV(host: string, ip: string) {
   logger.info(`Updating site_uv for host: https://${host}`);
   const siteKey = `site_uv:${host}`;
-  const liveSiteKey = `live_site_uv:${host}`;
+  const liveSiteKey = `site_uv_live:${host}`;
 
   const siteUVKey = await kv.sadd(siteKey, ip);
   const siteUV = await kv.scard(siteKey);
