@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@upstash/ratelimit": "^1.0.0",
     "@vercel/kv": "^1.0.1",
     "next": "14.0.4",
     "react": "^18",
