@@ -4,7 +4,7 @@ import { kv } from "@vercel/kv";
 
 const ratelimit = new Ratelimit({
   redis: kv,
-  limiter: Ratelimit.slidingWindow(300, "1 h"),
+  limiter: Ratelimit.slidingWindow(150, "1 h"),
 });
 
 // Define which routes you want to rate limit
