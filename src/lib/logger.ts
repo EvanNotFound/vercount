@@ -20,7 +20,10 @@ const logger = {
     console.warn(formatMessage("warn", ...messages));
   },
   debug(...messages: unknown[]): void {
-    console.debug(formatMessage("debug", ...messages));
+    // Check if the environment is not production before logging debug messages
+    if (process.env.NODE_ENV !== "production") {
+      console.debug(formatMessage("debug", ...messages));
+    }
   },
   // Add other logging levels if needed
 };
