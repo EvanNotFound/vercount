@@ -24,7 +24,9 @@ export async function POST(req: NextRequest) {
   }
 
   const clientHost =
-    header.get("X-Real-IP") || header.get("X-Forwarded-For")?.split(",")[0];
+    req.ip ||
+    header.get("X-Real-IP") ||
+    header.get("X-Forwarded-For")?.split(",")[0];
   // Use structured logging where possible for easier parsing
   logger.debug("Request details", {
     clientHost,
