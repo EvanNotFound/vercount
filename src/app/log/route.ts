@@ -73,3 +73,7 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
+
+export async function OPTIONS() {
+  return Response.json({}, { status: 204 });
+}
