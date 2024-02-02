@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import {
   getPagePVBeforeData,
@@ -10,65 +9,74 @@ import syncBusuanziData from "@/lib/sync-busuanzi-data";
 import logger from "@/lib/logger";
 import type { NextRequest } from "next/server";
 
-export async function GET(req: Request) {
-  return redirect("/");
-}
-
 export async function POST(req: NextRequest) {
-  const header = headers();
-  const data = await req.json();
+  try {
+    const header = headers();
+    const data = await req.json();
 
-  if (!data.url) {
-    return Response.json({ error: "Missing url" }, { status: 400 });
+    if (!data.url) {
+      logger.error(`POST request with missing URL in the body.`);
+      return Response.json({ error: "Missing url" }, { status: 400 });
+    }
+
+    const clientHost =
+      req.ip ||
+      header.get("X-Real-IP") ||
+      header.get("X-Forwarded-For")?.split(",")[0];
+    const referer = header.get("Referer");
+
+    if (!clientHost || !referer) {
+      logger.error(
+        `Unauthorized access attempt detected. Client host or referer missing.`,
+      );
+      return Response.json({ error: "unauthorized" }, { status: 401 });
+    }
+
+    const parsedUrl = new URL(data.url);
+    const [host, path] = [
+      parsedUrl.host,
+      parsedUrl.pathname.replace(/\/index$/, ""),
+    ];
+    logger.info(
+      `Request details - Host: ${host}, Path: ${path}, Client Host: ${clientHost}, Referer: ${referer}`,
+    );
+
+    const [siteUVBefore, sitePVBefore, pagePVBefore] = await Promise.all([
+      getSiteUVBeforeData(host, path),
+      getSitePVBeforeData(host, path),
+      getPagePVBeforeData(host, path),
+    ]);
+
+    logger.info(
+      `Before update - Site UV: ${siteUVBefore}, Site PV: ${sitePVBefore}, Page PV: ${pagePVBefore}`,
+    );
+
+    let [siteUVAfter, sitePVAfter, pagePVAfter] = await Promise.all([
+      updateSiteUV(host, clientHost),
+      updateSitePV(host),
+      updatePagePV(host, path),
+    ]);
+
+    // Accumulate the counts
+    siteUVAfter += siteUVBefore;
+    sitePVAfter += sitePVBefore;
+    pagePVAfter += pagePVBefore;
+
+    logger.info(
+      `After update - Site UV: ${siteUVAfter}, Site PV: ${sitePVAfter}, Page PV: ${pagePVAfter}, Host: https://${host}${path}`,
+    );
+
+    // Sync with external system if needed
+    syncBusuanziData(host, path);
+
+    const dataDict = {
+      site_uv: siteUVAfter,
+      site_pv: sitePVAfter,
+      page_pv: pagePVAfter,
+    };
+    return Response.json(dataDict);
+  } catch (error: any) {
+    logger.error(`Error processing POST request: ${error.message}`);
+    return Response.json({ error: "Internal Server Error" }, { status: 500 });
   }
-
-  const clientHost =
-    header.get("X-Real-IP") || header.get("X-Forwarded-For")?.split(",")[0];
-  console.log(
-    `client_host: ${clientHost}, real_ip: ${header.get(
-      "X-Real-IP",
-    )}, x_forwarded_for: ${header.get("X-Forwarded-For")}, req_ip: ${req.ip}`,
-  );
-  if (!clientHost) {
-    return Response.json({ error: "Missing host" }, { status: 400 });
-  }
-  const parsedUrl = new URL(data.url);
-  const [host, path] = [
-    parsedUrl.host,
-    parsedUrl.pathname.replace(/\/index$/, ""),
-  ];
-  logger.info(`host: ${host}, path: ${path}, client_host: ${clientHost}`);
-
-  const [siteUVBefore, sitePVBefore, pagePVBefore] = await Promise.all([
-    getSiteUVBeforeData(host, path),
-    getSitePVBeforeData(host, path),
-    getPagePVBeforeData(host, path),
-  ]);
-
-  logger.info(
-    `site_uv_before: ${siteUVBefore}, site_pv_before: ${sitePVBefore}, page_pv_before: ${pagePVBefore}`,
-  );
-
-  let [siteUVAfter, sitePVAfter, pagePVAfter] = await Promise.all([
-    updateSiteUV(host, clientHost),
-    updateSitePV(host),
-    updatePagePV(host, path),
-  ]);
-
-  siteUVAfter += siteUVBefore;
-  sitePVAfter += sitePVBefore;
-  pagePVAfter += pagePVBefore;
-
-  logger.info(
-    `Data updated for host: https://${host}${path}. site_uv: ${siteUVAfter}, site_pv: ${sitePVAfter}, page_pv: ${pagePVAfter}`,
-  );
-
-  syncBusuanziData(host, path);
-
-  const dataDict = {
-    site_uv: siteUVAfter,
-    site_pv: sitePVAfter,
-    page_pv: pagePVAfter,
-  };
-  return Response.json(dataDict);
 }
