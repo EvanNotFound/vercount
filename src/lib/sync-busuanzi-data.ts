@@ -7,14 +7,16 @@ export default async function syncBusuanziData(host: string, path: string) {
     Referer: `https://${host}${path}`,
     Cookie: "busuanziId=89D15D1F66D2494F91FB315545BF9C2A",
   };
-  logger.info(`Sending request from busuanzi for host: https://${host}${path}`);
+  logger.debug(
+    `Sending request from busuanzi for host: https://${host}${path}`,
+  );
 
   try {
     await fetch(url, {
       method: "GET",
       headers,
     });
-    logger.info(`Request sent successfully for host: https://${host}${path}`);
+    logger.debug(`Request sent successfully for host: https://${host}${path}`);
   } catch (e) {
     logger.error(
       `Request failed for host: https://${host}${path}. Error: ${e}`,

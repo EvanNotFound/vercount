@@ -3,12 +3,12 @@ import { EXPIRATION_TIME } from "@/lib/get-busuanzi-data";
 import logger from "@/lib/logger";
 
 export async function updatePagePV(host: string, path: string) {
-  logger.info(`Updating page_pv for host: https://${host}${path}`);
+  logger.debug(`Updating page_pv for host: https://${host}${path}`);
   const pageKey = `page_pv:${host}${path}`;
   const livePageKey = `live_page_pv:${host}${path}`;
 
   const pagePV = await kv.incr(pageKey);
-  logger.info(
+  logger.debug(
     `Page PV updated for host: https://${host}${path}, page_pv: ${pagePV}`,
   );
 
@@ -21,12 +21,12 @@ export async function updatePagePV(host: string, path: string) {
 }
 
 export async function updateSitePV(host: string) {
-  logger.info(`Updating site_pv for host: https://${host}`);
+  logger.debug(`Updating site_pv for host: https://${host}`);
   const siteKey = `site_pv:${host}`;
   const liveSiteKey = `site_pv_live:${host}`;
 
   const sitePV = await kv.incr(siteKey);
-  logger.info(`Site PV updated for host: https://${host}, site_pv: ${sitePV}`);
+  logger.debug(`Site PV updated for host: https://${host}, site_pv: ${sitePV}`);
 
   await Promise.all([
     kv.expire(siteKey, EXPIRATION_TIME),
@@ -37,13 +37,13 @@ export async function updateSitePV(host: string) {
 }
 
 export async function updateSiteUV(host: string, ip: string) {
-  logger.info(`Updating site_uv for host: https://${host}`);
+  logger.debug(`Updating site_uv for host: https://${host}`);
   const siteKey = `site_uv:${host}`;
   const liveSiteKey = `site_uv_live:${host}`;
 
   const siteUVKey = await kv.sadd(siteKey, ip);
   const siteUV = await kv.scard(siteKey);
-  logger.info(
+  logger.debug(
     `Site UV updated for host: https://${host}, site_uv: ${siteUV}, site_uv_key: ${siteUVKey}`,
   );
 

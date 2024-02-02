@@ -37,19 +37,12 @@ export async function POST(req: NextRequest) {
       parsedUrl.host,
       parsedUrl.pathname.replace(/\/index$/, ""),
     ];
-    logger.info(
-      `Request details - Host: ${host}, Path: ${path}, Client Host: ${clientHost}, Referer: ${referer}`,
-    );
 
     const [siteUVBefore, sitePVBefore, pagePVBefore] = await Promise.all([
       getSiteUVBeforeData(host, path),
       getSitePVBeforeData(host, path),
       getPagePVBeforeData(host, path),
     ]);
-
-    logger.info(
-      `Before update - Site UV: ${siteUVBefore}, Site PV: ${sitePVBefore}, Page PV: ${pagePVBefore}`,
-    );
 
     let [siteUVAfter, sitePVAfter, pagePVAfter] = await Promise.all([
       updateSiteUV(host, clientHost),
