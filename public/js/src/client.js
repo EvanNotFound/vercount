@@ -35,7 +35,7 @@ var visitorCounterCaller, visitorCounterDisplay;
   visitorCounterCaller = {
     fetch: async function (callback) {
       const baseUrl = getBaseUrl();
-      const apiUrl = `${baseUrl}/log?jsonpCallback=VisitorCountCallback`;
+      const apiUrl = `${baseUrl}/log`;
 
       try {
         const response = await fetch(apiUrl, {
