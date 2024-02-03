@@ -12,7 +12,7 @@ export default async function syncBusuanziData(host: string, path: string) {
   );
 
   try {
-    await fetch(url, {
+    fetch(url, {
       method: "GET",
       headers,
     });
