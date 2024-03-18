@@ -18,12 +18,12 @@ export default async function middleware(request: NextRequest) {
   const isUAValid = /mozilla\/|chrome\/|safari\//.test(ua);
 
   // Enhanced logging for User-Agent validation
-  if (!isUAValid) {
-    logger.error(
-      `Unauthorized access attempt with invalid User-Agent. IP: ${ip}, User-Agent: ${ua}`,
-    );
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  }
+  // if (!isUAValid) {
+  //   logger.error(
+  //     `Unauthorized access attempt with invalid User-Agent. IP: ${ip}, User-Agent: ${ua}`,
+  //   );
+  //   return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  // }
 
   logger.info({
     message: "Request received",
