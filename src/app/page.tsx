@@ -144,9 +144,6 @@ export default function Home() {
                       Total Visits &lt;span
                       id=&quot;busuanzi_value_site_pv&quot;&gt;Loading&lt;/span&gt;
                       {"\n"}
-                      Total Visits &lt;span
-                      id=&quot;busuanzi_value_site_pv&quot;&gt;Loading&lt;/span&gt;
-                      {"\n"}
                       Site Total Visitors &lt;span
                       id=&quot;busuanzi_value_site_uv&quot;&gt;Loading&lt;/span&gt;
                     </code>
