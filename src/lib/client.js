@@ -26,7 +26,7 @@ var visitorCounterCaller, visitorCounterDisplay;
   }
 
   const getBaseUrl = () => {
-    return "https://vercount.one";
+    return "https://events.vercount.one";
     // const scriptSrc = document.currentScript.src;
     // return scriptSrc.includes("cn.vercount.one")
     //   ? "https://cn.vercount.one"
