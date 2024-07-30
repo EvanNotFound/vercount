@@ -15,7 +15,7 @@ Vercount 是一个基于 NextJS + Redis 的网站计数器，它的特点是：
 - 初始化自动同步 (site_pv, site_uv, page_pv) 所有不蒜子的数据，无需手动操作
 - 自动保持和不蒜子的数据同步，每访问一次，数据就会自动同步
 - 兼容不蒜子的 span 标签，可以无缝切换
-- 使用 Upstash Redis 作为数据存储，数据不会丢失，保证 99.99% 可用性
+- 使用 Serverless Redis 作为数据存储，数据不会丢失，保证 99.99% 可用性
 - 使用 Vercel Serverless Functions 作为后端，保证 99.99% 可用性
 
 
