@@ -24,6 +24,20 @@ const nextConfig = {
         },
       ],
     },
+    {
+      // matching js route
+      source: "/js",
+      headers: [
+        {
+          key: "Cache-Control",
+          value: "public, s-maxage=86400, max-age=86400",
+        },
+        {
+          key: "Vercel-CDN-Cache-Control",
+          value: "max-age=3600",
+        },
+      ],
+    },
   ],
 };
 
