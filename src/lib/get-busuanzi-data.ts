@@ -1,7 +1,7 @@
 import { kv } from "@vercel/kv";
 import logger from "@/lib/logger";
 
-export const EXPIRATION_TIME = 60 * 60 * 24 * 30 * 6; // Adjust as needed
+export const EXPIRATION_TIME = 60 * 60 * 24 * 30; // Adjust as needed
 const MAX_RETRIES = 3;
 const BUSUANZI_URL =
   "https://busuanzi.ibruce.info/busuanzi?jsonpCallback=BusuanziCallback_777487655111";
