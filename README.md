@@ -69,7 +69,6 @@ Vercount 是一个基于 NextJS + Redis 的网站计数器，它的特点是：
 
 ```html
 本文总阅读量 <span id="busuanzi_value_page_pv">Loading</span> 次
-本文总访客量 <span id="busuanzi_value_page_uv">Loading</span> 人
 本站总访问量 <span id="busuanzi_value_site_pv">Loading</span> 次
 本站总访客数 <span id="busuanzi_value_site_uv">Loading</span> 人
 ```
