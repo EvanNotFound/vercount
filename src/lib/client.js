@@ -26,10 +26,11 @@ var visitorCounterCaller, visitorCounterDisplay;
   }
 
   const getBaseUrl = () => {
-    const scriptSrc = document.currentScript.src;
-    return scriptSrc.includes("cn.vercount.one")
-      ? "https://cn.vercount.one"
-      : "https://vercount.one";
+    return "https://vercount.one";
+    // const scriptSrc = document.currentScript.src;
+    // return scriptSrc.includes("cn.vercount.one")
+    //   ? "https://cn.vercount.one"
+    //   : "https://vercount.one";
   };
 
   visitorCounterCaller = {
@@ -48,6 +49,7 @@ var visitorCounterCaller, visitorCounterDisplay;
 
         const data = await response.json();
         documentReady(() => callback(data));
+        visitorCounterDisplay.showAll();
       } catch (error) {
         console.error("Error fetching visitor count:", error);
         visitorCounterDisplay.hideAll();
