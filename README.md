@@ -79,6 +79,27 @@ Vercount 是一个基于 NextJS + Redis 的网站计数器，它的特点是：
 
 对于 user_view 访客量, 会通过用户浏览器的 UserAgent 以及用户的IP地址 进行判断.
 
+## 捐赠请求
+
+目前，Vercount 项目所有的运营费用均由我个人承担，包括 Vercel 的 Function Invocations 和 Edge Middleware Invocations 的费用，以及项目数据库所需服务器的费用。
+
+这是一个公益项目，因此我诚挚地请求您的支持。即使是几元钱的捐助，也能帮助我们维持项目的长期运转。
+
+每月的支出明细如下：
+- Vercel Pro 订阅费用：$20 USD = ¥140 CNY
+- Vercel Function Invocations 费用：$1 USD = ¥7 CNY
+- Edge Middleware Invocations 费用：$1 USD = ¥7 CNY
+
+总计：¥154 CNY
+
+虽然目前我可以承担这些费用，但随着项目规模的扩大和用户数量的增加，我希望能得到您的帮助和支持。
+
+您可以扫描下方二维码，或访问我的[个人网站捐赠页面](https://evannotfound.com/sponsor)进行捐赠。
+
+![image](https://github.com/user-attachments/assets/5d8c530a-d324-42f0-9f60-5e44fd1e546b)
+
+非常感谢您的支持！
+
 ## Disclaimer
 
 最终解释权归 EvanNotFound 所有。
