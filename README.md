@@ -79,7 +79,7 @@ Vercount 是一个基于 NextJS + Redis 的网站计数器，它的特点是：
 
 对于 user_view 访客量, 会通过用户浏览器的 UserAgent 以及用户的IP地址 进行判断.
 
-## 捐赠请求
+## ☕️ 捐赠请求
 
 目前，Vercount 项目所有的运营费用均由我个人承担，包括 Vercel 的 Function Invocations 和 Edge Middleware Invocations 的费用，以及项目数据库所需服务器的费用。
 
