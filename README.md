@@ -90,7 +90,13 @@ Vercount 是一个基于 NextJS + Redis 的网站计数器，它的特点是：
 - Vercel Function Invocations 费用：$1 USD = ¥7 CNY
 - Edge Middleware Invocations 费用：$1 USD = ¥7 CNY
 
-总计：¥154 CNY
+每月总计：¥154 CNY
+
+每年的支出明细如下：
+- Vercount 数据库服务器费用：$40 USD = ¥280 CNY
+- Vercount.one 域名费用：$15 USD = ¥116 CNY
+
+每年总计：¥390 CNY
 
 虽然目前我可以承担这些费用，但随着项目规模的扩大和用户数量的增加，我希望能得到您的帮助和支持。
 
@@ -99,6 +105,7 @@ Vercount 是一个基于 NextJS + Redis 的网站计数器，它的特点是：
 ![image](https://github.com/user-attachments/assets/5d8c530a-d324-42f0-9f60-5e44fd1e546b)
 
 非常感谢您的支持！
+
 
 ## Disclaimer
 
