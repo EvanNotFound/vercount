@@ -5,7 +5,7 @@ import logger from "@/lib/logger"; // Ensure this is the correct import path for
 
 const ratelimit = new Ratelimit({
   redis: kv,
-  limiter: Ratelimit.slidingWindow(500, "1 h"),
+  limiter: Ratelimit.slidingWindow(100, "1 m"),
 });
 
 export const config = {
