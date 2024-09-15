@@ -62,7 +62,7 @@ Vercount 是一个基于 NextJS + Redis 的网站计数器，它的特点是：
 或者这个 script (海外访问优化) 添加到你的网站中，
 
 ```html
-<script defer src="https://vercount.one/js"></script>
+<script defer src="https://events.vercount.one/js"></script>
 ```
 
 在你的网站中添加上面其中之一的 script 之后，和不蒜子一样，你的网站就可以开始统计了，比如。
