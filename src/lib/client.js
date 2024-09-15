@@ -1,5 +1,4 @@
 var visitorCounterCaller, visitorCounterDisplay;
-
 (function () {
   var documentReady,
     readyCallbacks = [],
@@ -27,17 +26,12 @@ var visitorCounterCaller, visitorCounterDisplay;
 
   const getBaseUrl = () => {
     return "https://events.vercount.one";
-    // const scriptSrc = document.currentScript.src;
-    // return scriptSrc.includes("cn.vercount.one")
-    //   ? "https://cn.vercount.one"
-    //   : "https://vercount.one";
   };
 
   visitorCounterCaller = {
     fetch: async function (callback) {
       const baseUrl = getBaseUrl();
       const apiUrl = `${baseUrl}/log?jsonpCallback=VisitorCountCallback`;
-
       try {
         const response = await fetch(apiUrl, {
           method: "POST",
@@ -46,9 +40,12 @@ var visitorCounterCaller, visitorCounterDisplay;
           },
           body: JSON.stringify({ url: window.location.href }),
         });
-
         const data = await response.json();
-        documentReady(() => callback(data));
+        documentReady(() => {
+          callback(data);
+          // Store new values in localStorage
+          localStorage.setItem("visitorCountData", JSON.stringify(data));
+        });
         visitorCounterDisplay.showAll();
       } catch (error) {
         console.error("Error fetching visitor count:", error);
@@ -84,6 +81,15 @@ var visitorCounterCaller, visitorCounterDisplay;
       });
     },
   };
+
+  // Load and display stored data immediately
+  documentReady(() => {
+    const storedData = localStorage.getItem("visitorCountData");
+    if (storedData) {
+      visitorCounterDisplay.updateText(JSON.parse(storedData));
+      visitorCounterDisplay.showAll();
+    }
+  });
 
   // Fetch and update visitor count data
   visitorCounterCaller.fetch(
