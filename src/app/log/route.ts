@@ -8,7 +8,7 @@ import {
 import { updatePagePV, updateSitePV, updateSiteUV } from "@/lib/update-data";
 import syncBusuanziData from "@/lib/sync-busuanzi-data";
 import logger from "@/lib/logger"; // Ensure this logger is configured for env-based logging
-import type { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: Request) {
   return redirect("/");
@@ -87,4 +87,13 @@ export async function POST(req: NextRequest) {
     page_pv: pagePVAfter,
   };
   return Response.json(dataDict);
+}
+
+export async function OPTIONS() {
+  const corsHeaders = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, HEAD, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "*",
+  };
+  return NextResponse.json({ message: "OK" }, { headers: corsHeaders });
 }
