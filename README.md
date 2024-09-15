@@ -47,7 +47,7 @@ Vercount 是一个基于 NextJS + Redis 的网站计数器，它的特点是：
 或者，替换为海外访问优化版本：
 
 ```html
-<script defer src="https://vercount.one/js"></script>
+<script defer src="https://events.vercount.one/js"></script>
 ```
 
 
