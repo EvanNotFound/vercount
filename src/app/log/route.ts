@@ -89,11 +89,11 @@ export async function POST(req: NextRequest) {
   return Response.json(dataDict);
 }
 
-export async function OPTIONS() {
-  const corsHeaders = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, HEAD, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "*",
-  };
-  return NextResponse.json({ message: "OK" }, { headers: corsHeaders });
-}
+// export async function OPTIONS() {
+//   const corsHeaders = {
+//     "Access-Control-Allow-Origin": "*",
+//     "Access-Control-Allow-Methods": "GET, HEAD, POST, OPTIONS",
+//     "Access-Control-Allow-Headers": "*",
+//   };
+//   return NextResponse.json({ message: "OK" }, { headers: corsHeaders });
+// }
