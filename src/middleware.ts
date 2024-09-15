@@ -6,7 +6,6 @@ import logger from "@/lib/logger";
 const ratelimit = new Ratelimit({
   redis: kv,
   limiter: Ratelimit.slidingWindow(100, "1 m"),
-  analytics: true, // Enable analytics for more efficient tracking
 });
 
 // Precompile the User-Agent regex
