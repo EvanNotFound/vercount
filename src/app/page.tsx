@@ -286,13 +286,6 @@ export default function Home() {
             </ul>
             <p id="text94" className="style1 flex flex-row items-center gap-4">
               2024 © EvanNotFound. All Rights Reserved.{" "}
-              <a href="https://www.netlify.com">
-                {" "}
-                <img
-                  src="https://www.netlify.com/v3/img/components/netlify-color-accent.svg"
-                  alt="Deploys by Netlify"
-                />{" "}
-              </a>
             </p>
           </div>
         </div>
