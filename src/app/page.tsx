@@ -237,9 +237,9 @@ export default function Home() {
                   </h2>
                   <p id="text06" className="style1">
                     <span className="p">
-                      This project falls under AGPL-3.0 License.
+                      This project falls under GPL-3.0 License.
                       <br />
-                      <mark>本项目基于 AGPL-3.0 协议</mark>
+                      <mark>本项目基于 GPL-3.0 协议</mark>
                     </span>
                   </p>
                   <ul id="buttons04" className="style3 buttons">
