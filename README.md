@@ -3,7 +3,7 @@
 
 # Vercount 网站计数器
 
->  Powered by: 🚀 NextJS + Redis ✨ + Vercel
+>  Powered by: 🚀 NextJS + ✨Redis  + ▲Vercel
 
 不蒜子计数访问慢？总是 502？那就试试 Vercount 吧！完美不蒜子网站计数替代方案。
 
