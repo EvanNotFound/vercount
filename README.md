@@ -66,7 +66,7 @@ Vercount 是一个基于 NextJS + Redis 的网站计数器，它的特点是：
 <script defer src="https://cn.vercount.one/js"></script>
 ```
 
-然后不蒜子的 script 标签保持不变（推荐切换成 Vercount 专属的 script 标签，以便后续的功能扩展，看上文即可）。
+然后不蒜子的 script 标签可以保持不变，也可以（推荐）切换成 Vercount 专属的 id 标签，以便后续的功能扩展，看上文即可。
 
 ```html
 <span id="busuanzi_value_page_pv">Loading</span> 次
