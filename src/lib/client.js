@@ -58,25 +58,54 @@ var visitorCounterCaller, visitorCounterDisplay;
     counterIds: ["site_pv", "page_pv", "site_uv"],
     updateText: function (data) {
       this.counterIds.forEach((id) => {
-        const element = document.getElementById("busuanzi_value_" + id);
-        if (element) {
-          element.textContent = data[id] || "0";
+        // Update busuanzi elements
+        const busuanziElement = document.getElementById("busuanzi_value_" + id);
+        if (busuanziElement) {
+          busuanziElement.textContent = data[id] || "0";
+        }
+
+        // Update vercount elements
+        const vercountElement = document.getElementById("vercount_value_" + id);
+        if (vercountElement) {
+          vercountElement.textContent = data[id] || "0";
         }
       });
     },
     hideAll: function () {
       this.counterIds.forEach((id) => {
-        const container = document.getElementById("busuanzi_container_" + id);
-        if (container) {
-          container.style.display = "none";
+        // Hide busuanzi elements
+        const busuanziContainer = document.getElementById(
+          "busuanzi_container_" + id,
+        );
+        if (busuanziContainer) {
+          busuanziContainer.style.display = "none";
+        }
+
+        // Hide vercount elements
+        const vercountContainer = document.getElementById(
+          "vercount_container_" + id,
+        );
+        if (vercountContainer) {
+          vercountContainer.style.display = "none";
         }
       });
     },
     showAll: function () {
       this.counterIds.forEach((id) => {
-        const container = document.getElementById("busuanzi_container_" + id);
-        if (container) {
-          container.style.display = "inline";
+        // Show busuanzi elements
+        const busuanziContainer = document.getElementById(
+          "busuanzi_container_" + id,
+        );
+        if (busuanziContainer) {
+          busuanziContainer.style.display = "inline";
+        }
+
+        // Show vercount elements
+        const vercountContainer = document.getElementById(
+          "vercount_container_" + id,
+        );
+        if (vercountContainer) {
+          vercountContainer.style.display = "inline";
         }
       });
     },

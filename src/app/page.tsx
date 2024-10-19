@@ -46,7 +46,7 @@ export default function Home() {
                 <p className="uppercase">Page View</p>
                 <p
                   className="bg-white/20 rounded-xl px-3 py-2 w-fit mt-2 text-lg font-bold"
-                  id="busuanzi_value_page_pv"
+                  id="vercount_value_page_pv"
                 >
                   Loading
                 </p>
@@ -55,7 +55,7 @@ export default function Home() {
                 <p className="uppercase">Site Total Visits</p>
                 <p
                   className="bg-white/20 rounded-xl px-3 py-2 w-fit mt-2 text-lg font-bold"
-                  id="busuanzi_value_site_pv"
+                  id="vercount_value_site_pv"
                 >
                   Loading
                 </p>
@@ -64,7 +64,7 @@ export default function Home() {
                 <p className="uppercase">Site Total Visitors</p>
                 <p
                   className="bg-white/20 rounded-xl px-3 py-2 w-fit mt-2 text-lg font-bold"
-                  id="busuanzi_value_site_uv"
+                  id="vercount_value_site_uv"
                 >
                   Loading
                 </p>
@@ -115,7 +115,8 @@ export default function Home() {
               <div className="wrapper">
                 <div className="inner">
                   <h2 id="text02" className="style2">
-                    <mark>0</mark>1.
+                    <mark>0</mark>
+                    1.
                   </h2>
                   <h2 id="text04" className="style7">
                     Insert the script tag. <mark>添加以下 HTML 代码.</mark>
@@ -130,7 +131,8 @@ export default function Home() {
                   <p />
                   <hr id="divider05" className="style1" />
                   <h2 id="text08" className="style2">
-                    <mark>0</mark>2.
+                    <mark>0</mark>
+                    2.
                   </h2>
                   <h2 id="text10" className="style7">
                     Insert these IDs. <mark>使用以下 ID.</mark>
@@ -139,19 +141,20 @@ export default function Home() {
                   <pre className="text-gray-200 px-6 py-6 bg-white/10 rounded-xl sm:text-lg overflow-x-auto">
                     <code className="!bg-transparent !p-0 !m-0">
                       Total Page View &lt;span
-                      id=&quot;busuanzi_value_page_pv&quot;&gt;Loading&lt;/span&gt;
+                      id=&quot;vercount_value_page_pv&quot;&gt;Loading&lt;/span&gt;
                       {"\n"}
                       Total Visits &lt;span
-                      id=&quot;busuanzi_value_site_pv&quot;&gt;Loading&lt;/span&gt;
+                      id=&quot;vercount_value_site_pv&quot;&gt;Loading&lt;/span&gt;
                       {"\n"}
                       Site Total Visitors &lt;span
-                      id=&quot;busuanzi_value_site_uv&quot;&gt;Loading&lt;/span&gt;
+                      id=&quot;vercount_value_site_uv&quot;&gt;Loading&lt;/span&gt;
                     </code>
                   </pre>
                   <p />
                   <hr id="divider01" className="style1" />
                   <h2 id="text16" className="style2">
-                    <mark>0</mark>3.
+                    <mark>0</mark>
+                    3.
                   </h2>
                   <h2 id="text17" className="style7">
                     Refresh your website. <mark>刷新网页.</mark>
