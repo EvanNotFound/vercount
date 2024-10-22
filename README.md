@@ -36,6 +36,8 @@ Vercount 是一个基于 NextJS + Redis 的网站计数器，它的特点是：
 
 ## 快速使用
 
+**如果你需要在 React 项目中使用 Vercount，可以使用 [vercount-react](https://github.com/EvanNotFound/vercount-react)。**
+
 将这个 script (中国访问优化) 添加到你的网站中，
 
 ```html
