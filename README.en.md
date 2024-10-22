@@ -32,6 +32,8 @@ Vercount is designed to be faster, more stable, and secure. Easy deployment requ
 
 ## Quick Start
 
+**For React projects, use [vercount-react](https://github.com/EvanNotFound/vercount-react).**
+
 To get started, simply add this script to your site:
 
 ```html
