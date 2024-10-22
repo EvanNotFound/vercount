@@ -3,8 +3,7 @@
   <a title="zh-CN" href="README.md">  <img src="https://img.shields.io/badge/-%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-545759?style=for-the-badge" alt="简体中文"></a>
 </div>
 
-![vercount react banner@3x](https://github.com/user-attachments/assets/a540dc18-8d92-4b46-a121-ad6580d3ef3d)
-
+![vercount banner@3x](https://github.com/user-attachments/assets/e41667c9-f5f3-426f-b9f0-ece87d404840)
 
 # Vercount Website Counter
 
