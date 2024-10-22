@@ -80,7 +80,7 @@ Vercount 是一个基于 NextJS + Redis 的网站计数器，它的特点是：
 
 对于 page_view 网站访问量, 每访问一次加一.
 
-对于 user_view 访客量, 会通过用户浏览器的 UserAgent 以及用户的IP地址 进行判断.
+对于 unique_visitor 访客量, 会通过用户浏览器的 UserAgent 以及用户的IP地址 进行判断.
 
 ## 💗 支持我
 
