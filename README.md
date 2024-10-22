@@ -1,6 +1,6 @@
 <div align="right">
   <a title="en" href="README_en.md"><img src="https://img.shields.io/badge/-English-545759?style=for-the-badge" alt="english"></a>
-  <img src="https://img.shields.io/badge/-%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-A31F34?style=for-the-badge" alt="简体中文">
+  <img src="https://img.shields.io/badge/-%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-4A628A?style=for-the-badge" alt="简体中文">
 </div>
 
 ![vercount banner@3x](https://github.com/user-attachments/assets/e41667c9-f5f3-426f-b9f0-ece87d404840)
