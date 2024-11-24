@@ -139,8 +139,6 @@ cd vercount-redis
 创建 `docker-compose.yml` 文件：
 
 ```yaml
-version: '3.8'
-
 services:
   redis:
     image: redis:latest
