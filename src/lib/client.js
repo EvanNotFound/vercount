@@ -33,6 +33,8 @@ var visitorCounterCaller, visitorCounterDisplay;
       const baseUrl = getBaseUrl();
       const apiUrl = `${baseUrl}/log?jsonpCallback=VisitorCountCallback`;
       try {
+        visitorCounterDisplay.hideAll();
+        
         const response = await fetch(apiUrl, {
           method: "POST",
           headers: {
@@ -43,10 +45,9 @@ var visitorCounterCaller, visitorCounterDisplay;
         const data = await response.json();
         documentReady(() => {
           callback(data);
-          // Store new values in localStorage
           localStorage.setItem("visitorCountData", JSON.stringify(data));
+          visitorCounterDisplay.showAll();
         });
-        visitorCounterDisplay.showAll();
       } catch (error) {
         console.error("Error fetching visitor count:", error);
         visitorCounterDisplay.hideAll();
@@ -111,17 +112,9 @@ var visitorCounterCaller, visitorCounterDisplay;
     },
   };
 
-  // Load and display stored data immediately
   documentReady(() => {
-    const storedData = localStorage.getItem("visitorCountData");
-    if (storedData) {
-      visitorCounterDisplay.updateText(JSON.parse(storedData));
-      visitorCounterDisplay.showAll();
-    }
+    visitorCounterCaller.fetch(
+      visitorCounterDisplay.updateText.bind(visitorCounterDisplay)
+    );
   });
-
-  // Fetch and update visitor count data
-  visitorCounterCaller.fetch(
-    visitorCounterDisplay.updateText.bind(visitorCounterDisplay),
-  );
 })();
