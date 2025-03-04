@@ -9,7 +9,7 @@
 
 > Powered by: 🚀 NextJS + ✨ Redis + ▲ Vercel
 
-Looking for a simple, easy-to-use website counter? Try Vercount! It’s the ultimate solution for fast and reliable statistics.
+Looking for a simple, easy-to-use website counter? Try Vercount! It's the ultimate solution for fast and reliable statistics.
 
 Vercount is an efficient website counter based on NextJS and Redis, featuring:
 
@@ -53,6 +53,19 @@ Total unique visitors: <span id="vercount_value_site_uv">Loading</span>
 - **Page Views**: Increment by one for each visit.
 - **Unique Visitors**: Determined via UserAgent and IP address.
 
+## ⚠️ Important Notice
+
+**It is strictly forbidden to use scripts or programs to attempt to modify visit counts!** Such behavior violates our terms of service and may result in your IP being permanently banned.
+
+Please note that this service is entirely funded by me personally, and Vercel charges for each edge request. Spamming the endpoint with scripts only increases operational costs and may ultimately force me to suspend or terminate this public service.
+
+If you have special requirements to modify counts, please contact us through [evannotfound.com/contact](https://evannotfound.com/contact). We will evaluate your request based on specific circumstances.
+
+We have implemented multiple layers of security measures to detect and block automated script access, including but not limited to:
+- User agent detection
+- IP blocking
+- Browser fingerprinting
+- Access frequency limitations
 
 ## Self-Hosting Guide
 
@@ -184,7 +197,7 @@ For additional support, please open an issue on the GitHub repository.
 
 ## 💗 Support Me
 
-This is a non-profit project, and your support is sincerely appreciated. Even small donations help maintain the project’s longevity.
+This is a non-profit project, and your support is sincerely appreciated. Even small donations help maintain the project's longevity.
 
 <details><summary>📝 Expense Details</summary>
 I cover the operation costs personally, including Vercel fees and database server costs. Monthly and annual expenses are as follows:
