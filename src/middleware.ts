@@ -6,8 +6,7 @@ import logger from "@/lib/logger";
 // Stricter rate limiting: 50 requests per minute instead of 100
 const ratelimit = new Ratelimit({
   redis: kv,
-  limiter: Ratelimit.slidingWindow(50, "1 m"),
-  analytics: true, // Enable analytics to track rate limit usage
+  limiter: Ratelimit.slidingWindow(80, "1 m"),
 });
 
 // Precompile the User-Agent regex
