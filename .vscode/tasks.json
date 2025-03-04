@@ -1,0 +1,19 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "terser-compile",
+            "type": "shell",
+            "command": "npx terser ./src/lib/client.js -o ./public/js/client.min.js --compress --timings --mangle --toplevel --source-map",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        }
+    ]
+} 

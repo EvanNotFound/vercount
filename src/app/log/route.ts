@@ -23,6 +23,13 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: "Missing url" }, { status: 400 });
   }
 
+  // Check for browser token
+  const browserToken = data.token || header.get("X-Browser-Token");
+  if (!browserToken) {
+    logger.warn(`POST request with missing browser token`, { status: 400 });
+    return Response.json({ error: "Missing token" }, { status: 400 });
+  }
+
   const clientHost =
     req.ip ||
     header.get("X-Real-IP") ||
@@ -89,11 +96,11 @@ export async function POST(req: NextRequest) {
   return Response.json(dataDict);
 }
 
-// export async function OPTIONS() {
-//   const corsHeaders = {
-//     "Access-Control-Allow-Origin": "*",
-//     "Access-Control-Allow-Methods": "GET, HEAD, POST, OPTIONS",
-//     "Access-Control-Allow-Headers": "*",
-//   };
-//   return NextResponse.json({ message: "OK" }, { headers: corsHeaders });
-// }
+export async function OPTIONS() {
+  const corsHeaders = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, HEAD, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, X-Browser-Token",
+  };
+  return NextResponse.json({ message: "OK" }, { headers: corsHeaders });
+}
