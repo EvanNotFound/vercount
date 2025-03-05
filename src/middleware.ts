@@ -38,17 +38,17 @@ export default async function middleware(request: NextRequest) {
   const ua = request.headers.get("user-agent")?.toLowerCase() || "unknown";
 
   // Check if IP is already blocked
-  if (await isIPBlocked(ip)) {
-    logger.warn({
-      message: "Request from blocked IP",
-      ip,
-      ua,
-    });
-    return NextResponse.json({ 
-      status: "error",
-      message: "Unauthorized access",
-     }, { status: 403 });
-  }
+  // if (await isIPBlocked(ip)) {
+  //   logger.warn({
+  //     message: "Request from blocked IP",
+  //     ip,
+  //     ua,
+  //   });
+  //   return NextResponse.json({ 
+  //     status: "error",
+  //     message: "Unauthorized access",
+  //    }, { status: 403 });
+  // }
 
   // Perform rate limiting first
   const { success, limit, reset, remaining } = await ratelimit.limit(ip);
@@ -80,27 +80,19 @@ export default async function middleware(request: NextRequest) {
   // Block suspicious user agents
   if (suspiciousUARegex.test(ua)) {
     // Block the IP for 24 hours after detecting suspicious UA
-    await blockIP(ip, 24);
+    // await blockIP(ip, 24);
     
     logger.warn({
-      message: "Blocked suspicious user agent",
+      message: "Suspicious user agent detected",
       ip,
       ua,
     });
-    return NextResponse.json({ 
-      status: "error",
-      message: "Unauthorized access",
-    }, { status: 403 });
+    // return NextResponse.json({ 
+    //   status: "error",
+    //   message: "Unauthorized access",
+    // }, { status: 403 });
   }
 
-  // Optional: Check User-Agent validity
-  // const isUAValid = uaRegex.test(ua);
-  // if (!isUAValid) {
-  //   logger.error(
-  //     `Unauthorized access attempt with invalid User-Agent. IP: ${ip}, User-Agent: ${ua}`,
-  //   );
-  //   return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  // }
 
   // Log warning if approaching rate limit
   if (remaining < 20) {
