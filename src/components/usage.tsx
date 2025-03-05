@@ -8,7 +8,7 @@ export default function Usage() {
           <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col items-center justify-center space-y-4 text-center mb-16 max-w-3xl mx-auto">
               <h2 className="text-3xl md:text-5xl font-bold tracking-tighter">Usage</h2>
-              <p className="text-xl text-zinc-400">Choose your implementation method</p>
+              <p className="text-xl text-zinc-400">Choose your preferred framework</p>
               <p className="text-zinc-400">
                 选择适合你的 Web 框架
               </p>
