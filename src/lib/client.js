@@ -31,7 +31,7 @@ var visitorCounterCaller, visitorCounterDisplay;
   // Get the API endpoint with version
   const getApiEndpoint = (version = 2) => {
     const baseUrl = getBaseUrl();
-    return `${baseUrl}/api/v${version}/log?jsonpCallback=VisitorCountCallback`;
+    return `${baseUrl}/api/v${version}/log`;
   };
 
   // Generate a simple browser fingerprint to help identify legitimate requests
