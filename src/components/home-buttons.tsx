@@ -13,7 +13,7 @@ export default function HomeButtons() {
 					className="rounded-full bg-white text-black hover:bg-white/90 pl-8 pr-6 py-6 group"
 					asChild
 				>
-					<Link href="#implementation">
+					<Link href="#usage">
 						Get Started{" "}
 						<ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-0.5 transition-transform duration-300" />
 					</Link>
