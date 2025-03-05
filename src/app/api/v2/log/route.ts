@@ -6,7 +6,7 @@ import {
   getSiteUVBeforeData,
 } from "@/lib/get-before-data";
 import { updatePagePV, updateSitePV, updateSiteUV } from "@/lib/update-data";
-import syncBusuanziData from "@/lib/sync-busuanzi-data";
+import { syncBusuanziData } from "@/utils/busuanzi";
 import logger from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
 

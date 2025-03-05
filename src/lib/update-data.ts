@@ -1,5 +1,5 @@
 import kv from "@/lib/kv";
-import { EXPIRATION_TIME } from "@/lib/get-busuanzi-data";
+import { EXPIRATION_TIME } from "@/utils/busuanzi";
 import logger from "@/lib/logger";
 
 /**
@@ -35,7 +35,7 @@ function sanitizeUrlPath(host: string, path: string): { host: string, path: stri
   return { host, path };
 }
 
-export async function updatePagePV(host: string, path: string) {
+async function updatePagePV(host: string, path: string) {
   // Sanitize the URL components
   const sanitized = sanitizeUrlPath(host, path);
   host = sanitized.host;
@@ -58,7 +58,7 @@ export async function updatePagePV(host: string, path: string) {
   return pagePV;
 }
 
-export async function updateSitePV(host: string) {
+async function updateSitePV(host: string) {
   // Sanitize the host
   const sanitized = sanitizeUrlPath(host, "");
   host = sanitized.host;
@@ -78,7 +78,7 @@ export async function updateSitePV(host: string) {
   return sitePV;
 }
 
-export async function updateSiteUV(host: string, ip: string) {
+async function updateSiteUV(host: string, ip: string) {
   // Sanitize the host
   const sanitized = sanitizeUrlPath(host, "");
   host = sanitized.host;
@@ -100,3 +100,5 @@ export async function updateSiteUV(host: string, ip: string) {
 
   return siteUV;
 }
+
+export { updatePagePV, updateSitePV, updateSiteUV };
