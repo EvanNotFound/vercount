@@ -1,0 +1,130 @@
+/* Shiki code highlighting styles */
+pre {
+  overflow-x: auto;
+  padding: 1rem;
+  border-radius: 0.375rem;
+  background-color: #0d1117 !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  /* Custom scrollbar for code blocks */
+  scrollbar-width: thin; /* For Firefox */
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent; /* For Firefox */
+}
+
+/* Custom scrollbars for code blocks */
+pre::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+pre::-webkit-scrollbar-track {
+  background-color: transparent;
+  border-radius: 3px;
+}
+
+pre::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+pre::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+pre code {
+  display: block;
+  color: #e1e4e8;
+}
+
+/* Line numbers */
+.line {
+  display: inline-block;
+  width: 100%;
+  position: relative;
+}
+
+.line[line-number]::before {
+  content: attr(line-number);
+  position: absolute;
+  left: -2.5rem;
+  color: #6e7681;
+  text-align: right;
+  width: 2rem;
+}
+
+/* Token colors - GitHub Dark theme */
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: #8b949e;
+}
+
+.token.punctuation {
+  color: #c9d1d9;
+}
+
+.token.property,
+.token.tag,
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol,
+.token.deleted {
+  color: #79c0ff;
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.inserted {
+  color: #a5d6ff;
+}
+
+.token.operator,
+.token.entity,
+.token.url,
+.language-css .token.string,
+.style .token.string {
+  color: #d2a8ff;
+}
+
+.token.atrule,
+.token.attr-value,
+.token.keyword {
+  color: #ff7b72;
+}
+
+.token.function,
+.token.class-name {
+  color: #d2a8ff;
+}
+
+.token.regex,
+.token.important,
+.token.variable {
+  color: #ffa657;
+}
+
+/* Copy button styles */
+.copy-button {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  padding: 0.5rem;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 0.375rem;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.copy-button:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+pre:hover .copy-button {
+  opacity: 1;
+} 

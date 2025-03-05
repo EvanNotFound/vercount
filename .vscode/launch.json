@@ -8,7 +8,7 @@
             "name": "dev",
             "type": "node",
             "request": "launch",
-            "runtimeExecutable": "npm",
+            "runtimeExecutable": "pnpm",
             "runtimeArgs": ["run", "dev"],
             "skipFiles": ["<node_internals>/**"],
             "console": "integratedTerminal",
@@ -43,7 +43,7 @@
             "name": "Next.js: debug full stack",
             "type": "node-terminal",
             "request": "launch",
-            "command": "npm run dev",
+            "command": "pnpm run dev",
             "serverReadyAction": {
                 "pattern": "started server on .+, url: (https?://.+)",
                 "uriFormat": "%s",
