@@ -79,15 +79,15 @@ export async function getBusuanziPagePVData(host: string, path: string) {
     Cookie: "busuanziId=89D15D1F66D2494F91FB315545BF9C2A",
   };
 
-  const dataNoSlash = await fetchBusuanziData(BUSUANZI_URL, headers);
-  const dataSlash = await fetchBusuanziData(BUSUANZI_URL, {
+  const headersWithSlash = {
     ...headers,
     Referer: `${headers["Referer"]}/`,
-  });
+  };
 
+  // Make both API calls in parallel
   const [dataNoSlashResult, dataSlashResult] = await Promise.all([
-    dataNoSlash,
-    dataSlash,
+    fetchBusuanziData(BUSUANZI_URL, headers),
+    fetchBusuanziData(BUSUANZI_URL, headersWithSlash)
   ]);
 
   if (dataNoSlashResult && dataSlashResult) {
@@ -107,8 +107,8 @@ export async function getBusuanziPagePVData(host: string, path: string) {
     await kv.set(`live_page_pv:${host}${path}`, pagePv, {
       ex: EXPIRATION_TIME,
     });
-    logger.error(
-      `Max retries exceeded for ${host}${path}. Defaulting Page PV values to 0.`,
+    logger.debug(
+      `Page PV data retrieved and stored for ${host}${path}, ${pagePv}`,
     );
     return pagePv;
   } else {
@@ -116,5 +116,6 @@ export async function getBusuanziPagePVData(host: string, path: string) {
     logger.error(
       `Max retries exceeded for ${host}${path}. Defaulting Page PV values to 0.`,
     );
+    return 0;
   }
 }

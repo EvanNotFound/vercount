@@ -189,47 +189,51 @@ export async function POST(req: NextRequest) {
     parsedUrl.pathname.replace(/\/index$/, ""),
   ];
 
-  // logger.info(`Processing request`, { host, path, clientHost });
-
-  const [siteUVBefore, sitePVBefore, pagePVBefore] = await Promise.all([
-    getSiteUVBeforeData(host, path),
-    getSitePVBeforeData(host, path),
-    getPagePVBeforeData(host, path),
+  // Get initial data and update counts in parallel
+  const [
+    initialData,
+    updateResults
+  ] = await Promise.all([
+    // Get initial data
+    Promise.all([
+      getSiteUVBeforeData(host, path),
+      getSitePVBeforeData(host, path),
+      getPagePVBeforeData(host, path),
+    ]),
+    // Update counts
+    Promise.all([
+      updateSiteUV(host, clientHost),
+      updateSitePV(host),
+      updatePagePV(host, path),
+    ])
   ]);
 
-  // logger.info(`Initial data`, {
-  //   siteUVBefore,
-  //   sitePVBefore,
-  //   pagePVBefore,
-  // });
+  const [siteUVBefore, sitePVBefore, pagePVBefore] = initialData;
+  const [siteUVAfter, sitePVAfter, pagePVAfter] = updateResults;
 
-  let [siteUVAfter, sitePVAfter, pagePVAfter] = await Promise.all([
-    updateSiteUV(host, clientHost),
-    updateSitePV(host),
-    updatePagePV(host, path),
-  ]);
-
-  siteUVAfter += siteUVBefore;
-  sitePVAfter += sitePVBefore;
-  pagePVAfter += pagePVBefore;
+  // Add the before values to the after values
+  const finalSiteUV = siteUVAfter + siteUVBefore;
+  const finalSitePV = sitePVAfter + sitePVBefore;
+  const finalPagePV = pagePVAfter + pagePVBefore;
 
   logger.info(`Data updated`, {
     host,
     path,
-    siteUVAfter,
-    sitePVAfter,
-    pagePVAfter,
+    siteUVAfter: finalSiteUV,
+    sitePVAfter: finalSitePV,
+    pagePVAfter: finalPagePV,
   });
 
+  // Fire and forget
   syncBusuanziData(host, path);
 
   return Response.json({
     status: "success",
     message: "Data updated successfully",
     data: {
-      site_uv: siteUVAfter,
-      site_pv: sitePVAfter,
-      page_pv: pagePVAfter,
+      site_uv: finalSiteUV,
+      site_pv: finalSitePV,
+      page_pv: finalPagePV,
     }
   });
 }
