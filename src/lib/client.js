@@ -28,6 +28,12 @@ var visitorCounterCaller, visitorCounterDisplay;
     return "https://events.vercount.one";
   };
 
+  // Get the API endpoint with version
+  const getApiEndpoint = (version = 2) => {
+    const baseUrl = getBaseUrl();
+    return `${baseUrl}/api/v${version}/log?jsonpCallback=VisitorCountCallback`;
+  };
+
   // Generate a simple browser fingerprint to help identify legitimate requests
   const generateBrowserToken = () => {
     const screenInfo = `${window.screen.width}x${window.screen.height}x${window.screen.colorDepth}`;
@@ -57,10 +63,30 @@ var visitorCounterCaller, visitorCounterDisplay;
     return Math.abs(hash).toString(36);
   };
 
+  // Helper function to extract counter data from the new API response format
+  const extractCounterData = (response) => {
+    // If response has the new format with status and data
+    if (response && response.status) {
+      if (response.status === "success" && response.data) {
+        return response.data;
+      } else if (response.status === "error" && response.data) {
+        console.warn(`API error: ${response.message}`, response);
+        return response.data; // Return the data even in case of error
+      } else if (response.status === "error") {
+        console.warn(`API error: ${response.message}`, response);
+        return { site_uv: 0, site_pv: 0, page_pv: 0 }; // Default values
+      }
+    }
+    
+    // Fallback for old format or unexpected response structure
+    return response || { site_uv: 0, site_pv: 0, page_pv: 0 };
+  };
+
   visitorCounterCaller = {
     fetch: async function (callback) {
-      const baseUrl = getBaseUrl();
-      const apiUrl = `${baseUrl}/log?jsonpCallback=VisitorCountCallback`;
+      const apiUrl = getApiEndpoint(2); // Use v2 endpoint
+      const fallbackApiUrl = getApiEndpoint(1); // Fallback to v1 if needed
+      
       try {
         visitorCounterDisplay.hideAll();
         
@@ -78,7 +104,7 @@ var visitorCounterCaller, visitorCounterDisplay;
           validUrl = "https://local.file/invalid-protocol";
         }
         
-        // Try to fetch with the token first
+        // Try to fetch with the v2 endpoint first
         try {
           const response = await fetch(apiUrl, {
             method: "POST",
@@ -91,31 +117,66 @@ var visitorCounterCaller, visitorCounterDisplay;
               token: browserToken
             }),
           });
-          const data = await response.json();
+          
+          // Check if the response is ok
+          if (!response.ok) {
+            throw new Error(`API responded with status: ${response.status}`);
+          }
+          
+          const responseData = await response.json();
+          const counterData = extractCounterData(responseData);
+          
           documentReady(() => {
-            callback(data);
-            localStorage.setItem("visitorCountData", JSON.stringify(data));
+            callback(counterData);
+            localStorage.setItem("visitorCountData", JSON.stringify(counterData));
             visitorCounterDisplay.showAll();
           });
-        } catch (corsError) {
-          // If we get a CORS error, try again without the custom header
-          console.warn("CORS error with token header, retrying without custom header:", corsError);
-          const fallbackResponse = await fetch(apiUrl, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ 
-              url: validUrl,
-              token: browserToken // Still include token in body
-            }),
-          });
-          const fallbackData = await fallbackResponse.json();
-          documentReady(() => {
-            callback(fallbackData);
-            localStorage.setItem("visitorCountData", JSON.stringify(fallbackData));
-            visitorCounterDisplay.showAll();
-          });
+        } catch (v2Error) {
+          // If v2 endpoint fails, try the v1 endpoint
+          console.warn("Error with v2 API, falling back to v1:", v2Error);
+          
+          try {
+            const fallbackResponse = await fetch(fallbackApiUrl, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "X-Browser-Token": browserToken
+              },
+              body: JSON.stringify({ 
+                url: validUrl,
+                token: browserToken
+              }),
+            });
+            
+            const fallbackResponseData = await fallbackResponse.json();
+            // No need to extract data for v1 format as it's already in the right format
+            
+            documentReady(() => {
+              callback(fallbackResponseData);
+              localStorage.setItem("visitorCountData", JSON.stringify(fallbackResponseData));
+              visitorCounterDisplay.showAll();
+            });
+          } catch (corsError) {
+            // If we get a CORS error, try again without the custom header
+            console.warn("CORS error with token header, retrying without custom header:", corsError);
+            const lastFallbackResponse = await fetch(fallbackApiUrl, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({ 
+                url: validUrl,
+                token: browserToken // Still include token in body
+              }),
+            });
+            const lastFallbackData = await lastFallbackResponse.json();
+            
+            documentReady(() => {
+              callback(lastFallbackData);
+              localStorage.setItem("visitorCountData", JSON.stringify(lastFallbackData));
+              visitorCounterDisplay.showAll();
+            });
+          }
         }
       } catch (error) {
         console.error("Error fetching visitor count:", error);

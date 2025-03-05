@@ -30,7 +30,7 @@ async function blockIP(ip: string, durationHours = 24): Promise<void> {
 }
 
 export const config = {
-  matcher: "/log",
+  matcher: ["/log", "/api/v1/log", "/api/v2/log"],
 };
 
 export default async function middleware(request: NextRequest) {
@@ -44,7 +44,10 @@ export default async function middleware(request: NextRequest) {
       ip,
       ua,
     });
-    return NextResponse.json({ error: "unauthorized" }, { status: 403 });
+    return NextResponse.json({ 
+      status: "error",
+      message: "Unauthorized access",
+     }, { status: 403 });
   }
 
   // Perform rate limiting first
@@ -59,7 +62,10 @@ export default async function middleware(request: NextRequest) {
       remaining,
       ua,
     });
-    return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
+    return NextResponse.json({ 
+      status: "error",
+      message: "Rate limit exceeded",
+    }, { status: 429 });
   }
 
   // Log only if rate limit check passes
@@ -81,7 +87,10 @@ export default async function middleware(request: NextRequest) {
       ip,
       ua,
     });
-    return NextResponse.json({ error: "unauthorized" }, { status: 403 });
+    return NextResponse.json({ 
+      status: "error",
+      message: "Unauthorized access",
+    }, { status: 403 });
   }
 
   // Optional: Check User-Agent validity
