@@ -4,7 +4,7 @@ import { SiGithub } from '@icons-pack/react-simple-icons';
 
 export default function OpenSource() {
   return (
-    <section id="opensource" className="w-full py-20 md:py-32">
+    <section id="opensource" className="w-full py-20 md:py-32 border-t border-white/10">
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col items-center justify-center space-y-8 text-center max-w-3xl mx-auto">
           <div className="space-y-4">

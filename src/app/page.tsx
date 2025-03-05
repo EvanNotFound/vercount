@@ -16,6 +16,7 @@ import Header from "@/components/header";
 import Usage from "@/components/usage";
 import Features from "@/components/features";
 import OpenSource from "@/components/open-source";
+import Sponsorship from "@/components/sponsorship";
 import Footer from "@/components/footer";
 import BlurFadeStagger from "@/components/animations/blur-fade-stagger";
 
@@ -60,6 +61,7 @@ export default function Home() {
 
 				<Usage />
 				<Features />
+        <Sponsorship />
 				<OpenSource />
 			</main>
 

@@ -4,7 +4,7 @@ import { SiHtml5, SiReact } from '@icons-pack/react-simple-icons';
 
 export default function Usage() {
 	return (
-        <section id="implementation" className="w-full py-20 md:py-32 border-b border-white/10">
+        <section id="usage" className="w-full py-20 md:py-32 border-b border-white/10">
           <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col items-center justify-center space-y-4 text-center mb-16 max-w-3xl mx-auto">
               <h2 className="text-3xl md:text-5xl font-bold tracking-tighter">Usage</h2>

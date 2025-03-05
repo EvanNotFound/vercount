@@ -12,16 +12,19 @@ export default function Header() {
             </div>
             <nav className="hidden md:flex items-center gap-8">
               <Link
-                href="#implementation"
+                href="#usage"
                 className="text-sm font-medium text-zinc-400 hover:text-white transition-colors"
               >
-                Implementation
+                Usage
               </Link>
               <Link href="#features" className="text-sm font-medium text-zinc-400 hover:text-white transition-colors">
                 Features
               </Link>
               <Link href="#opensource" className="text-sm font-medium text-zinc-400 hover:text-white transition-colors">
                 Open Source
+              </Link>
+              <Link href="#sponsorship" className="text-sm font-medium text-zinc-400 hover:text-white transition-colors">
+                Sponsorship
               </Link>
             </nav>
             <div className="flex items-center gap-4">
