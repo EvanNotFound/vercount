@@ -29,7 +29,7 @@
     "tailwind-merge": "^3.0.2",
     "tailwindcss-animate": "^1.0.7",
     "terser": "^5.26.0",
-    "vercount-react": "^0.1.3",
+    "vercount-react": "^0.1.4",
     "winston": "^3.11.0"
   },
   "devDependencies": {

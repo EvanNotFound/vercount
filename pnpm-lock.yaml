@@ -66,8 +66,8 @@ dependencies:
     specifier: ^5.26.0
     version: 5.26.0
   vercount-react:
-    specifier: ^0.1.3
-    version: 0.1.3(react-dom@18.2.0)(react@18.2.0)
+    specifier: ^0.1.4
+    version: 0.1.4(react-dom@18.2.0)(react@18.2.0)
   winston:
     specifier: ^3.11.0
     version: 3.11.0
@@ -3515,8 +3515,8 @@ packages:
   /util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
 
-  /vercount-react@0.1.3(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-E4A/4xKC5qleP/5DJTYOXch/f6ZfDexunva/BWRTjIXxK+a+irDYKy5KpfbiUG/RUneNfI7rm6EmkfKyfQpPiw==}
+  /vercount-react@0.1.4(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-DE4ZeEnGtxmQvd+RuL3aKbnGI2BMSQZpdzH5GQfRKBVj6yuDrJ15Wr7YoxjSWozl8m7cs+arLqBDSoDZ7Fqvjw==}
     peerDependencies:
       react: '>=18.0.0'
       react-dom: '>=18.0.0'
