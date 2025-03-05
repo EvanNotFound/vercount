@@ -1,4 +1,4 @@
-import { kv } from "@vercel/kv";
+import kv from "@/lib/kv";
 import logger from "@/lib/logger";
 
 export const EXPIRATION_TIME = 60 * 60 * 24 * 30; // Adjust as needed

@@ -1,4 +1,4 @@
-import { kv } from "@vercel/kv";
+import kv from "@/lib/kv";
 import { EXPIRATION_TIME } from "@/lib/get-busuanzi-data";
 import logger from "@/lib/logger";
 

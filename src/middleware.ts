@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Ratelimit } from "@upstash/ratelimit";
-import { kv } from "@vercel/kv";
+import kv from "@/lib/kv";
 import logger from "@/lib/logger";
 
 // Stricter rate limiting: 50 requests per minute instead of 100
