@@ -114,49 +114,16 @@ yarn add vercount-react`}
                       />
                     </div>
 
-                    {/* Step 2: Component Approach */}
+
+                    {/* Step 2: Hook Approach */}
                     <div className="flex flex-col space-y-4 rounded-lg border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
                       <div className="flex items-center space-x-2">
                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white">
                           <span className="text-sm font-bold">02</span>
                         </div>
-                        <h3 className="text-xl font-bold">Component Approach</h3>
+                        <h3 className="text-xl font-bold">Use the hook</h3>
                       </div>
-                      <p className="text-zinc-400">方式一：使用组件方式</p>
-                      <CodeBlockWithHighlight 
-                        code={`import { Vercount } from 'vercount-react';
-
-function MyComponent() {
-  return (
-    <div>
-      <p>Page Views: <Vercount type="page_pv" /></p>
-      <p>Total Visits: <Vercount type="site_pv" /></p>
-      <p>Total Visitors: <Vercount type="site_uv" /></p>
-    </div>
-  );
-}`}
-                        language="jsx"
-                      />
-                      <p className="text-zinc-300">You can customize the component with props:</p>
-                      <CodeBlockWithHighlight 
-                        code={`<Vercount 
-  type="page_pv" 
-  loadingText="Counting..." 
-  className="font-bold text-blue-500" 
-/>`}
-                        language="jsx"
-                      />
-                    </div>
-
-                    {/* Step 3: Hook Approach */}
-                    <div className="flex flex-col space-y-4 rounded-lg border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
-                      <div className="flex items-center space-x-2">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white">
-                          <span className="text-sm font-bold">03</span>
-                        </div>
-                        <h3 className="text-xl font-bold">Hook Approach</h3>
-                      </div>
-                      <p className="text-zinc-400">方式二：使用 Hook 方式</p>
+                      <p className="text-zinc-400">在 React 项目中使用 vercount-react 的 Hook</p>
                       <CodeBlockWithHighlight 
                         code={`import { useVercount } from 'vercount-react'
 
