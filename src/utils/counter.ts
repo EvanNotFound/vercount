@@ -44,17 +44,17 @@ export function sanitizeUrlPath(host: string, path: string): { host: string, pat
  * Get site unique visitor count
  */
 export async function getSiteUVBeforeData(host: string, path: string): Promise<number> {
-  const siteKey = `site_uv_live:${host}`;
+  const siteKey = `uv:busuanzi:site:${host}`;
   const siteUV = await kv.get(siteKey);
   
   if (!siteUV) {
-    logger.debug(`site_uv not found for host: https://${host}${path}`);
+    logger.debug(`Site UV not found for host: https://${host}${path}`);
     const siteUVData = await getBusuanziSiteUVData(host, path);
     const siteUV = siteUVData ? siteUVData : 0;
     return Number(siteUV);
   } else {
     logger.debug(
-      `site_uv found for host: https://${host}${path}, site_uv: ${siteUV}`
+      `Site UV found for host: https://${host}${path}, site_uv: ${siteUV}`
     );
     return Number(siteUV);
   }
@@ -64,18 +64,18 @@ export async function getSiteUVBeforeData(host: string, path: string): Promise<n
  * Get site page view count
  */
 export async function getSitePVBeforeData(host: string, path: string): Promise<number> {
-  const siteKey = `site_pv_live:${host}`;
+  const siteKey = `pv:busuanzi:site:${host}`;
   const sitePV = await kv.get(siteKey);
   
   if (!sitePV) {
-    logger.debug(`site_pv not found for host: https://${host}${path}`);
+    logger.debug(`Site PV not found for host: https://${host}${path}`);
     const sitePVData = await getBusuanziSitePVData(host);
     const sitePV = sitePVData ? sitePVData : 0;
-    logger.debug(`site_pv_data: ${sitePVData}, site_pv: ${sitePV}`);
+    logger.debug(`Site PV data: ${sitePVData}, site_pv: ${sitePV}`);
     return Number(sitePV);
   } else {
     logger.debug(
-      `site_pv found for host: https://${host}${path}, site_pv: ${sitePV}`
+      `Site PV found for host: https://${host}${path}, site_pv: ${sitePV}`
     );
     return Number(sitePV);
   }
@@ -85,18 +85,18 @@ export async function getSitePVBeforeData(host: string, path: string): Promise<n
  * Get page view count for a specific page
  */
 export async function getPagePVBeforeData(host: string, path: string): Promise<number> {
-  const pageKey = `live_page_pv:${host}${path}`;
+  const pageKey = `pv:busuanzi:page:${host}:${path}`;
   const pagePV = await kv.get(pageKey);
-  logger.debug(`page_pv: ${pagePV}, page_key: ${pageKey}`);
+  logger.debug(`Page PV: ${pagePV}, page_key: ${pageKey}`);
 
   if (!pagePV) {
-    logger.debug(`page_pv not found for host: https://${host}${path}`);
+    logger.debug(`Page PV not found for host: https://${host}${path}`);
     const pagePVData = await getBusuanziPagePVData(host, path);
     const pagePV = pagePVData ? pagePVData : 0;
     return Number(pagePV);
   } else {
     logger.debug(
-      `page_pv found for host: https://${host}${path}, page_pv: ${pagePV}`
+      `Page PV found for host: https://${host}${path}, page_pv: ${pagePV}`
     );
     return Number(pagePV);
   }
@@ -111,9 +111,9 @@ export async function updatePagePV(host: string, path: string): Promise<number> 
   host = sanitized.host;
   path = sanitized.path;
   
-  logger.debug(`Updating page_pv for host: https://${host}${path}`);
-  const pageKey = `page_pv:${host}${path}`;
-  const livePageKey = `live_page_pv:${host}${path}`;
+  logger.debug(`Updating page PV for host: https://${host}${path}`);
+  const pageKey = `pv:local:page:${host}:${path}`;
+  const busuanziPageKey = `pv:busuanzi:page:${host}:${path}`;
 
   const pagePV = await kv.incr(pageKey);
   logger.debug(
@@ -122,7 +122,7 @@ export async function updatePagePV(host: string, path: string): Promise<number> 
 
   await Promise.all([
     kv.expire(pageKey, EXPIRATION_TIME),
-    kv.expire(livePageKey, EXPIRATION_TIME),
+    kv.expire(busuanziPageKey, EXPIRATION_TIME),
   ]);
 
   return pagePV;
@@ -136,16 +136,16 @@ export async function updateSitePV(host: string): Promise<number> {
   const sanitized = sanitizeUrlPath(host, "");
   host = sanitized.host;
   
-  logger.debug(`Updating site_pv for host: https://${host}`);
-  const siteKey = `site_pv:${host}`;
-  const liveSiteKey = `site_pv_live:${host}`;
+  logger.debug(`Updating site PV for host: https://${host}`);
+  const siteKey = `pv:local:site:${host}`;
+  const busuanziSiteKey = `pv:busuanzi:site:${host}`;
 
   const sitePV = await kv.incr(siteKey);
   logger.debug(`Site PV updated for host: https://${host}, site_pv: ${sitePV}`);
 
   await Promise.all([
     kv.expire(siteKey, EXPIRATION_TIME),
-    kv.expire(liveSiteKey, EXPIRATION_TIME),
+    kv.expire(busuanziSiteKey, EXPIRATION_TIME),
   ]);
 
   return sitePV;
@@ -159,9 +159,9 @@ export async function updateSiteUV(host: string, ip: string): Promise<number> {
   const sanitized = sanitizeUrlPath(host, "");
   host = sanitized.host;
   
-  logger.debug(`Updating site_uv for host: https://${host}`);
-  const siteKey = `site_uv:${host}`;
-  const liveSiteKey = `site_uv_live:${host}`;
+  logger.debug(`Updating site UV for host: https://${host}`);
+  const siteKey = `uv:local:site:${host}`;
+  const busuanziSiteKey = `uv:busuanzi:site:${host}`;
 
   const siteUVKey = await kv.sadd(siteKey, ip);
   const siteUV = await kv.scard(siteKey);
@@ -171,7 +171,7 @@ export async function updateSiteUV(host: string, ip: string): Promise<number> {
 
   await Promise.all([
     kv.expire(siteKey, EXPIRATION_TIME),
-    kv.expire(liveSiteKey, EXPIRATION_TIME),
+    kv.expire(busuanziSiteKey, EXPIRATION_TIME),
   ]);
 
   return siteUV;

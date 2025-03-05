@@ -38,11 +38,11 @@ async function getBusuanziSiteUVData(host: string, path: string) {
 	const data = await fetchBusuanziData(BUSUANZI_URL, headers);
 	if (data) {
 		const siteUv = data.site_uv || 0;
-		await kv.set(`site_uv_live:${host}`, siteUv, { ex: EXPIRATION_TIME });
+		await kv.set(`uv:busuanzi:site:${host}`, siteUv, { ex: EXPIRATION_TIME });
 		logger.debug(`UV data retrieved and stored for ${host}`);
 		return siteUv;
 	} else {
-		await kv.set(`site_uv_live:${host}`, 0, {
+		await kv.set(`uv:busuanzi:site:${host}`, 0, {
 			ex: EXPIRATION_TIME,
 		});
 		logger.error(
@@ -60,11 +60,11 @@ async function getBusuanziSitePVData(host: string) {
 	const data = await fetchBusuanziData(BUSUANZI_URL, headers);
 	if (data) {
 		const sitePv = data.site_pv || 0;
-		await kv.set(`site_pv_live:${host}`, sitePv, { ex: EXPIRATION_TIME });
+		await kv.set(`pv:busuanzi:site:${host}`, sitePv, { ex: EXPIRATION_TIME });
 		logger.debug(`Site PV data retrieved and stored for ${host}`);
 		return sitePv;
 	} else {
-		await kv.set(`site_pv_live:${host}`, 0, {
+		await kv.set(`pv:busuanzi:site:${host}`, 0, {
 			ex: EXPIRATION_TIME,
 		});
 		logger.error(
@@ -95,7 +95,7 @@ async function getBusuanziPagePVData(host: string, path: string) {
 			dataNoSlashResult.page_pv || 0,
 			dataSlashResult.page_pv || 0
 		);
-		await kv.set(`live_page_pv:${host}${path}`, pagePv, {
+		await kv.set(`pv:busuanzi:page:${host}:${path}`, pagePv, {
 			ex: EXPIRATION_TIME,
 		});
 		logger.debug(
@@ -104,7 +104,7 @@ async function getBusuanziPagePVData(host: string, path: string) {
 		return pagePv;
 	} else if (dataNoSlashResult || dataSlashResult) {
 		const pagePv = (dataNoSlashResult || dataSlashResult).page_pv || 0;
-		await kv.set(`live_page_pv:${host}${path}`, pagePv, {
+		await kv.set(`pv:busuanzi:page:${host}:${path}`, pagePv, {
 			ex: EXPIRATION_TIME,
 		});
 		logger.debug(
@@ -112,7 +112,7 @@ async function getBusuanziPagePVData(host: string, path: string) {
 		);
 		return pagePv;
 	} else {
-		await kv.set(`live_page_pv:${host}${path}`, 0, { ex: EXPIRATION_TIME });
+		await kv.set(`pv:busuanzi:page:${host}:${path}`, 0, { ex: EXPIRATION_TIME });
 		logger.error(
 			`Max retries exceeded for ${host}${path}. Defaulting Page PV values to 0.`
 		);
