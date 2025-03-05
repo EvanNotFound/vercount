@@ -15,9 +15,9 @@ export const metadata: Metadata = {
   title: "Vercount - 网站流量计数器",
   metadataBase: new URL("https://vercount.one"),
   description:
-    "Vercount is a straightforward, fast, and reliable website counter. Vercount 是一个完美的不蒜子网站计数器替代方案，轻松统计页面浏览量和访客数量。",
+    "Vercount is a straightforward, fast, and reliable website view counter. Vercount 是一个完美的不蒜子网站计数器替代方案，轻松统计页面浏览量和访客数量。",
   keywords:
-    "Vercount, 网站计数器, 不蒜子替代品, 流量分析, 页面浏览量, 访客跟踪",
+    "Vercount, 网站计数器, 不蒜子替代品, 流量分析, 页面浏览量, 访客跟踪, Website Counter, Website View Counter, Website Visitor Counter",
   robots: "index, follow",
   twitter: {
     card: "summary_large_image",
