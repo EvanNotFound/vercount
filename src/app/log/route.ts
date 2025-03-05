@@ -7,11 +7,77 @@ import {
 } from "@/lib/get-before-data";
 import { updatePagePV, updateSitePV, updateSiteUV } from "@/lib/update-data";
 import syncBusuanziData from "@/lib/sync-busuanzi-data";
-import logger from "@/lib/logger"; // Ensure this logger is configured for env-based logging
+import logger from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: Request) {
-  return redirect("/");
+  const url = new URL(req.url);
+  const targetUrl = url.searchParams.get('url');
+  
+  if (!targetUrl) {
+    logger.warn(`GET request with missing URL parameter`, { status: 400 });
+    return Response.json({ error: "Missing url parameter" }, { status: 400 });
+  }
+  
+  // Validate URL format
+  try {
+    const parsedUrl = new URL(targetUrl);
+    
+    // Check if it's a file:// URL or other non-http(s) protocol
+    if (!parsedUrl.protocol.startsWith('http')) {
+      logger.warn(`Invalid URL protocol: ${parsedUrl.protocol}`, { status: 400 });
+      return Response.json({ 
+        error: "Invalid URL protocol. Only HTTP and HTTPS are supported.",
+        site_uv: 0,
+        site_pv: 0,
+        page_pv: 0
+      }, { status: 200 });
+    }
+    
+    // Check if host is empty
+    if (!parsedUrl.host) {
+      logger.warn(`Invalid URL host: empty`, { status: 400 });
+      return Response.json({ 
+        error: "Invalid URL host",
+        site_uv: 0,
+        site_pv: 0,
+        page_pv: 0
+      }, { status: 200 });
+    }
+    
+    const host = parsedUrl.host;
+    const path = parsedUrl.pathname.replace(/\/index$/, "");
+    
+    // Get the counts without updating them
+    const [siteUV, sitePV, pagePV] = await Promise.all([
+      getSiteUVBeforeData(host, path),
+      getSitePVBeforeData(host, path),
+      getPagePVBeforeData(host, path),
+    ]);
+    
+    logger.info(`Retrieved data for GET request`, {
+      host,
+      path,
+      siteUV,
+      sitePV,
+      pagePV,
+    });
+    
+    return Response.json({
+      site_uv: siteUV,
+      site_pv: sitePV,
+      page_pv: pagePV,
+    });
+    
+  } catch (error) {
+    logger.warn(`Invalid URL format: ${targetUrl}`, { status: 400, error });
+    return Response.json({ 
+      error: "Invalid URL format",
+      site_uv: 0,
+      site_pv: 0,
+      page_pv: 0
+    }, { status: 200 });
+  }
 }
 
 export async function POST(req: NextRequest) {
