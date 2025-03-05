@@ -1,6 +1,11 @@
 import kv from "@/lib/kv";
-import { EXPIRATION_TIME } from "@/utils/busuanzi";
 import logger from "@/lib/logger";
+import { EXPIRATION_TIME } from "@/utils/busuanzi";
+import {
+  getBusuanziPagePVData,
+  getBusuanziSitePVData,
+  getBusuanziSiteUVData,
+} from "@/utils/busuanzi";
 
 /**
  * Sanitizes a URL path to ensure it's a valid web path
@@ -8,7 +13,7 @@ import logger from "@/lib/logger";
  * @param path The path
  * @returns A sanitized version of the host and path
  */
-function sanitizeUrlPath(host: string, path: string): { host: string, path: string } {
+export function sanitizeUrlPath(host: string, path: string): { host: string, path: string } {
   // Check if host is empty (which happens with file:// URLs)
   if (!host) {
     logger.warn(`Invalid host detected: empty host with path ${path}`);
@@ -35,7 +40,72 @@ function sanitizeUrlPath(host: string, path: string): { host: string, path: stri
   return { host, path };
 }
 
-async function updatePagePV(host: string, path: string) {
+/**
+ * Get site unique visitor count
+ */
+export async function getSiteUVBeforeData(host: string, path: string): Promise<number> {
+  const siteKey = `site_uv_live:${host}`;
+  const siteUV = await kv.get(siteKey);
+  
+  if (!siteUV) {
+    logger.debug(`site_uv not found for host: https://${host}${path}`);
+    const siteUVData = await getBusuanziSiteUVData(host, path);
+    const siteUV = siteUVData ? siteUVData : 0;
+    return Number(siteUV);
+  } else {
+    logger.debug(
+      `site_uv found for host: https://${host}${path}, site_uv: ${siteUV}`
+    );
+    return Number(siteUV);
+  }
+}
+
+/**
+ * Get site page view count
+ */
+export async function getSitePVBeforeData(host: string, path: string): Promise<number> {
+  const siteKey = `site_pv_live:${host}`;
+  const sitePV = await kv.get(siteKey);
+  
+  if (!sitePV) {
+    logger.debug(`site_pv not found for host: https://${host}${path}`);
+    const sitePVData = await getBusuanziSitePVData(host);
+    const sitePV = sitePVData ? sitePVData : 0;
+    logger.debug(`site_pv_data: ${sitePVData}, site_pv: ${sitePV}`);
+    return Number(sitePV);
+  } else {
+    logger.debug(
+      `site_pv found for host: https://${host}${path}, site_pv: ${sitePV}`
+    );
+    return Number(sitePV);
+  }
+}
+
+/**
+ * Get page view count for a specific page
+ */
+export async function getPagePVBeforeData(host: string, path: string): Promise<number> {
+  const pageKey = `live_page_pv:${host}${path}`;
+  const pagePV = await kv.get(pageKey);
+  logger.debug(`page_pv: ${pagePV}, page_key: ${pageKey}`);
+
+  if (!pagePV) {
+    logger.debug(`page_pv not found for host: https://${host}${path}`);
+    const pagePVData = await getBusuanziPagePVData(host, path);
+    const pagePV = pagePVData ? pagePVData : 0;
+    return Number(pagePV);
+  } else {
+    logger.debug(
+      `page_pv found for host: https://${host}${path}, page_pv: ${pagePV}`
+    );
+    return Number(pagePV);
+  }
+}
+
+/**
+ * Update page view count
+ */
+export async function updatePagePV(host: string, path: string): Promise<number> {
   // Sanitize the URL components
   const sanitized = sanitizeUrlPath(host, path);
   host = sanitized.host;
@@ -58,7 +128,10 @@ async function updatePagePV(host: string, path: string) {
   return pagePV;
 }
 
-async function updateSitePV(host: string) {
+/**
+ * Update site page view count
+ */
+export async function updateSitePV(host: string): Promise<number> {
   // Sanitize the host
   const sanitized = sanitizeUrlPath(host, "");
   host = sanitized.host;
@@ -78,7 +151,10 @@ async function updateSitePV(host: string) {
   return sitePV;
 }
 
-async function updateSiteUV(host: string, ip: string) {
+/**
+ * Update site unique visitor count
+ */
+export async function updateSiteUV(host: string, ip: string): Promise<number> {
   // Sanitize the host
   const sanitized = sanitizeUrlPath(host, "");
   host = sanitized.host;
@@ -99,6 +175,4 @@ async function updateSiteUV(host: string, ip: string) {
   ]);
 
   return siteUV;
-}
-
-export { updatePagePV, updateSitePV, updateSiteUV };
+} 

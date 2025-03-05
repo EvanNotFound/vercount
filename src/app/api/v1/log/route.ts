@@ -1,11 +1,12 @@
-import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import {
   getPagePVBeforeData,
   getSitePVBeforeData,
   getSiteUVBeforeData,
-} from "@/lib/get-before-data";
-import { updatePagePV, updateSitePV, updateSiteUV } from "@/lib/update-data";
+  updatePagePV,
+  updateSitePV,
+  updateSiteUV
+} from "@/utils/counter";
 import { syncBusuanziData } from "@/utils/busuanzi";
 import logger from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
