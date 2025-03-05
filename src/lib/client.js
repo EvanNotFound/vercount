@@ -67,6 +67,17 @@ var visitorCounterCaller, visitorCounterDisplay;
         // Generate browser token
         const browserToken = generateBrowserToken();
         
+        // Validate URL before sending
+        const currentUrl = window.location.href;
+        let validUrl = currentUrl;
+        
+        // Check if it's a file:// URL or other non-http(s) protocol
+        if (!currentUrl.startsWith('http')) {
+          console.warn("Invalid URL protocol detected. Only HTTP and HTTPS are supported.");
+          // Use a fallback URL for local files to avoid polluting the KV store
+          validUrl = "https://local.file/invalid-protocol";
+        }
+        
         // Try to fetch with the token first
         try {
           const response = await fetch(apiUrl, {
@@ -76,7 +87,7 @@ var visitorCounterCaller, visitorCounterDisplay;
               "X-Browser-Token": browserToken
             },
             body: JSON.stringify({ 
-              url: window.location.href,
+              url: validUrl,
               token: browserToken
             }),
           });
@@ -95,7 +106,7 @@ var visitorCounterCaller, visitorCounterDisplay;
               "Content-Type": "application/json"
             },
             body: JSON.stringify({ 
-              url: window.location.href,
+              url: validUrl,
               token: browserToken // Still include token in body
             }),
           });

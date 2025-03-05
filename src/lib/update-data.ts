@@ -2,7 +2,45 @@ import kv from "@/lib/kv";
 import { EXPIRATION_TIME } from "@/lib/get-busuanzi-data";
 import logger from "@/lib/logger";
 
+/**
+ * Sanitizes a URL path to ensure it's a valid web path
+ * @param host The hostname
+ * @param path The path
+ * @returns A sanitized version of the host and path
+ */
+function sanitizeUrlPath(host: string, path: string): { host: string, path: string } {
+  // Check if host is empty (which happens with file:// URLs)
+  if (!host) {
+    logger.warn(`Invalid host detected: empty host with path ${path}`);
+    return { host: "invalid-host", path: "/invalid-path" };
+  }
+  
+  // Check if path starts with a drive letter (like /D:/)
+  if (/^\/[A-Za-z]:\//.test(path)) {
+    logger.warn(`Local file path detected: ${path}`);
+    return { host, path: "/invalid-local-path" };
+  }
+  
+  // Ensure path starts with a slash
+  if (!path.startsWith('/')) {
+    path = '/' + path;
+  }
+  
+  // Limit path length to prevent abuse
+  if (path.length > 200) {
+    logger.warn(`Path too long: ${path.substring(0, 50)}...`);
+    path = path.substring(0, 200);
+  }
+  
+  return { host, path };
+}
+
 export async function updatePagePV(host: string, path: string) {
+  // Sanitize the URL components
+  const sanitized = sanitizeUrlPath(host, path);
+  host = sanitized.host;
+  path = sanitized.path;
+  
   logger.debug(`Updating page_pv for host: https://${host}${path}`);
   const pageKey = `page_pv:${host}${path}`;
   const livePageKey = `live_page_pv:${host}${path}`;
@@ -21,6 +59,10 @@ export async function updatePagePV(host: string, path: string) {
 }
 
 export async function updateSitePV(host: string) {
+  // Sanitize the host
+  const sanitized = sanitizeUrlPath(host, "");
+  host = sanitized.host;
+  
   logger.debug(`Updating site_pv for host: https://${host}`);
   const siteKey = `site_pv:${host}`;
   const liveSiteKey = `site_pv_live:${host}`;
@@ -37,6 +79,10 @@ export async function updateSitePV(host: string) {
 }
 
 export async function updateSiteUV(host: string, ip: string) {
+  // Sanitize the host
+  const sanitized = sanitizeUrlPath(host, "");
+  host = sanitized.host;
+  
   logger.debug(`Updating site_uv for host: https://${host}`);
   const siteKey = `site_uv:${host}`;
   const liveSiteKey = `site_uv_live:${host}`;

@@ -23,6 +23,41 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: "Missing url" }, { status: 400 });
   }
 
+  // Validate URL format
+  try {
+    const url = new URL(data.url);
+    
+    // Check if it's a file:// URL or other non-http(s) protocol
+    if (!url.protocol.startsWith('http')) {
+      logger.warn(`Invalid URL protocol: ${url.protocol}`, { status: 400 });
+      return Response.json({ 
+        error: "Invalid URL protocol. Only HTTP and HTTPS are supported.",
+        site_uv: 0,
+        site_pv: 0,
+        page_pv: 0
+      }, { status: 200 }); // Return 200 with zeros to not break client
+    }
+    
+    // Check if host is empty
+    if (!url.host) {
+      logger.warn(`Invalid URL host: empty`, { status: 400 });
+      return Response.json({ 
+        error: "Invalid URL host",
+        site_uv: 0,
+        site_pv: 0,
+        page_pv: 0
+      }, { status: 200 }); // Return 200 with zeros to not break client
+    }
+  } catch (error) {
+    logger.warn(`Invalid URL format: ${data.url}`, { status: 400, error });
+    return Response.json({ 
+      error: "Invalid URL format",
+      site_uv: 0,
+      site_pv: 0,
+      page_pv: 0
+    }, { status: 200 }); // Return 200 with zeros to not break client
+  }
+
   // Check for browser token
   const browserToken = data.token || header.get("X-Browser-Token");
   if (!browserToken) {
