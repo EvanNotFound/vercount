@@ -230,7 +230,7 @@ export async function migratePagePV(host: string, path: string): Promise<number>
         await kv.expire(newPageKey, EXPIRATION_TIME);
         
         // Optionally, clear the old key after migration
-        // await kv.del(oldKey);
+        await kv.del(oldKey);
         
         return oldPVNum;
       }
@@ -297,7 +297,7 @@ export async function incrementPagePVWithMigration(host: string, path: string): 
         await kv.set(newPageKey, newPVNum);
         
         // Optionally, clear the old key after migration
-        // await kv.del(oldKey);
+        await kv.del(oldKey);
         
         await Promise.all([
           kv.expire(newPageKey, EXPIRATION_TIME),
