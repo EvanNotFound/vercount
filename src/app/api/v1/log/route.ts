@@ -5,7 +5,9 @@ import {
   fetchSiteUVHistory,
   incrementPagePV,
   incrementSitePV,
-  recordSiteUV
+  migratePagePV,
+  recordSiteUV,
+  incrementPagePVWithMigration,
 } from "@/utils/counter";
 import { notifyBusuanziService } from "@/utils/busuanzi";
 import logger from "@/lib/logger";
@@ -161,7 +163,8 @@ export async function POST(req: NextRequest) {
   const [siteUVBefore, sitePVBefore, pagePVBefore] = await Promise.all([
     fetchSiteUVHistory(host, path),
     fetchSitePVHistory(host, path),
-    fetchPagePVHistory(host, path),
+    // fetchPagePVHistory(host, path),
+    migratePagePV(host, path),
   ]);
 
   // logger.info(`Initial data`, {
@@ -173,7 +176,8 @@ export async function POST(req: NextRequest) {
   let [siteUVAfter, sitePVAfter, pagePVAfter] = await Promise.all([
     recordSiteUV(host, clientHost),
     incrementSitePV(host),
-    incrementPagePV(host, path),
+    // incrementPagePV(host, path),
+    incrementPagePVWithMigration(host, path),
   ]);
 
   siteUVAfter += siteUVBefore;
