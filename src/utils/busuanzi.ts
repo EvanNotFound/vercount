@@ -41,24 +41,25 @@ async function fetchBusuanziData(url: string, headers: any) {
  * @param path The path
  * @returns The site unique visitor count
  */
-async function fetchBusuanziSiteUV(host: string, path: string) {
+async function fetchBusuanziSiteUV(hostSanitized: string, hostOriginal: string) {
+	// Note: host and path are already sanitized by the caller
 	const headers = {
-		Referer: `https://${host}/`,
+		Referer: `https://${hostOriginal}/`,
 		Cookie: "busuanziId=89D15D1F66D2494F91FB315545BF9C2A",
 	};
 
 	const data = await fetchBusuanziData(BUSUANZI_URL, headers);
 	if (data) {
 		const siteUv = data.site_uv || 0;
-		await kv.set(`uv:busuanzi:site:${host}`, siteUv, { ex: EXPIRATION_TIME });
-		logger.debug(`UV data retrieved and stored for ${host}`);
+		await kv.set(`uv:busuanzi:site:${hostSanitized}`, siteUv, { ex: EXPIRATION_TIME });
+		logger.debug(`UV data retrieved and stored for ${hostSanitized}`);
 		return siteUv;
 	} else {
-		await kv.set(`uv:busuanzi:site:${host}`, 0, {
+		await kv.set(`uv:busuanzi:site:${hostSanitized}`, 0, {
 			ex: EXPIRATION_TIME,
 		});
 		logger.error(
-			`Max retries exceeded for ${host}. Defaulting UV values to 0.`
+			`Max retries exceeded for ${hostSanitized}. Defaulting UV values to 0.`
 		);
 	}
 }
@@ -68,24 +69,25 @@ async function fetchBusuanziSiteUV(host: string, path: string) {
  * @param host The hostname
  * @returns The site page view count
  */
-async function fetchBusuanziSitePV(host: string) {
+async function fetchBusuanziSitePV(hostSanitized: string, hostOriginal: string) {
+	// Note: host is already sanitized by the caller
 	const headers = {
-		Referer: `https://${host}/`,
+		Referer: `https://${hostOriginal}/`,
 		Cookie: "busuanziId=89D15D1F66D2494F91FB315545BF9C2A",
 	};
 
 	const data = await fetchBusuanziData(BUSUANZI_URL, headers);
 	if (data) {
 		const sitePv = data.site_pv || 0;
-		await kv.set(`pv:busuanzi:site:${host}`, sitePv, { ex: EXPIRATION_TIME });
-		logger.debug(`Site PV data retrieved and stored for ${host}`);
+		await kv.set(`pv:busuanzi:site:${hostSanitized}`, sitePv, { ex: EXPIRATION_TIME });
+		logger.debug(`Site PV data retrieved and stored for ${hostSanitized}`);
 		return sitePv;
 	} else {
-		await kv.set(`pv:busuanzi:site:${host}`, 0, {
+		await kv.set(`pv:busuanzi:site:${hostSanitized}`, 0, {
 			ex: EXPIRATION_TIME,
 		});
 		logger.error(
-			`Max retries exceeded for ${host}. Defaulting PV values to 0.`
+			`Max retries exceeded for ${hostSanitized}. Defaulting PV values to 0.`
 		);
 	}
 }
@@ -96,9 +98,10 @@ async function fetchBusuanziSitePV(host: string) {
  * @param path The path
  * @returns The page view count
  */
-async function fetchBusuanziPagePV(host: string, path: string) {
+async function fetchBusuanziPagePV(hostSanitized: string, pathSanitized: string, hostOriginal: string, pathOriginal: string) {
+	// Note: host and path are already sanitized by the caller
 	const headers = {
-		Referer: `https://${host}${path}`,
+		Referer: `https://${hostOriginal}${pathOriginal}`,
 		Cookie: "busuanziId=89D15D1F66D2494F91FB315545BF9C2A",
 	};
 
@@ -118,26 +121,26 @@ async function fetchBusuanziPagePV(host: string, path: string) {
 			dataNoSlashResult.page_pv || 0,
 			dataSlashResult.page_pv || 0
 		);
-		await kv.set(`pv:busuanzi:page:${host}:${path}`, pagePv, {
+		await kv.set(`pv:busuanzi:page:${hostSanitized}:${pathSanitized}`, pagePv, {
 			ex: EXPIRATION_TIME,
 		});
 		logger.debug(
-			`Page PV data retrieved and stored for ${host}${path}, ${pagePv}`
+			`Page PV data retrieved and stored for ${hostSanitized}${pathSanitized}, ${pagePv}`
 		);
 		return pagePv;
 	} else if (dataNoSlashResult || dataSlashResult) {
 		const pagePv = (dataNoSlashResult || dataSlashResult).page_pv || 0;
-		await kv.set(`pv:busuanzi:page:${host}:${path}`, pagePv, {
+		await kv.set(`pv:busuanzi:page:${hostSanitized}:${pathSanitized}`, pagePv, {
 			ex: EXPIRATION_TIME,
 		});
 		logger.debug(
-			`Page PV data retrieved and stored for ${host}${path}, ${pagePv}`
+			`Page PV data retrieved and stored for ${hostSanitized}${pathSanitized}, ${pagePv}`
 		);
 		return pagePv;
 	} else {
-		await kv.set(`pv:busuanzi:page:${host}:${path}`, 0, { ex: EXPIRATION_TIME });
+		await kv.set(`pv:busuanzi:page:${hostSanitized}:${pathSanitized}`, 0, { ex: EXPIRATION_TIME });
 		logger.error(
-			`Max retries exceeded for ${host}${path}. Defaulting Page PV values to 0.`
+			`Max retries exceeded for ${hostSanitized}${pathSanitized}. Defaulting Page PV values to 0.`
 		);
 		return 0;
 	}
@@ -148,9 +151,10 @@ async function fetchBusuanziPagePV(host: string, path: string) {
  * @param host The hostname
  * @param path The path
  */
-function notifyBusuanziService(host: string, path: string) {
+function notifyBusuanziService(hostOriginal: string, pathOriginal: string) {
+	// Note: host and path may not be sanitized here, as this function might be called directly
 	const headers = {
-		Referer: `https://${host}${path}`,
+		Referer: `https://${hostOriginal}${pathOriginal}`,
 		Cookie: "busuanziId=89D15D1F66D2494F91FB315545BF9C2A",
 	};
 
@@ -160,11 +164,11 @@ function notifyBusuanziService(host: string, path: string) {
 		headers,
 	})
 		.then(() => {
-			logger.debug(`Busuanzi sync request sent for: https://${host}${path}`);
+			logger.debug(`Busuanzi sync request sent for: https://${hostOriginal}${pathOriginal}`);
 		})
 		.catch((e) => {
 			logger.error(
-				`Busuanzi sync failed for: https://${host}${path}. Error: ${e}`
+				`Busuanzi sync failed for: https://${hostOriginal}${pathOriginal}. Error: ${e}`
 			);
 		});
 }
