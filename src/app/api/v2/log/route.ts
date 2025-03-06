@@ -7,7 +7,7 @@ import {
   incrementSitePV,
   recordSiteUV
 } from "@/utils/counter";
-import { syncBusuanziData } from "@/utils/busuanzi";
+import { notifyBusuanziService } from "@/utils/busuanzi";
 import logger from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -226,7 +226,7 @@ export async function POST(req: NextRequest) {
   });
 
   // Fire and forget
-  syncBusuanziData(host, path);
+  notifyBusuanziService(host, path);
 
   return Response.json({
     status: "success",
