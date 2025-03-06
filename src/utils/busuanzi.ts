@@ -1,7 +1,7 @@
 import kv from "@/lib/kv";
 import logger from "@/lib/logger";
+import { EXPIRATION_TIME } from "@/utils/counter";
 
-export const EXPIRATION_TIME = 60 * 60 * 24 * 30; 
 const MAX_RETRIES = 3;
 const BUSUANZI_URL =
 	"https://busuanzi.ibruce.info/busuanzi?jsonpCallback=BusuanziCallback_777487655111";

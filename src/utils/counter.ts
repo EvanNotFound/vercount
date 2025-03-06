@@ -1,11 +1,12 @@
 import kv from "@/lib/kv";
 import logger from "@/lib/logger";
-import { EXPIRATION_TIME } from "@/utils/busuanzi";
 import {
   getBusuanziPagePVData,
   getBusuanziSitePVData,
   getBusuanziSiteUVData,
 } from "@/utils/busuanzi";
+
+export const EXPIRATION_TIME = 60 * 60 * 24 * 30 * 3; 
 
 /**
  * Sanitizes a URL path to ensure it's a valid web path
