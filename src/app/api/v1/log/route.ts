@@ -1,11 +1,11 @@
 import { headers } from "next/headers";
 import {
-  getPagePVBeforeData,
-  getSitePVBeforeData,
-  getSiteUVBeforeData,
-  updatePagePV,
-  updateSitePV,
-  updateSiteUV
+  fetchPagePVHistory,
+  fetchSitePVHistory,
+  fetchSiteUVHistory,
+  incrementPagePV,
+  incrementSitePV,
+  recordSiteUV
 } from "@/utils/counter";
 import { syncBusuanziData } from "@/utils/busuanzi";
 import logger from "@/lib/logger";
@@ -51,9 +51,9 @@ export async function GET(req: Request) {
     
     // Get the counts without updating them
     const [siteUV, sitePV, pagePV] = await Promise.all([
-      getSiteUVBeforeData(host, path),
-      getSitePVBeforeData(host, path),
-      getPagePVBeforeData(host, path),
+      fetchSiteUVHistory(host, path),
+      fetchSitePVHistory(host, path),
+      fetchPagePVHistory(host, path),
     ]);
     
     logger.info(`Retrieved data for GET request`, {
@@ -159,9 +159,9 @@ export async function POST(req: NextRequest) {
   // logger.info(`Processing request`, { host, path, clientHost });
 
   const [siteUVBefore, sitePVBefore, pagePVBefore] = await Promise.all([
-    getSiteUVBeforeData(host, path),
-    getSitePVBeforeData(host, path),
-    getPagePVBeforeData(host, path),
+    fetchSiteUVHistory(host, path),
+    fetchSitePVHistory(host, path),
+    fetchPagePVHistory(host, path),
   ]);
 
   // logger.info(`Initial data`, {
@@ -171,9 +171,9 @@ export async function POST(req: NextRequest) {
   // });
 
   let [siteUVAfter, sitePVAfter, pagePVAfter] = await Promise.all([
-    updateSiteUV(host, clientHost),
-    updateSitePV(host),
-    updatePagePV(host, path),
+    recordSiteUV(host, clientHost),
+    incrementSitePV(host),
+    incrementPagePV(host, path),
   ]);
 
   siteUVAfter += siteUVBefore;

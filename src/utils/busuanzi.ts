@@ -6,6 +6,12 @@ const MAX_RETRIES = 3;
 const BUSUANZI_URL =
 	"https://busuanzi.ibruce.info/busuanzi?jsonpCallback=BusuanziCallback_777487655111";
 
+/**
+ * Fetches analytics data from Busuanzi service with retry logic
+ * @param url The Busuanzi service URL
+ * @param headers Request headers including referer
+ * @returns The parsed analytics data or null if failed
+ */
 async function fetchBusuanziData(url: string, headers: any) {
 	for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
 		try {
@@ -29,7 +35,13 @@ async function fetchBusuanziData(url: string, headers: any) {
 	return null;
 }
 
-async function getBusuanziSiteUVData(host: string, path: string) {
+/**
+ * Retrieves site unique visitor count from Busuanzi service
+ * @param host The hostname
+ * @param path The path
+ * @returns The site unique visitor count
+ */
+async function fetchBusuanziSiteUV(host: string, path: string) {
 	const headers = {
 		Referer: `https://${host}/`,
 		Cookie: "busuanziId=89D15D1F66D2494F91FB315545BF9C2A",
@@ -51,7 +63,12 @@ async function getBusuanziSiteUVData(host: string, path: string) {
 	}
 }
 
-async function getBusuanziSitePVData(host: string) {
+/**
+ * Retrieves site page view count from Busuanzi service
+ * @param host The hostname
+ * @returns The site page view count
+ */
+async function fetchBusuanziSitePV(host: string) {
 	const headers = {
 		Referer: `https://${host}/`,
 		Cookie: "busuanziId=89D15D1F66D2494F91FB315545BF9C2A",
@@ -73,7 +90,13 @@ async function getBusuanziSitePVData(host: string) {
 	}
 }
 
-async function getBusuanziPagePVData(host: string, path: string) {
+/**
+ * Retrieves page view count for a specific page from Busuanzi service
+ * @param host The hostname
+ * @param path The path
+ * @returns The page view count
+ */
+async function fetchBusuanziPagePV(host: string, path: string) {
 	const headers = {
 		Referer: `https://${host}${path}`,
 		Cookie: "busuanziId=89D15D1F66D2494F91FB315545BF9C2A",
@@ -120,7 +143,12 @@ async function getBusuanziPagePVData(host: string, path: string) {
 	}
 }
 
-function syncBusuanziData(host: string, path: string) {
+/**
+ * Sends a non-blocking request to Busuanzi to sync analytics data
+ * @param host The hostname
+ * @param path The path
+ */
+function notifyBusuanziService(host: string, path: string) {
 	const headers = {
 		Referer: `https://${host}${path}`,
 		Cookie: "busuanziId=89D15D1F66D2494F91FB315545BF9C2A",
@@ -142,8 +170,8 @@ function syncBusuanziData(host: string, path: string) {
 }
 
 export {
-	getBusuanziSiteUVData,
-	getBusuanziSitePVData,
-	getBusuanziPagePVData,
-	syncBusuanziData,
+	fetchBusuanziSiteUV,
+	fetchBusuanziSitePV,
+	fetchBusuanziPagePV,
+	notifyBusuanziService,
 };

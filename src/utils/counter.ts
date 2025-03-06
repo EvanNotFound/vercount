@@ -1,12 +1,19 @@
 import kv from "@/lib/kv";
 import logger from "@/lib/logger";
 import {
-  getBusuanziPagePVData,
-  getBusuanziSitePVData,
-  getBusuanziSiteUVData,
+  fetchBusuanziPagePV,
+  fetchBusuanziSitePV,
+  fetchBusuanziSiteUV,
 } from "@/utils/busuanzi";
 
-export const EXPIRATION_TIME = 60 * 60 * 24 * 30 * 3; 
+// Constants
+export const EXPIRATION_TIME = 60 * 60 * 24 * 30 * 3; // 3 months in seconds
+
+// Types
+export interface SanitizedUrl {
+  host: string;
+  path: string;
+}
 
 /**
  * Sanitizes a URL path to ensure it's a valid web path
@@ -14,7 +21,7 @@ export const EXPIRATION_TIME = 60 * 60 * 24 * 30 * 3;
  * @param path The path
  * @returns A sanitized version of the host and path
  */
-export function sanitizeUrlPath(host: string, path: string): { host: string, path: string } {
+export function sanitizeUrlPath(host: string, path: string): SanitizedUrl {
   // Check if host is empty (which happens with file:// URLs)
   if (!host) {
     logger.warn(`Invalid host detected: empty host with path ${path}`);
@@ -42,138 +49,182 @@ export function sanitizeUrlPath(host: string, path: string): { host: string, pat
 }
 
 /**
- * Get site unique visitor count
+ * Get site unique visitor count from historical data
+ * @param host The hostname
+ * @param path The path
+ * @returns The number of unique visitors
  */
-export async function getSiteUVBeforeData(host: string, path: string): Promise<number> {
-  const siteKey = `uv:busuanzi:site:${host}`;
-  const siteUV = await kv.get(siteKey);
-  
-  if (!siteUV) {
-    logger.debug(`Site UV not found for host: https://${host}${path}`);
-    const siteUVData = await getBusuanziSiteUVData(host, path);
-    const siteUV = siteUVData ? siteUVData : 0;
-    return Number(siteUV);
-  } else {
-    logger.debug(
-      `Site UV found for host: https://${host}${path}, site_uv: ${siteUV}`
-    );
-    return Number(siteUV);
+export async function fetchSiteUVHistory(host: string, path: string): Promise<number> {
+  try {
+    const siteKey = `uv:busuanzi:site:${host}`;
+    const siteUV = await kv.get(siteKey);
+    
+    if (!siteUV) {
+      logger.debug(`Site UV not found for host: https://${host}${path}`);
+      const siteUVData = await fetchBusuanziSiteUV(host, path);
+      return Number(siteUVData || 0);
+    } else {
+      logger.debug(
+        `Site UV found for host: https://${host}${path}, site_uv: ${siteUV}`
+      );
+      return Number(siteUV);
+    }
+  } catch (error) {
+    logger.error(`Error getting site UV data: ${error}`);
+    return 0;
   }
 }
 
 /**
- * Get site page view count
+ * Get site page view count from historical data
+ * @param host The hostname
+ * @param path The path
+ * @returns The number of site page views
  */
-export async function getSitePVBeforeData(host: string, path: string): Promise<number> {
-  const siteKey = `pv:busuanzi:site:${host}`;
-  const sitePV = await kv.get(siteKey);
-  
-  if (!sitePV) {
-    logger.debug(`Site PV not found for host: https://${host}${path}`);
-    const sitePVData = await getBusuanziSitePVData(host);
-    const sitePV = sitePVData ? sitePVData : 0;
-    logger.debug(`Site PV data: ${sitePVData}, site_pv: ${sitePV}`);
-    return Number(sitePV);
-  } else {
-    logger.debug(
-      `Site PV found for host: https://${host}${path}, site_pv: ${sitePV}`
-    );
-    return Number(sitePV);
+export async function fetchSitePVHistory(host: string, path: string): Promise<number> {
+  try {
+    const siteKey = `pv:busuanzi:site:${host}`;
+    const sitePV = await kv.get(siteKey);
+    
+    if (!sitePV) {
+      logger.debug(`Site PV not found for host: https://${host}${path}`);
+      const sitePVData = await fetchBusuanziSitePV(host);
+      logger.debug(`Site PV data: ${sitePVData}, site_pv: ${sitePVData || 0}`);
+      return Number(sitePVData || 0);
+    } else {
+      logger.debug(
+        `Site PV found for host: https://${host}${path}, site_pv: ${sitePV}`
+      );
+      return Number(sitePV);
+    }
+  } catch (error) {
+    logger.error(`Error getting site PV data: ${error}`);
+    return 0;
   }
 }
 
 /**
- * Get page view count for a specific page
+ * Get page view count for a specific page from historical data
+ * @param host The hostname
+ * @param path The path
+ * @returns The number of page views
  */
-export async function getPagePVBeforeData(host: string, path: string): Promise<number> {
-  const pageKey = `pv:busuanzi:page:${host}:${path}`;
-  const pagePV = await kv.get(pageKey);
-  logger.debug(`Page PV: ${pagePV}, page_key: ${pageKey}`);
+export async function fetchPagePVHistory(host: string, path: string): Promise<number> {
+  try {
+    const pageKey = `pv:busuanzi:page:${host}:${path}`;
+    const pagePV = await kv.get(pageKey);
+    logger.debug(`Page PV: ${pagePV}, page_key: ${pageKey}`);
 
-  if (!pagePV) {
-    logger.debug(`Page PV not found for host: https://${host}${path}`);
-    const pagePVData = await getBusuanziPagePVData(host, path);
-    const pagePV = pagePVData ? pagePVData : 0;
-    return Number(pagePV);
-  } else {
-    logger.debug(
-      `Page PV found for host: https://${host}${path}, page_pv: ${pagePV}`
-    );
-    return Number(pagePV);
+    if (!pagePV) {
+      logger.debug(`Page PV not found for host: https://${host}${path}`);
+      const pagePVData = await fetchBusuanziPagePV(host, path);
+      return Number(pagePVData || 0);
+    } else {
+      logger.debug(
+        `Page PV found for host: https://${host}${path}, page_pv: ${pagePV}`
+      );
+      return Number(pagePV);
+    }
+  } catch (error) {
+    logger.error(`Error getting page PV data: ${error}`);
+    return 0;
   }
 }
 
 /**
- * Update page view count
+ * Increment and return page view count
+ * @param host The hostname
+ * @param path The path
+ * @returns The updated page view count
  */
-export async function updatePagePV(host: string, path: string): Promise<number> {
-  // Sanitize the URL components
-  const sanitized = sanitizeUrlPath(host, path);
-  host = sanitized.host;
-  path = sanitized.path;
-  
-  logger.debug(`Updating page PV for host: https://${host}${path}`);
-  const pageKey = `pv:local:page:${host}:${path}`;
-  const busuanziPageKey = `pv:busuanzi:page:${host}:${path}`;
+export async function incrementPagePV(host: string, path: string): Promise<number> {
+  try {
+    // Sanitize the URL components
+    const sanitized = sanitizeUrlPath(host, path);
+    host = sanitized.host;
+    path = sanitized.path;
+    
+    logger.debug(`Updating page PV for host: https://${host}${path}`);
+    const pageKey = `pv:local:page:${host}:${path}`;
+    const busuanziPageKey = `pv:busuanzi:page:${host}:${path}`;
 
-  const pagePV = await kv.incr(pageKey);
-  logger.debug(
-    `Page PV updated for host: https://${host}${path}, page_pv: ${pagePV}`,
-  );
+    const pagePV = await kv.incr(pageKey);
+    logger.debug(
+      `Page PV updated for host: https://${host}${path}, page_pv: ${pagePV}`,
+    );
 
-  await Promise.all([
-    kv.expire(pageKey, EXPIRATION_TIME),
-    kv.expire(busuanziPageKey, EXPIRATION_TIME),
-  ]);
+    await Promise.all([
+      kv.expire(pageKey, EXPIRATION_TIME),
+      kv.expire(busuanziPageKey, EXPIRATION_TIME),
+    ]);
 
-  return pagePV;
+    return pagePV;
+  } catch (error) {
+    logger.error(`Error updating page PV: ${error}`);
+    return 0;
+  }
 }
 
 /**
- * Update site page view count
+ * Increment and return site page view count
+ * @param host The hostname
+ * @returns The updated site page view count
  */
-export async function updateSitePV(host: string): Promise<number> {
-  // Sanitize the host
-  const sanitized = sanitizeUrlPath(host, "");
-  host = sanitized.host;
-  
-  logger.debug(`Updating site PV for host: https://${host}`);
-  const siteKey = `pv:local:site:${host}`;
-  const busuanziSiteKey = `pv:busuanzi:site:${host}`;
+export async function incrementSitePV(host: string): Promise<number> {
+  try {
+    // Sanitize the host
+    const sanitized = sanitizeUrlPath(host, "");
+    host = sanitized.host;
+    
+    logger.debug(`Updating site PV for host: https://${host}`);
+    const siteKey = `pv:local:site:${host}`;
+    const busuanziSiteKey = `pv:busuanzi:site:${host}`;
 
-  const sitePV = await kv.incr(siteKey);
-  logger.debug(`Site PV updated for host: https://${host}, site_pv: ${sitePV}`);
+    const sitePV = await kv.incr(siteKey);
+    logger.debug(`Site PV updated for host: https://${host}, site_pv: ${sitePV}`);
 
-  await Promise.all([
-    kv.expire(siteKey, EXPIRATION_TIME),
-    kv.expire(busuanziSiteKey, EXPIRATION_TIME),
-  ]);
+    await Promise.all([
+      kv.expire(siteKey, EXPIRATION_TIME),
+      kv.expire(busuanziSiteKey, EXPIRATION_TIME),
+    ]);
 
-  return sitePV;
+    return sitePV;
+  } catch (error) {
+    logger.error(`Error updating site PV: ${error}`);
+    return 0;
+  }
 }
 
 /**
- * Update site unique visitor count
+ * Record unique visitor and return updated count
+ * @param host The hostname
+ * @param ip The visitor's IP address
+ * @returns The updated unique visitor count
  */
-export async function updateSiteUV(host: string, ip: string): Promise<number> {
-  // Sanitize the host
-  const sanitized = sanitizeUrlPath(host, "");
-  host = sanitized.host;
-  
-  logger.debug(`Updating site UV for host: https://${host}`);
-  const siteKey = `uv:local:site:${host}`;
-  const busuanziSiteKey = `uv:busuanzi:site:${host}`;
+export async function recordSiteUV(host: string, ip: string): Promise<number> {
+  try {
+    // Sanitize the host
+    const sanitized = sanitizeUrlPath(host, "");
+    host = sanitized.host;
+    
+    logger.debug(`Updating site UV for host: https://${host}`);
+    const siteKey = `uv:local:site:${host}`;
+    const busuanziSiteKey = `uv:busuanzi:site:${host}`;
 
-  const siteUVKey = await kv.sadd(siteKey, ip);
-  const siteUV = await kv.scard(siteKey);
-  logger.debug(
-    `Site UV updated for host: https://${host}, site_uv: ${siteUV}, site_uv_key: ${siteUVKey}`,
-  );
+    const siteUVKey = await kv.sadd(siteKey, ip);
+    const siteUV = await kv.scard(siteKey);
+    logger.debug(
+      `Site UV updated for host: https://${host}, site_uv: ${siteUV}, site_uv_key: ${siteUVKey}`,
+    );
 
-  await Promise.all([
-    kv.expire(siteKey, EXPIRATION_TIME),
-    kv.expire(busuanziSiteKey, EXPIRATION_TIME),
-  ]);
+    await Promise.all([
+      kv.expire(siteKey, EXPIRATION_TIME),
+      kv.expire(busuanziSiteKey, EXPIRATION_TIME),
+    ]);
 
-  return siteUV;
+    return siteUV;
+  } catch (error) {
+    logger.error(`Error updating site UV: ${error}`);
+    return 0;
+  }
 } 
