@@ -5,9 +5,9 @@ import {
   fetchSiteUVHistory,
   incrementPagePV,
   incrementSitePV,
-  migratePagePV,
+  // migratePagePV,
   recordSiteUV,
-  incrementPagePVWithMigration,
+  // incrementPagePVWithMigration,
 } from "@/utils/counter";
 import { notifyBusuanziService } from "@/utils/busuanzi";
 import logger from "@/lib/logger";

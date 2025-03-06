@@ -131,197 +131,197 @@ export async function fetchPagePVHistory(host: string, path: string): Promise<nu
   }
 }
 
-/**
- * Helper function to generate possible old path formats from a new sanitized path
- * @param path The new sanitized path (with leading slash)
- * @returns Array of possible old path formats
- */
-function generateOldPathFormats(path: string): string[] {
-  // Remove leading slash if it exists
-  const withoutLeadingSlash = path.startsWith('/') ? path.substring(1) : path;
+// /**
+//  * Helper function to generate possible old path formats from a new sanitized path
+//  * @param path The new sanitized path (with leading slash)
+//  * @returns Array of possible old path formats
+//  */
+// function generateOldPathFormats(path: string): string[] {
+//   // Remove leading slash if it exists
+//   const withoutLeadingSlash = path.startsWith('/') ? path.substring(1) : path;
   
-  // Generate variations
-  const possibleFormats = [
-    withoutLeadingSlash,                                  // /about -> about
-    withoutLeadingSlash.replace(/\//g, ':'),             // /category/wordpress -> category:wordpress
-    withoutLeadingSlash + ':',                           // /about -> about:
-    withoutLeadingSlash.replace(/\//g, ':') + ':',       // /category/wordpress -> category:wordpress:
-  ];
+//   // Generate variations
+//   const possibleFormats = [
+//     withoutLeadingSlash,                                  // /about -> about
+//     withoutLeadingSlash.replace(/\//g, ':'),             // /category/wordpress -> category:wordpress
+//     withoutLeadingSlash + ':',                           // /about -> about:
+//     withoutLeadingSlash.replace(/\//g, ':') + ':',       // /category/wordpress -> category:wordpress:
+//   ];
   
-  // Handle index.html variations
-  if (path.endsWith('/')) {
-    possibleFormats.push(withoutLeadingSlash + 'index.html');  // /friends/ -> friends/index.html
-    possibleFormats.push(withoutLeadingSlash.replace(/\/$/, '') + ':index.html'); // /friends/ -> friends:index.html
-    possibleFormats.push(withoutLeadingSlash.replace(/\/$/, '') + ':index'); // /friends/ -> friends:index
-    possibleFormats.push(withoutLeadingSlash.replace(/\/$/, '') + 'index'); // /friends/ -> friendsindex
-  } else {
-    possibleFormats.push(withoutLeadingSlash + '/index.html'); // /friends -> friends/index.html
-    possibleFormats.push(withoutLeadingSlash + ':index.html'); // /friends -> friends:index.html
-    possibleFormats.push(withoutLeadingSlash + ':index'); // /friends -> friends:index
-    possibleFormats.push(withoutLeadingSlash + 'index'); // /friends -> friendsindex
-  }
+//   // Handle index.html variations
+//   if (path.endsWith('/')) {
+//     possibleFormats.push(withoutLeadingSlash + 'index.html');  // /friends/ -> friends/index.html
+//     possibleFormats.push(withoutLeadingSlash.replace(/\/$/, '') + ':index.html'); // /friends/ -> friends:index.html
+//     possibleFormats.push(withoutLeadingSlash.replace(/\/$/, '') + ':index'); // /friends/ -> friends:index
+//     possibleFormats.push(withoutLeadingSlash.replace(/\/$/, '') + 'index'); // /friends/ -> friendsindex
+//   } else {
+//     possibleFormats.push(withoutLeadingSlash + '/index.html'); // /friends -> friends/index.html
+//     possibleFormats.push(withoutLeadingSlash + ':index.html'); // /friends -> friends:index.html
+//     possibleFormats.push(withoutLeadingSlash + ':index'); // /friends -> friends:index
+//     possibleFormats.push(withoutLeadingSlash + 'index'); // /friends -> friendsindex
+//   }
   
-  // Handle special case for root path
-  if (path === '/' || path === '') {
-    possibleFormats.push('index');
-    possibleFormats.push('index:');
-    possibleFormats.push('index.html');
-  }
+//   // Handle special case for root path
+//   if (path === '/' || path === '') {
+//     possibleFormats.push('index');
+//     possibleFormats.push('index:');
+//     possibleFormats.push('index.html');
+//   }
   
-  // Handle paths that might end with "index" already
-  if (withoutLeadingSlash.endsWith('index')) {
-    // Add variations without the index suffix
-    const withoutIndex = withoutLeadingSlash.replace(/index$/, '');
-    if (withoutIndex) {
-      possibleFormats.push(withoutIndex.replace(/\/$/, ''));
-      possibleFormats.push(withoutIndex.replace(/\/$/, '') + ':');
-    }
-  }
+//   // Handle paths that might end with "index" already
+//   if (withoutLeadingSlash.endsWith('index')) {
+//     // Add variations without the index suffix
+//     const withoutIndex = withoutLeadingSlash.replace(/index$/, '');
+//     if (withoutIndex) {
+//       possibleFormats.push(withoutIndex.replace(/\/$/, ''));
+//       possibleFormats.push(withoutIndex.replace(/\/$/, '') + ':');
+//     }
+//   }
   
-  // Remove duplicates using Array.filter instead of Set
-  return possibleFormats.filter((value, index, self) => self.indexOf(value) === index);
-}
+//   // Remove duplicates using Array.filter instead of Set
+//   return possibleFormats.filter((value, index, self) => self.indexOf(value) === index);
+// }
 
-/**
- * Temporary migration function to handle both old and new key formats for page PV
- * Handles various old path formats including colons instead of slashes
- * @param host The hostname
- * @param path The path (with leading slash in new format)
- * @returns The combined PV count from both old and new formats
- */
-export async function migratePagePV(host: string, path: string): Promise<number> {
-  try {
-    // Sanitize the URL components for the new format
-    const sanitized = sanitizeUrlPath(host, path);
-    const sanitizedHost = sanitized.host;
-    const sanitizedPath = sanitized.path;
+// /**
+//  * Temporary migration function to handle both old and new key formats for page PV
+//  * Handles various old path formats including colons instead of slashes
+//  * @param host The hostname
+//  * @param path The path (with leading slash in new format)
+//  * @returns The combined PV count from both old and new formats
+//  */
+// export async function migratePagePV(host: string, path: string): Promise<number> {
+//   try {
+//     // Sanitize the URL components for the new format
+//     const sanitized = sanitizeUrlPath(host, path);
+//     const sanitizedHost = sanitized.host;
+//     const sanitizedPath = sanitized.path;
     
-    // Create key for new format
-    const newPageKey = `pv:local:page:${sanitizedHost}:${sanitizedPath}`;
+//     // Create key for new format
+//     const newPageKey = `pv:local:page:${sanitizedHost}:${sanitizedPath}`;
     
-    // Generate possible old format keys
-    const oldPathFormats = generateOldPathFormats(sanitizedPath);
-    const oldPageKeys = oldPathFormats.map(oldPath => `pv:local:page:${sanitizedHost}:${oldPath}`);
-    const busuanziOldPageKeys = oldPathFormats.map(oldPath => `pv:busuanzi:page:${sanitizedHost}:${oldPath}`);
+//     // Generate possible old format keys
+//     const oldPathFormats = generateOldPathFormats(sanitizedPath);
+//     const oldPageKeys = oldPathFormats.map(oldPath => `pv:local:page:${sanitizedHost}:${oldPath}`);
+//     const busuanziOldPageKeys = oldPathFormats.map(oldPath => `pv:busuanzi:page:${sanitizedHost}:${oldPath}`);
     
-    logger.debug(`Checking new key format: ${newPageKey}`);
-    logger.debug(`Checking old key formats: ${oldPageKeys.join(', ')}`);
+//     logger.debug(`Checking new key format: ${newPageKey}`);
+//     logger.debug(`Checking old key formats: ${oldPageKeys.join(', ')}`);
     
-    // Get value from new key
-    const newPV = await kv.get(newPageKey);
-    const newPVNum = Number(newPV || 0);
+//     // Get value from new key
+//     const newPV = await kv.get(newPageKey);
+//     const newPVNum = Number(newPV || 0);
     
-    // If new format already has data, return it
-    if (newPVNum > 0) {
-      logger.debug(`Found PV count in new format: ${newPVNum}`);
-      return newPVNum;
-    }
+//     // If new format already has data, return it
+//     if (newPVNum > 0) {
+//       logger.debug(`Found PV count in new format: ${newPVNum}`);
+//       return newPVNum;
+//     }
     
-    // Check all old format keys
-    for (const oldKey of [...oldPageKeys, ...busuanziOldPageKeys]) {
-      const oldPV = await kv.get(oldKey);
-      const oldPVNum = Number(oldPV || 0);
+//     // Check all old format keys
+//     for (const oldKey of [...oldPageKeys, ...busuanziOldPageKeys]) {
+//       const oldPV = await kv.get(oldKey);
+//       const oldPVNum = Number(oldPV || 0);
       
-      if (oldPVNum > 0) {
-        logger.info(`Found old format PV data (${oldPVNum}) at key: ${oldKey}, migrating to new format`);
+//       if (oldPVNum > 0) {
+//         logger.info(`Found old format PV data (${oldPVNum}) at key: ${oldKey}, migrating to new format`);
         
-        // Migrate data to new format
-        await kv.set(newPageKey, oldPVNum);
-        await kv.expire(newPageKey, EXPIRATION_TIME);
+//         // Migrate data to new format
+//         await kv.set(newPageKey, oldPVNum);
+//         await kv.expire(newPageKey, EXPIRATION_TIME);
         
-        // Optionally, clear the old key after migration
-        await kv.del(oldKey);
+//         // Optionally, clear the old key after migration
+//         // await kv.del(oldKey);
         
-        return oldPVNum;
-      }
-    }
+//         return oldPVNum;
+//       }
+//     }
     
-    // No data found in any format
-    logger.debug(`No PV data found in any format for: ${sanitizedHost}${sanitizedPath}`);
-    return 0;
-  } catch (error) {
-    logger.error(`Error during PV migration: ${error}`);
-    return 0;
-  }
-}
+//     // No data found in any format
+//     logger.debug(`No PV data found in any format for: ${sanitizedHost}${sanitizedPath}`);
+//     return 0;
+//   } catch (error) {
+//     logger.error(`Error during PV migration: ${error}`);
+//     return 0;
+//   }
+// }
 
-/**
- * Temporary function to increment page PV while checking both old and new key formats
- * Handles various old path formats including colons instead of slashes
- * @param host The hostname
- * @param path The path
- * @returns The updated page PV count
- */
-export async function incrementPagePVWithMigration(host: string, path: string): Promise<number> {
-  try {
-    // Sanitize the URL components
-    const sanitized = sanitizeUrlPath(host, path);
-    const sanitizedHost = sanitized.host;
-    const sanitizedPath = sanitized.path;
+// /**
+//  * Temporary function to increment page PV while checking both old and new key formats
+//  * Handles various old path formats including colons instead of slashes
+//  * @param host The hostname
+//  * @param path The path
+//  * @returns The updated page PV count
+//  */
+// export async function incrementPagePVWithMigration(host: string, path: string): Promise<number> {
+//   try {
+//     // Sanitize the URL components
+//     const sanitized = sanitizeUrlPath(host, path);
+//     const sanitizedHost = sanitized.host;
+//     const sanitizedPath = sanitized.path;
     
-    // Create key for new format
-    const newPageKey = `pv:local:page:${sanitizedHost}:${sanitizedPath}`;
-    const newBusuanziPageKey = `pv:busuanzi:page:${sanitizedHost}:${sanitizedPath}`;
+//     // Create key for new format
+//     const newPageKey = `pv:local:page:${sanitizedHost}:${sanitizedPath}`;
+//     const newBusuanziPageKey = `pv:busuanzi:page:${sanitizedHost}:${sanitizedPath}`;
     
-    // Generate possible old format keys
-    const oldPathFormats = generateOldPathFormats(sanitizedPath);
-    const oldPageKeys = oldPathFormats.map(oldPath => `pv:local:page:${sanitizedHost}:${oldPath}`);
-    const busuanziOldPageKeys = oldPathFormats.map(oldPath => `pv:busuanzi:page:${sanitizedHost}:${oldPath}`);
+//     // Generate possible old format keys
+//     const oldPathFormats = generateOldPathFormats(sanitizedPath);
+//     const oldPageKeys = oldPathFormats.map(oldPath => `pv:local:page:${sanitizedHost}:${oldPath}`);
+//     const busuanziOldPageKeys = oldPathFormats.map(oldPath => `pv:busuanzi:page:${sanitizedHost}:${oldPath}`);
     
-    logger.debug(`Incrementing PV with migration for: https://${sanitizedHost}${sanitizedPath}`);
+//     logger.debug(`Incrementing PV with migration for: https://${sanitizedHost}${sanitizedPath}`);
     
-    // Check if new format already has data
-    const newPV = await kv.get(newPageKey);
-    if (newPV) {
-      // New format already has data, just increment it
-      const pagePV = await kv.incr(newPageKey);
-      await Promise.all([
-        kv.expire(newPageKey, EXPIRATION_TIME),
-        kv.expire(newBusuanziPageKey, EXPIRATION_TIME)
-      ]);
+//     // Check if new format already has data
+//     const newPV = await kv.get(newPageKey);
+//     if (newPV) {
+//       // New format already has data, just increment it
+//       const pagePV = await kv.incr(newPageKey);
+//       await Promise.all([
+//         kv.expire(newPageKey, EXPIRATION_TIME),
+//         kv.expire(newBusuanziPageKey, EXPIRATION_TIME)
+//       ]);
       
-      logger.debug(`Page PV updated for new format: ${pagePV}`);
-      return pagePV;
-    }
+//       logger.debug(`Page PV updated for new format: ${pagePV}`);
+//       return pagePV;
+//     }
     
-    // Check all old format keys
-    for (const oldKey of [...oldPageKeys, ...busuanziOldPageKeys]) {
-      const oldPV = await kv.get(oldKey);
-      const oldPVNum = Number(oldPV || 0);
+//     // Check all old format keys
+//     for (const oldKey of [...oldPageKeys, ...busuanziOldPageKeys]) {
+//       const oldPV = await kv.get(oldKey);
+//       const oldPVNum = Number(oldPV || 0);
       
-      if (oldPVNum > 0) {
-        logger.info(`Found old format PV data (${oldPVNum}) at key: ${oldKey}, migrating to new format`);
+//       if (oldPVNum > 0) {
+//         logger.info(`Found old format PV data (${oldPVNum}) at key: ${oldKey}, migrating to new format`);
         
-        // Set the new key with the old value + 1
-        const newPVNum = oldPVNum + 1;
-        await kv.set(newPageKey, newPVNum);
+//         // Set the new key with the old value + 1
+//         const newPVNum = oldPVNum + 1;
+//         await kv.set(newPageKey, newPVNum);
         
-        // Optionally, clear the old key after migration
-        await kv.del(oldKey);
+//         // Optionally, clear the old key after migration
+//         await kv.del(oldKey);
         
-        await Promise.all([
-          kv.expire(newPageKey, EXPIRATION_TIME),
-          kv.expire(newBusuanziPageKey, EXPIRATION_TIME)
-        ]);
+//         await Promise.all([
+//           kv.expire(newPageKey, EXPIRATION_TIME),
+//           kv.expire(newBusuanziPageKey, EXPIRATION_TIME)
+//         ]);
         
-        return newPVNum;
-      }
-    }
+//         return newPVNum;
+//       }
+//     }
     
-    // No old data found, just increment the new format
-    const pagePV = await kv.incr(newPageKey);
-    await Promise.all([
-      kv.expire(newPageKey, EXPIRATION_TIME),
-      kv.expire(newBusuanziPageKey, EXPIRATION_TIME)
-    ]);
+//     // No old data found, just increment the new format
+//     const pagePV = await kv.incr(newPageKey);
+//     await Promise.all([
+//       kv.expire(newPageKey, EXPIRATION_TIME),
+//       kv.expire(newBusuanziPageKey, EXPIRATION_TIME)
+//     ]);
     
-    logger.debug(`Page PV updated for new format: ${pagePV}`);
-    return pagePV;
-  } catch (error) {
-    logger.error(`Error incrementing page PV with migration: ${error}`);
-    return 0;
-  }
-}
+//     logger.debug(`Page PV updated for new format: ${pagePV}`);
+//     return pagePV;
+//   } catch (error) {
+//     logger.error(`Error incrementing page PV with migration: ${error}`);
+//     return 0;
+//   }
+// }
 
 /**
  * Increment and return page view count

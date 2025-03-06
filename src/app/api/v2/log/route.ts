@@ -6,8 +6,8 @@ import {
   incrementPagePV,
   incrementSitePV,
   recordSiteUV,
-  migratePagePV,
-  incrementPagePVWithMigration,
+  // migratePagePV,
+  // incrementPagePVWithMigration,
 } from "@/utils/counter";
 import { notifyBusuanziService } from "@/utils/busuanzi";
 import logger from "@/lib/logger";
