@@ -201,15 +201,15 @@ export async function POST(req: NextRequest) {
     Promise.all([
       fetchSiteUVHistory(host, path),
       fetchSitePVHistory(host, path),
-      // fetchPagePVHistory(host, path),
-      migratePagePV(host, path), // Use migration function to check both old and new formats
+      fetchPagePVHistory(host, path),
+      // migratePagePV(host, path), // Use migration function to check both old and new formats
     ]),
     // Update counts - use incrementPagePVWithMigration instead of incrementPagePV
     Promise.all([
       recordSiteUV(host, clientHost),
       incrementSitePV(host),
-      // incrementPagePV(host, path),
-      incrementPagePVWithMigration(host, path), // Use migration function to handle both formats
+      incrementPagePV(host, path),
+      // incrementPagePVWithMigration(host, path), // Use migration function to handle both formats
     ])
   ]);
 
