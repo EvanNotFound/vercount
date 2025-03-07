@@ -41,7 +41,7 @@ export default function RootLayout({
 		<html lang="en" className="scroll-smooth dark">
 			<body className={inter.className + " " + sora.className}>
 				<Providers>
-          <Header />
+					<Header />
 					{children}
 					<Footer />
 					<Toaster />

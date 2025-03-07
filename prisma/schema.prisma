@@ -51,8 +51,13 @@ model User {
   email         String?   @unique
   emailVerified DateTime? @map("email_verified")
   image         String?
+  role          UserRole  @default(USER)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  
   accounts      Account[]
   sessions      Session[]
+  domains       Domain[]
 
   @@map("user")
 }
@@ -64,4 +69,41 @@ model VerificationToken {
 
   @@unique([identifier, token])
   @@map("verification_token")
+}
+
+// Domain model for domain verification and ownership
+model Domain {
+  id               String   @id @default(cuid())
+  name             String   @unique
+  verified         Boolean  @default(false)
+  verificationCode String   @unique @default(cuid()) @map("verification_code")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+  
+  // Track monitored pages (paths only, counts stored in Redis)
+  monitoredPages   MonitoredPage[]
+  
+  userId           String   @map("user_id")
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("domain")
+}
+
+// Monitored pages for a domain (we only store the paths, not the counts)
+model MonitoredPage {
+  id        String   @id @default(cuid())
+  path      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  domainId  String   @map("domain_id")
+  domain    Domain   @relation(fields: [domainId], references: [id], onDelete: Cascade)
+
+  @@unique([domainId, path])
+  @@map("monitored_page")
+}
+
+enum UserRole {
+  USER
+  ADMIN
 }

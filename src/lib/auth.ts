@@ -5,16 +5,6 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "./prisma";
 import { Session } from "next-auth";
 
-// Extend the Session type to include user.id
-interface ExtendedSession extends Session {
-  user: {
-    id?: string;
-    name?: string | null;
-    email?: string | null;
-    image?: string | null;
-  };
-}
-
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   session: {
@@ -34,11 +24,14 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async session({ session, token }) {
-      const extendedSession = session as ExtendedSession;
-      if (token && extendedSession.user) {
-        extendedSession.user.id = token.sub as string;
+      if (token && session.user) {
+        session.user.id = token.sub as string;
+        // If you add role in the future
+        // if (token.role) {
+        //   session.user.role = token.role;
+        // }
       }
-      return extendedSession;
+      return session;
     },
   },
   pages: {
