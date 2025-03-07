@@ -3,11 +3,13 @@ import { Inter, Sora } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { Providers } from "@/app/providers";
-import Header from "@/components/header";
-import Footer from "@/components/footer";
+import { GeistMono } from 'geist/font/mono';
 
-const inter = Inter({ subsets: ["latin"] });
-const sora = Sora({ subsets: ["latin"] });
+
+
+const sora = Sora({ subsets: ["latin"],
+	variable: "--font-sora",
+ });
 
 export const viewport = {
 	colorScheme: "light",
@@ -39,7 +41,7 @@ export default function RootLayout({
 }) {
 	return (
 		<html lang="en" className="scroll-smooth dark">
-			<body className={inter.className + " " + sora.className}>
+			<body className={`${GeistMono.variable} ${sora.variable} font-sans`}>
 				<Providers>
 					{children}
 					<Toaster />

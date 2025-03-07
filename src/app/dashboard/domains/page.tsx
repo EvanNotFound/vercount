@@ -9,8 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { HomeIcon, Globe } from "lucide-react";
+import { HomeIcon, Globe, ArrowRight } from "lucide-react";
 import DashboardHeader from "@/components/dashboard/dashboard-header";
+import { Separator } from "@/components/ui/separator";
 
 // Types
 interface Domain {
@@ -134,46 +135,40 @@ export default function DomainsPage() {
       return;
     }
 
-    if (!domain.verified) {
-      // For unverified domains, try to verify via DNS
-      const verifyPromise = () => 
-        fetch("/api/domains/verify", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            domainId: domain.id,
-            verificationCode: domain.verificationCode,
-          }),
-        })
-        .then(async res => {
-          const data = await res.json();
-          if (!res.ok) {
-            throw new Error(data.message || "Verification failed");
-          }
-          if (data.status !== "success") {
-            throw new Error(data.message || "Verification failed");
-          }
-          return data;
-        });
-      
-      toast.promise(verifyPromise, {
-        loading: "Checking DNS records...",
-        success: (data) => {
-          fetchDomains(); // Refresh the domains list
-          return data.message || "Domain verified successfully!";
+    // For unverified domains, try to verify via DNS
+    const verifyPromise = () => 
+      fetch("/api/domains/verify", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-        error: (err) => {
-          console.error("Verification error:", err);
-          return err.message || "Failed to verify domain";
-        },
+        body: JSON.stringify({
+          domainId: domain.id,
+          verificationCode: domain.verificationCode,
+        }),
+      })
+      .then(async res => {
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.message || "Verification failed");
+        }
+        if (data.status !== "success") {
+          throw new Error(data.message || "Verification failed");
+        }
+        return data;
       });
-    } else {
-      // For verified domains, just refresh the data
-      fetchDomains();
-      toast.success("Domain data refreshed");
-    }
+    
+    toast.promise(verifyPromise, {
+      loading: "Checking DNS records...",
+      success: (data) => {
+        fetchDomains(); // Refresh the domains list
+        return data.message || "Domain verified successfully!";
+      },
+      error: (err) => {
+        console.error("Verification error:", err);
+        return err.message || "Failed to verify domain";
+      },
+    });
   };
 
   return (
@@ -259,14 +254,16 @@ export default function DomainsPage() {
                           </div>
                           
                           <div className="flex gap-2">
-                            <Button 
-                              variant="outline" 
-                              onClick={(e) => {
-                                handleVerifyDomain(e, domain.id);
-                              }}
-                            >
-                              Refresh
-                            </Button>
+                            {!domain.verified && (
+                              <Button 
+                                variant="outline" 
+                                onClick={(e) => {
+                                  handleVerifyDomain(e, domain.id);
+                                }}
+                              >
+                                Refresh
+                              </Button>
+                            )}
                             <Button 
                               variant="secondary" 
                           
@@ -293,7 +290,7 @@ export default function DomainsPage() {
                             </div>
                             
                             <div className="border rounded p-4 mb-2">
-                              <h4 className="text-sm font-medium mb-4">Domain verification</h4>
+                              <h4 className="text-sm font-medium mb-4">Domain verification (DNS)</h4>
                               <div className="border-t border-b py-4 mb-4">
                                 <p className="text-xs mb-2">
                                   Set the following TXT record on <span className="font-mono bg-secondary/30 px-1 rounded">_vercount.{domain.name}</span> to use <span className="font-mono bg-secondary/30 px-1 rounded">{domain.name}</span> in this project.
@@ -315,7 +312,7 @@ export default function DomainsPage() {
                                   <tbody>
                                     <tr>
                                       <td className="py-2">TXT</td>
-                                      <td className="py-2 font-mono">_vercount</td>
+                                      <td className="py-2 font-mono">_vercount.{domain.name}</td>
                                       <td className="py-2 font-mono">vercount-domain-verify={domain.name},{domain.verificationCode}</td>
                                     </tr>
                                   </tbody>
@@ -324,26 +321,52 @@ export default function DomainsPage() {
                             </div>
                           </div>
                         ) : (
+                          <>
+                          <Separator className="my-4" />
                           <div 
-                            className="cursor-pointer" 
+                            className="cursor-pointer hover:bg-secondary/50 transition-colors rounded-lg p-4" 
                             onClick={() => router.push(`/dashboard/counters?domain=${domain.name}`)}
                           >
-                            <div className="flex justify-between items-center p-2 bg-accent/10 rounded">
-                              <div className="text-sm">
-                                <p>
-                                  Site PV: <span className="font-semibold">{domain.counters?.sitePv || 0}</span>
-                                </p>
-                                <p>
-                                  Site UV: <span className="font-semibold">{domain.counters?.siteUv || 0}</span>
-                                </p>
+                            <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
+                              <div className="flex gap-6 items-center">
+                                <div className="flex flex-col items-center gap-1">
+                                  <span className="text-3xl font-bold">{domain.counters?.sitePv || 0}</span>
+                                  <span className="text-xs text-muted-foreground">Page Views</span>
+                                </div>
+                                <Separator orientation="vertical" className="hidden sm:block h-10" />
+                                <div className="flex flex-col items-center gap-1">
+                                  <span className="text-3xl font-bold">{domain.counters?.siteUv || 0}</span>
+                                  <span className="text-xs text-muted-foreground">Unique Visitors</span>
+                                </div>
                               </div>
-                              <div>
-                                <Button variant="ghost" size="sm">
-                                  View Analytics →
-                                </Button>
-                              </div>
+                              
+                              <Button 
+                                variant="default" 
+                                className="w-full sm:w-auto"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  router.push(`/dashboard/counters?domain=${domain.name}`);
+                                }}
+                              >
+                                View Analytics <ArrowRight className="w-4 h-4 ml-2" />
+                              </Button>
                             </div>
+                            
+                            {domain.counters?.pageViews && domain.counters.pageViews.length > 0 && (
+                              <div className="mt-4 pt-4 border-t">
+                                <p className="text-xs text-muted-foreground mb-2">Top Pages</p>
+                                <div className="space-y-2">
+                                  {domain.counters.pageViews.slice(0, 3).map((page, i) => (
+                                    <div key={i} className="flex justify-between items-center text-sm">
+                                      <span className="truncate max-w-[70%]">{page.path}</span>
+                                      <span className="font-medium">{page.views}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
+                          </>
                         )}
                       </div>
                     ))}
