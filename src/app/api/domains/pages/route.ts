@@ -1,9 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { domainService } from "@/lib/domain-service";
 import { prisma } from "@/lib/prisma";
 import logger from "@/lib/logger";
+import { successResponse, ApiErrors } from "@/lib/api-response";
 
 // POST handler - Update page view counter
 export async function POST(req: NextRequest) {
@@ -11,157 +12,107 @@ export async function POST(req: NextRequest) {
     const session = await getServerSession(authOptions);
     
     if (!session || !session.user) {
-      return NextResponse.json(
-        { success: false, message: "Unauthorized" },
-        { status: 401 }
-      );
+      return ApiErrors.unauthorized();
     }
     
     const userId = session.user.id;
     if (!userId) {
-      return NextResponse.json(
-        { success: false, message: "User ID not found in session" },
-        { status: 400 }
-      );
+      return ApiErrors.badRequest("User ID not found in session");
     }
     
     const data = await req.json();
     
     if (!data.domainName) {
-      return NextResponse.json(
-        { success: false, message: "Domain name is required" },
-        { status: 400 }
-      );
+      return ApiErrors.badRequest("Domain name is required");
     }
     
     if (!data.path) {
-      return NextResponse.json(
-        { success: false, message: "Page path is required" },
-        { status: 400 }
-      );
+      return ApiErrors.badRequest("Page path is required");
     }
     
     if (data.pageViews === undefined) {
-      return NextResponse.json(
-        { success: false, message: "Page views count is required" },
-        { status: 400 }
-      );
+      return ApiErrors.badRequest("Page views count is required");
     }
     
-    // Check if the domain belongs to the user
+    // Check if the domain exists and belongs to the user
     const domain = await prisma.domain.findFirst({
       where: {
         name: data.domainName,
-        userId,
+        userId: userId,
       },
     });
     
     if (!domain) {
-      return NextResponse.json(
-        { success: false, message: "Domain not found or does not belong to you" },
-        { status: 404 }
-      );
+      return ApiErrors.badRequest("Domain not found or does not belong to you");
     }
     
-    // Update page view counter
+    // Update or create the page view counter
     const result = await domainService.updatePageViewCounter(
-      data.domainName,
+      domain.id,
       data.path,
       data.pageViews
     );
     
     if (!result.success) {
-      return NextResponse.json(
-        { success: false, message: result.message },
-        { status: 400 }
-      );
+      return ApiErrors.badRequest(result.message);
     }
     
-    return NextResponse.json({
-      success: true,
-      message: "Page view counter updated successfully",
-    });
+    return successResponse(
+      { updated: true, domainId: domain.id, path: data.path },
+      "Page view counter updated successfully"
+    );
   } catch (error) {
     logger.error("Error in POST /api/domains/pages", { error });
-    return NextResponse.json(
-      { success: false, message: "Internal server error" },
-      { status: 500 }
-    );
+    return ApiErrors.internalError();
   }
 }
 
-// DELETE handler - Remove a monitored page
+// DELETE handler - Delete a monitored page
 export async function DELETE(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
     if (!session || !session.user) {
-      return NextResponse.json(
-        { success: false, message: "Unauthorized" },
-        { status: 401 }
-      );
+      return ApiErrors.unauthorized();
     }
     
     const userId = session.user.id;
     if (!userId) {
-      return NextResponse.json(
-        { success: false, message: "User ID not found in session" },
-        { status: 400 }
-      );
+      return ApiErrors.badRequest("User ID not found in session");
     }
     
-    const { searchParams } = new URL(req.url);
-    const domainId = searchParams.get("domainId");
-    const path = searchParams.get("path");
+    const url = new URL(req.url);
+    const pageId = url.searchParams.get("pageId");
     
-    if (!domainId) {
-      return NextResponse.json(
-        { success: false, message: "Domain ID is required" },
-        { status: 400 }
-      );
+    if (!pageId) {
+      return ApiErrors.badRequest("Page ID is required");
     }
     
-    if (!path) {
-      return NextResponse.json(
-        { success: false, message: "Page path is required" },
-        { status: 400 }
-      );
-    }
-    
-    // Check if the domain belongs to the user
-    const domain = await prisma.domain.findFirst({
-      where: {
-        id: domainId,
-        userId,
-      },
+    // Check if the page exists and belongs to the user
+    const page = await prisma.monitoredPage.findUnique({
+      where: { id: pageId },
+      include: { domain: true },
     });
     
-    if (!domain) {
-      return NextResponse.json(
-        { success: false, message: "Domain not found or does not belong to you" },
-        { status: 404 }
-      );
+    if (!page) {
+      return ApiErrors.notFound("Page not found");
     }
     
-    // Remove the monitored page
-    const result = await domainService.removeMonitoredPage(domainId, path);
-    
-    if (!result.success) {
-      return NextResponse.json(
-        { success: false, message: result.message },
-        { status: 400 }
-      );
+    if (page.domain.userId !== userId) {
+      return ApiErrors.unauthorized();
     }
     
-    return NextResponse.json({
-      success: true,
-      message: "Monitored page removed successfully",
+    // Delete the page
+    await prisma.monitoredPage.delete({
+      where: { id: pageId },
     });
+    
+    return successResponse(
+      { deleted: true, pageId },
+      "Page deleted successfully"
+    );
   } catch (error) {
     logger.error("Error in DELETE /api/domains/pages", { error });
-    return NextResponse.json(
-      { success: false, message: "Internal server error" },
-      { status: 500 }
-    );
+    return ApiErrors.internalError();
   }
 } 

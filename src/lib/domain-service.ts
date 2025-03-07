@@ -1,6 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import kv from "@/lib/kv";
 import logger from "@/lib/logger";
+import dns from "dns";
+import { promisify } from "util";
+
+// Promisify DNS methods
+const resolveTxt = promisify(dns.resolveTxt);
 
 /**
  * Service for managing domains and their counter data
@@ -85,17 +90,54 @@ export const domainService = {
         return { success: true, message: "Domain already verified" };
       }
       
-      if (domain.verificationCode !== verificationCode) {
-        return { success: false, message: "Invalid verification code" };
+      // Always verify via DNS TXT record
+      try {
+        logger.info(`Attempting to verify domain: ${domain.name} with DNS lookup for _vercount.${domain.name}`);
+        
+        // Check for TXT record in DNS
+        let txtRecords: string[][] = [];
+        try {
+          txtRecords = await resolveTxt(`_vercount.${domain.name}`);
+          logger.info(`DNS TXT records found for _vercount.${domain.name}:`, { txtRecords });
+        } catch (dnsError) {
+          logger.error(`DNS lookup failed for _vercount.${domain.name}`, { error: dnsError });
+          return { 
+            success: false, 
+            message: "DNS verification failed: Could not find TXT record. Please ensure you've added the _vercount TXT record to your DNS settings." 
+          };
+        }
+        
+        const expectedValue = `vercount-domain-verify=${domain.name},${domain.verificationCode}`;
+        logger.info(`Expected TXT record value: ${expectedValue}`);
+        
+        // Check if any of the TXT records match our expected format
+        const verified = txtRecords.some(record => {
+          const joined = record.join('');
+          logger.info(`Comparing TXT record: "${joined}" with expected: "${expectedValue}"`);
+          return joined === expectedValue;
+        });
+        
+        if (!verified) {
+          return { 
+            success: false, 
+            message: "Domain verification failed: TXT record found but value doesn't match. Please ensure you've added the correct TXT record value." 
+          };
+        }
+        
+        // If DNS verification succeeded, update domain to verified
+        await prisma.domain.update({
+          where: { id: domainId },
+          data: { verified: true },
+        });
+        
+        return { success: true, message: "Domain verified successfully via DNS!" };
+      } catch (error) {
+        logger.error("Error verifying domain via DNS", { error, domainId, domain: domain.name });
+        return { 
+          success: false, 
+          message: "Failed to verify domain via DNS. Please check your DNS configuration and ensure the TXT record is properly set." 
+        };
       }
-      
-      // Update domain to verified
-      await prisma.domain.update({
-        where: { id: domainId },
-        data: { verified: true },
-      });
-      
-      return { success: true, message: "Domain verified successfully" };
     } catch (error) {
       logger.error("Error verifying domain", { error, domainId });
       return { success: false, message: "Failed to verify domain" };

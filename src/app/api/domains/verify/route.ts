@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { domainService } from "@/lib/domain-service";
 import logger from "@/lib/logger";
+import { successResponse, ApiErrors, errorResponse } from "@/lib/api-response";
 
 // POST handler - Verify a domain
 export async function POST(req: NextRequest) {
@@ -10,26 +11,17 @@ export async function POST(req: NextRequest) {
     const session = await getServerSession(authOptions);
     
     if (!session || !session.user) {
-      return NextResponse.json(
-        { success: false, message: "Unauthorized" },
-        { status: 401 }
-      );
+      return ApiErrors.unauthorized();
     }
     
     const data = await req.json();
     
     if (!data.domainId) {
-      return NextResponse.json(
-        { success: false, message: "Domain ID is required" },
-        { status: 400 }
-      );
+      return ApiErrors.badRequest("Domain ID is required");
     }
     
     if (!data.verificationCode) {
-      return NextResponse.json(
-        { success: false, message: "Verification code is required" },
-        { status: 400 }
-      );
+      return ApiErrors.badRequest("Verification code is required");
     }
     
     const result = await domainService.verifyDomain(
@@ -38,21 +30,21 @@ export async function POST(req: NextRequest) {
     );
     
     if (!result.success) {
-      return NextResponse.json(
-        { success: false, message: result.message },
-        { status: 400 }
-      );
+      logger.warn("Domain verification failed", { 
+        domainId: data.domainId, 
+        message: result.message 
+      });
+      
+      return ApiErrors.badRequest(result.message);
     }
     
-    return NextResponse.json({
-      success: true,
-      message: "Domain verified successfully",
-    });
+    logger.info("Domain verified successfully", { domainId: data.domainId });
+    return successResponse(
+      { verified: true, domainId: data.domainId },
+      result.message || "Domain verified successfully"
+    );
   } catch (error) {
     logger.error("Error in POST /api/domains/verify", { error });
-    return NextResponse.json(
-      { success: false, message: "Internal server error" },
-      { status: 500 }
-    );
+    return ApiErrors.internalError();
   }
 } 

@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { domainService } from "@/lib/domain-service";
 import logger from "@/lib/logger";
+import { successResponse, ApiErrors } from "@/lib/api-response";
 
 // GET handler - Get all domains for the authenticated user
 export async function GET(req: NextRequest) {
@@ -10,36 +11,24 @@ export async function GET(req: NextRequest) {
     const session = await getServerSession(authOptions);
     
     if (!session || !session.user) {
-      return NextResponse.json(
-        { success: false, message: "Unauthorized" },
-        { status: 401 }
-      );
+      return ApiErrors.unauthorized();
     }
     
     const userId = session.user.id;
     if (!userId) {
-      return NextResponse.json(
-        { success: false, message: "User ID not found in session" },
-        { status: 400 }
-      );
+      return ApiErrors.badRequest("User ID not found in session");
     }
     
     const result = await domainService.getDomains(userId);
     
     if (!result.success) {
-      return NextResponse.json(
-        { success: false, message: result.message },
-        { status: 400 }
-      );
+      return ApiErrors.badRequest(result.message);
     }
     
-    return NextResponse.json({ success: true, domains: result.domains });
+    return successResponse({ domains: result.domains });
   } catch (error) {
     logger.error("Error in GET /api/domains", { error });
-    return NextResponse.json(
-      { success: false, message: "Internal server error" },
-      { status: 500 }
-    );
+    return ApiErrors.internalError();
   }
 }
 
@@ -49,48 +38,32 @@ export async function POST(req: NextRequest) {
     const session = await getServerSession(authOptions);
     
     if (!session || !session.user) {
-      return NextResponse.json(
-        { success: false, message: "Unauthorized" },
-        { status: 401 }
-      );
+      return ApiErrors.unauthorized();
     }
     
     const userId = session.user.id;
     if (!userId) {
-      return NextResponse.json(
-        { success: false, message: "User ID not found in session" },
-        { status: 400 }
-      );
+      return ApiErrors.badRequest("User ID not found in session");
     }
     
     const data = await req.json();
     
     if (!data.domain) {
-      return NextResponse.json(
-        { success: false, message: "Domain name is required" },
-        { status: 400 }
-      );
+      return ApiErrors.badRequest("Domain name is required");
     }
     
     const result = await domainService.addDomain(userId, data.domain);
     
     if (!result.success) {
-      return NextResponse.json(
-        { success: false, message: result.message },
-        { status: 400 }
-      );
+      return ApiErrors.badRequest(result.message);
     }
     
-    return NextResponse.json({ 
-      success: true, 
-      domain: result.domain,
-      message: "Domain added successfully" 
-    });
+    return successResponse(
+      { domain: result.domain },
+      "Domain added successfully"
+    );
   } catch (error) {
     logger.error("Error in POST /api/domains", { error });
-    return NextResponse.json(
-      { success: false, message: "Internal server error" },
-      { status: 500 }
-    );
+    return ApiErrors.internalError();
   }
 } 

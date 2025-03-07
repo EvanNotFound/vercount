@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { toast } from "sonner";
 import { HomeIcon, ArrowLeft, BarChart3, TrendingUp, Users, Clock } from "lucide-react";
 import DashboardHeader from "@/components/dashboard/dashboard-header";
 

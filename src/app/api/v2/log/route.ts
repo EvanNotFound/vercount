@@ -9,7 +9,8 @@ import {
 } from "@/utils/counter";
 import { notifyBusuanziService } from "@/utils/busuanzi";
 import logger from "@/lib/logger";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
+import { successResponse, ApiErrors, errorResponse } from "@/lib/api-response";
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -17,10 +18,7 @@ export async function GET(req: Request) {
   
   if (!targetUrl) {
     logger.warn(`GET request with missing URL parameter`, { status: 400 });
-    return Response.json({ 
-      status: "error",
-      message: "Missing url parameter" 
-    }, { status: 400 });
+    return ApiErrors.badRequest("Missing url parameter");
   }
   
   // Validate URL format
@@ -30,29 +28,21 @@ export async function GET(req: Request) {
     // Check if it's a file:// URL or other non-http(s) protocol
     if (!parsedUrl.protocol.startsWith('http')) {
       logger.warn(`Invalid URL protocol: ${parsedUrl.protocol}`, { status: 400 });
-      return Response.json({ 
-        status: "error",
-        message: "Invalid URL protocol. Only HTTP and HTTPS are supported.",
-        data: {
-          site_uv: 0,
-          site_pv: 0,
-          page_pv: 0
-        }
-      }, { status: 200 });
+      return successResponse({
+        site_uv: 0,
+        site_pv: 0,
+        page_pv: 0
+      }, "Invalid URL protocol. Only HTTP and HTTPS are supported.", 200);
     }
     
     // Check if host is empty
     if (!parsedUrl.host) {
       logger.warn(`Invalid URL host: empty`, { status: 400 });
-      return Response.json({ 
-        status: "error",
-        message: "Invalid URL host",
-        data: {
-          site_uv: 0,
-          site_pv: 0,
-          page_pv: 0
-        }
-      }, { status: 200 });
+      return successResponse({
+        site_uv: 0,
+        site_pv: 0,
+        page_pv: 0
+      }, "Invalid URL host", 200);
     }
     
     const host = parsedUrl.host;
@@ -73,27 +63,19 @@ export async function GET(req: Request) {
       pagePV,
     });
     
-    return Response.json({
-      status: "success",
-      message: "Data retrieved successfully",
-      data: {
-        site_uv: siteUV,
-        site_pv: sitePV,
-        page_pv: pagePV,
-      }
-    });
+    return successResponse({
+      site_uv: siteUV,
+      site_pv: sitePV,
+      page_pv: pagePV,
+    }, "Data retrieved successfully");
     
   } catch (error) {
     logger.warn(`Invalid URL format: ${targetUrl}`, { status: 400, error });
-    return Response.json({ 
-      status: "error",
-      message: "Invalid URL format",
-      data: {
-        site_uv: 0,
-        site_pv: 0,
-        page_pv: 0
-      }
-    }, { status: 200 });
+    return successResponse({
+      site_uv: 0,
+      site_pv: 0,
+      page_pv: 0
+    }, "Invalid URL format", 200);
   }
 }
 
@@ -103,10 +85,7 @@ export async function POST(req: NextRequest) {
 
   if (!data.url) {
     logger.warn(`POST request with missing URL`, { status: 400 });
-    return Response.json({ 
-      status: "error",
-      message: "Missing url" 
-    }, { status: 400 });
+    return ApiErrors.badRequest("Missing url");
   }
 
   // Validate URL format
@@ -116,51 +95,36 @@ export async function POST(req: NextRequest) {
     // Check if it's a file:// URL or other non-http(s) protocol
     if (!url.protocol.startsWith('http')) {
       logger.warn(`Invalid URL protocol: ${url.protocol}`, { status: 400 });
-      return Response.json({ 
-        status: "error",
-        message: "Invalid URL protocol. Only HTTP and HTTPS are supported.",
-        data: {
-          site_uv: 0,
-          site_pv: 0,
-          page_pv: 0
-        }
-      }, { status: 200 }); // Return 200 with zeros to not break client
+      return successResponse({
+        site_uv: 0,
+        site_pv: 0,
+        page_pv: 0
+      }, "Invalid URL protocol. Only HTTP and HTTPS are supported.", 200);
     }
     
     // Check if host is empty
     if (!url.host) {
       logger.warn(`Invalid URL host: empty`, { status: 400 });
-      return Response.json({ 
-        status: "error",
-        message: "Invalid URL host",
-        data: {
-          site_uv: 0,
-          site_pv: 0,
-          page_pv: 0
-        }
-      }, { status: 200 }); // Return 200 with zeros to not break client
-    }
-  } catch (error) {
-    logger.warn(`Invalid URL format: ${data.url}`, { status: 400, error });
-    return Response.json({ 
-      status: "error",
-      message: "Invalid URL format",
-      data: {
+      return successResponse({
         site_uv: 0,
         site_pv: 0,
         page_pv: 0
-      }
-    }, { status: 200 }); // Return 200 with zeros to not break client
+      }, "Invalid URL host", 200);
+    }
+  } catch (error) {
+    logger.warn(`Invalid URL format: ${data.url}`, { status: 400, error });
+    return successResponse({
+      site_uv: 0,
+      site_pv: 0,
+      page_pv: 0
+    }, "Invalid URL format", 200);
   }
 
   // Check for browser token
   const browserToken = data.token || header.get("X-Browser-Token");
   if (!browserToken) {
     logger.warn(`POST request with missing browser token`, { status: 400 });
-    return Response.json({ 
-      status: "error",
-      message: "Missing token" 
-    }, { status: 400 });
+    return ApiErrors.badRequest("Missing token");
   }
 
   const clientHost =
@@ -178,10 +142,7 @@ export async function POST(req: NextRequest) {
 
   if (!clientHost) {
     logger.warn(`POST request with missing client host`, { status: 400 });
-    return Response.json({ 
-      status: "error",
-      message: "Missing host" 
-    }, { status: 400 });
+    return ApiErrors.badRequest("Missing host");
   }
 
   const parsedUrl = new URL(data.url);
@@ -228,15 +189,11 @@ export async function POST(req: NextRequest) {
   // Fire and forget
   notifyBusuanziService(host, path);
 
-  return Response.json({
-    status: "success",
-    message: "Data updated successfully",
-    data: {
-      site_uv: finalSiteUV,
-      site_pv: finalSitePV,
-      page_pv: finalPagePV,
-    }
-  });
+  return successResponse({
+    site_uv: finalSiteUV,
+    site_pv: finalSitePV,
+    page_pv: finalPagePV,
+  }, "Data updated successfully");
 }
 
 export async function OPTIONS() {
@@ -245,8 +202,5 @@ export async function OPTIONS() {
     "Access-Control-Allow-Methods": "GET, HEAD, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, X-Browser-Token",
   };
-  return NextResponse.json({ 
-    status: "success",
-    message: "OK" 
-  }, { headers: corsHeaders });
+  return successResponse({ message: "OK" }, "CORS preflight successful", 200, corsHeaders);
 } 
