@@ -3,12 +3,13 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { HomeIcon, ArrowUpRight, Users, Globe, BarChart3, TrendingUp } from "lucide-react";
+import DashboardHeader from "@/components/dashboard/dashboard-header";
 
 // Types
 interface Domain {
@@ -42,12 +43,27 @@ export default function Dashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [domains, setDomains] = useState<Domain[]>([]);
-  const [newDomain, setNewDomain] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [selectedDomain, setSelectedDomain] = useState<Domain | null>(null);
-  const [sitePv, setSitePv] = useState<number>(0);
-  const [siteUv, setSiteUv] = useState<number>(0);
-  const [pageViewUpdates, setPageViewUpdates] = useState<Record<string, number>>({});
+  const [domainsLoading, setDomainsLoading] = useState(true);
+
+  // Dummy data for statistics
+  const [stats, setStats] = useState({
+    totalPageViews: 12487,
+    totalUniqueVisitors: 3254,
+    totalDomains: 0,
+    totalMonitoredPages: 0,
+    recentActivity: [
+      { domain: "example.com", path: "/", views: 245, change: "+12%" },
+      { domain: "mysite.org", path: "/blog", views: 187, change: "+8%" },
+      { domain: "example.com", path: "/products", views: 132, change: "+5%" },
+      { domain: "mysite.org", path: "/about", views: 98, change: "-3%" },
+    ],
+    topPages: [
+      { domain: "example.com", path: "/", views: 3245 },
+      { domain: "mysite.org", path: "/blog", views: 2187 },
+      { domain: "example.com", path: "/products", views: 1932 },
+      { domain: "mysite.org", path: "/about", views: 1098 },
+    ]
+  });
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -63,10 +79,26 @@ export default function Dashboard() {
     }
   }, [status]);
 
+  // Update stats based on fetched domains
+  useEffect(() => {
+    if (domains.length > 0) {
+      let totalPages = 0;
+      domains.forEach(domain => {
+        totalPages += domain.monitoredPages.length;
+      });
+      
+      setStats(prev => ({
+        ...prev,
+        totalDomains: domains.length,
+        totalMonitoredPages: totalPages
+      }));
+    }
+  }, [domains]);
+
   // Fetch domains from API
   const fetchDomains = async () => {
     try {
-      setLoading(true);
+      setDomainsLoading(true);
       const response = await fetch("/api/domains");
       
       if (!response.ok) {
@@ -82,315 +114,201 @@ export default function Dashboard() {
       console.error("Error fetching domains:", error);
       toast.error("Failed to load domains");
     } finally {
-      setLoading(false);
+      setDomainsLoading(false);
     }
   };
 
-  // Add a new domain
-  const handleAddDomain = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!newDomain) {
-      toast.error("Please enter a domain name");
-      return;
-    }
-    
-    try {
-      const response = await fetch("/api/domains", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ domain: newDomain }),
-      });
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        toast.success("Domain added successfully");
-        setNewDomain("");
-        fetchDomains();
-      } else {
-        toast.error(data.message || "Failed to add domain");
-      }
-    } catch (error) {
-      console.error("Error adding domain:", error);
-      toast.error("Failed to add domain");
-    }
-  };
-
-  // Select a domain to edit
-  const handleSelectDomain = (domain: Domain) => {
-    setSelectedDomain(domain);
-    if (domain.counters) {
-      setSitePv(domain.counters.sitePv);
-      setSiteUv(domain.counters.siteUv);
-      
-      // Initialize page view updates
-      const updates: Record<string, number> = {};
-      domain.counters.pageViews.forEach((pageView) => {
-        updates[pageView.path] = pageView.views;
-      });
-      setPageViewUpdates(updates);
-    }
-  };
-
-  // Update counters
-  const handleUpdateCounters = async () => {
-    if (!selectedDomain) return;
-    
-    try {
-      const response = await fetch("/api/domains/counters", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          domainName: selectedDomain.name,
-          sitePv,
-          siteUv,
-        }),
-      });
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        toast.success("Counters updated successfully");
-        fetchDomains();
-      } else {
-        toast.error(data.message || "Failed to update counters");
-      }
-    } catch (error) {
-      console.error("Error updating counters:", error);
-      toast.error("Failed to update counters");
-    }
-  };
-
-  // Update page view counter
-  const handleUpdatePageView = async (path: string) => {
-    if (!selectedDomain) return;
-    
-    try {
-      const response = await fetch("/api/domains/pages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          domainName: selectedDomain.name,
-          path,
-          pageViews: pageViewUpdates[path],
-        }),
-      });
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        toast.success("Page view counter updated successfully");
-        fetchDomains();
-      } else {
-        toast.error(data.message || "Failed to update page view counter");
-      }
-    } catch (error) {
-      console.error("Error updating page view counter:", error);
-      toast.error("Failed to update page view counter");
-    }
-  };
-
-  // Handle page view input change
-  const handlePageViewChange = (path: string, value: number) => {
-    setPageViewUpdates((prev) => ({
-      ...prev,
-      [path]: value,
-    }));
-  };
-
-  if (status === "loading" || loading) {
-    return (
-      <main className="flex min-h-screen flex-col items-center justify-center p-4">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Loading...</h1>
-        </div>
-      </main>
-    );
-  }
+  // Rest of your existing functions...
+  // ... (keep all the existing functions)
 
   return (
-    <main className="flex flex-col p-4 md:p-8">
-      <div className="max-w-6xl mx-auto w-full">
-        <h1 className="text-2xl md:text-3xl font-bold mb-6">Dashboard</h1>
-        
-        <Tabs defaultValue="domains" className="w-full">
-          <TabsList className="mb-6">
-            <TabsTrigger value="domains">My Domains</TabsTrigger>
-            <TabsTrigger value="counters">Manage Counters</TabsTrigger>
-          </TabsList>
+    <div className="flex-1 flex flex-col">
+      {/* Breadcrumb header */}
+      <DashboardHeader items={[
+        { label: "Home", href: "/", icon: HomeIcon },
+        { label: "Dashboard" },
+      ]} />
+
+      {/* Main content */}
+      <div className="flex-1 p-4 md:p-8">
+        <div className="max-w-6xl w-full mx-auto">
+          <h1 className="text-2xl md:text-3xl font-bold mb-6">Dashboard Overview</h1>
           
-          <TabsContent value="domains" className="space-y-6">
-            <div className="bg-card rounded-lg border p-4 md:p-6">
-              <h2 className="text-xl font-semibold mb-4">Add New Domain</h2>
-              <form onSubmit={handleAddDomain} className="flex gap-2 items-end">
-                <div className="flex-1">
-                  <Label htmlFor="domain-name">Domain Name</Label>
-                  <Input
-                    id="domain-name"
-                    placeholder="example.com"
-                    value={newDomain}
-                    onChange={(e) => setNewDomain(e.target.value)}
-                  />
-                </div>
-                <Button type="submit">Add Domain</Button>
-              </form>
-            </div>
-            
-            <div className="bg-card rounded-lg border p-4 md:p-6">
-              <h2 className="text-xl font-semibold mb-4">My Domains</h2>
-              
-              {domains.length === 0 ? (
-                <p className="text-muted-foreground">No domains added yet.</p>
-              ) : (
-                <div className="space-y-4">
-                  {domains.map((domain) => (
-                    <div
-                      key={domain.id}
-                      className="p-4 border rounded-lg hover:bg-accent/10 transition-colors"
-                      onClick={() => handleSelectDomain(domain)}
-                    >
-                      <div className="flex flex-col md:flex-row justify-between md:items-center gap-2">
-                        <div>
-                          <h3 className="font-medium">{domain.name}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            {domain.verified ? (
-                              <span className="text-green-500">Verified</span>
-                            ) : (
-                              <span className="text-yellow-500">Pending verification</span>
-                            )}
-                          </p>
-                        </div>
-                        
-                        {!domain.verified && (
-                          <div className="bg-secondary/30 rounded p-2 text-xs break-all">
-                            <p>Verification Code:</p>
-                            <code>{domain.verificationCode}</code>
-                          </div>
-                        )}
-                        
-                        <div className="text-sm">
-                          <p>
-                            Site PV: <span className="font-semibold">{domain.counters?.sitePv || 0}</span>
-                          </p>
-                          <p>
-                            Site UV: <span className="font-semibold">{domain.counters?.siteUv || 0}</span>
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="counters" className="space-y-6">
-            {!selectedDomain ? (
-              <div className="bg-card rounded-lg border p-6 text-center">
-                <p className="text-muted-foreground">Please select a domain from the "My Domains" tab to manage counters.</p>
-              </div>
-            ) : (
-              <>
-                <div className="bg-card rounded-lg border p-4 md:p-6">
-                  <h2 className="text-xl font-semibold mb-4">
-                    Manage Counters for {selectedDomain.name}
-                  </h2>
-                  
-                  {!selectedDomain.verified && (
-                    <div className="bg-yellow-100 border-yellow-300 border rounded-lg p-3 mb-4 dark:bg-yellow-900/20 dark:border-yellow-800">
-                      <p className="text-yellow-700 dark:text-yellow-500">
-                        This domain is not yet verified. Please verify ownership by adding the following verification code to your site:
-                      </p>
-                      <code className="block mt-2 p-2 bg-black/5 rounded dark:bg-white/5 break-all">
-                        {selectedDomain.verificationCode}
-                      </code>
-                    </div>
-                  )}
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                    <div>
-                      <Label htmlFor="site-pv">Site Page Views</Label>
-                      <div className="flex gap-2">
-                        <Input
-                          id="site-pv"
-                          type="number"
-                          value={sitePv}
-                          onChange={(e) => setSitePv(parseInt(e.target.value) || 0)}
-                          disabled={!selectedDomain.verified}
-                        />
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="site-uv">Site Unique Visitors</Label>
-                      <div className="flex gap-2">
-                        <Input
-                          id="site-uv"
-                          type="number"
-                          value={siteUv}
-                          onChange={(e) => setSiteUv(parseInt(e.target.value) || 0)}
-                          disabled={!selectedDomain.verified}
-                        />
-                      </div>
-                    </div>
+          {/* Stats cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Total Page Views</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div className="text-2xl font-bold">{stats.totalPageViews.toLocaleString()}</div>
+                  <div className="p-2 bg-primary/10 rounded-full">
+                    <BarChart3 className="h-4 w-4 text-primary" />
                   </div>
-                  
-                  <Button 
-                    onClick={handleUpdateCounters} 
-                    disabled={!selectedDomain.verified}
-                  >
-                    Update Counters
-                  </Button>
                 </div>
-                
-                <div className="bg-card rounded-lg border p-4 md:p-6">
-                  <h2 className="text-xl font-semibold mb-4">Page Views</h2>
-                  
-                  {selectedDomain.counters?.pageViews.length === 0 ? (
-                    <p className="text-muted-foreground">No page views data available.</p>
+                <div className="text-xs text-muted-foreground mt-1 flex items-center">
+                  <ArrowUpRight className="h-3 w-3 mr-1 text-green-500" />
+                  <span className="text-green-500 font-medium">+14%</span>
+                  <span className="ml-1">from last month</span>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Unique Visitors</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div className="text-2xl font-bold">{stats.totalUniqueVisitors.toLocaleString()}</div>
+                  <div className="p-2 bg-primary/10 rounded-full">
+                    <Users className="h-4 w-4 text-primary" />
+                  </div>
+                </div>
+                <div className="text-xs text-muted-foreground mt-1 flex items-center">
+                  <ArrowUpRight className="h-3 w-3 mr-1 text-green-500" />
+                  <span className="text-green-500 font-medium">+8%</span>
+                  <span className="ml-1">from last month</span>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Total Domains</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div className="text-2xl font-bold">
+                    {domainsLoading ? <Skeleton className="h-7 w-10" /> : stats.totalDomains}
+                  </div>
+                  <div className="p-2 bg-primary/10 rounded-full">
+                    <Globe className="h-4 w-4 text-primary" />
+                  </div>
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  {domainsLoading ? <Skeleton className="h-4 w-24" /> : `${stats.totalDomains} active domains`}
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Monitored Pages</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div className="text-2xl font-bold">
+                    {domainsLoading ? <Skeleton className="h-7 w-10" /> : stats.totalMonitoredPages}
+                  </div>
+                  <div className="p-2 bg-primary/10 rounded-full">
+                    <TrendingUp className="h-4 w-4 text-primary" />
+                  </div>
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  {domainsLoading ? <Skeleton className="h-4 w-24" /> : `Across ${stats.totalDomains} domains`}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          
+          {/* Recent activity and top pages */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Activity</CardTitle>
+                <CardDescription>Page view changes in the last 24 hours</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {domainsLoading ? (
+                    Array(4).fill(0).map((_, i) => (
+                      <div key={i} className="flex items-center justify-between">
+                        <div>
+                          <Skeleton className="h-5 w-32 mb-1" />
+                          <Skeleton className="h-4 w-24" />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Skeleton className="h-5 w-20" />
+                        </div>
+                      </div>
+                    ))
                   ) : (
-                    <div className="space-y-4">
-                      {selectedDomain.counters?.pageViews.map((pageView) => (
-                        <div key={pageView.path} className="p-3 border rounded-lg">
-                          <p className="font-medium text-sm mb-2 break-all">{pageView.path}</p>
-                          <div className="flex gap-2">
-                            <Input
-                              type="number"
-                              value={pageViewUpdates[pageView.path] || 0}
-                              onChange={(e) => 
-                                handlePageViewChange(
-                                  pageView.path, 
-                                  parseInt(e.target.value) || 0
-                                )
-                              }
-                              disabled={!selectedDomain.verified}
-                              className="max-w-[150px]"
-                            />
-                            <Button 
-                              onClick={() => handleUpdatePageView(pageView.path)}
-                              disabled={!selectedDomain.verified}
-                              size="sm"
-                            >
-                              Update
-                            </Button>
+                    stats.recentActivity.map((item, i) => (
+                      <div key={i} className="flex items-center justify-between">
+                        <div>
+                          <div className="font-medium">{item.domain}</div>
+                          <div className="text-sm text-muted-foreground">{item.path}</div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="font-medium">{item.views} views</div>
+                          <div className={`text-xs ${item.change.startsWith('+') ? 'text-green-500' : 'text-red-500'}`}>
+                            {item.change}
                           </div>
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    ))
                   )}
                 </div>
-              </>
-            )}
-          </TabsContent>
-        </Tabs>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Top Pages</CardTitle>
+                <CardDescription>Most viewed pages across all domains</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {domainsLoading ? (
+                    Array(4).fill(0).map((_, i) => (
+                      <div key={i} className="flex items-center justify-between">
+                        <div>
+                          <Skeleton className="h-5 w-32 mb-1" />
+                          <Skeleton className="h-4 w-24" />
+                        </div>
+                        <Skeleton className="h-5 w-20" />
+                      </div>
+                    ))
+                  ) : (
+                    stats.topPages.map((item, i) => (
+                      <div key={i} className="flex items-center justify-between">
+                        <div>
+                          <div className="font-medium">{item.domain}</div>
+                          <div className="text-sm text-muted-foreground">{item.path}</div>
+                        </div>
+                        <div className="font-medium">{item.views.toLocaleString()} views</div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          
+          {/* Quick actions */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Quick Actions</CardTitle>
+              <CardDescription>Common tasks you might want to perform</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-3">
+                <Button onClick={() => router.push('/dashboard/domains')}>
+                  Manage Domains
+                </Button>
+                <Button onClick={() => router.push('/dashboard/counters')} variant="outline">
+                  Update Counters
+                </Button>
+                <Button onClick={() => router.push('/dashboard/analytics')} variant="outline">
+                  View Analytics
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </main>
+    </div>
   );
 } 

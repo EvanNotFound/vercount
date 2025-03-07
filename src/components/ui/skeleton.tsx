@@ -1,15 +1,25 @@
-import { cn } from "@/lib/utils"
+import React from "react";
+import { cn } from "@/lib/utils";
 
-function Skeleton({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
+const Skeleton = React.forwardRef<
+  HTMLSpanElement,
+  React.HTMLAttributes<HTMLSpanElement>
+>((props, ref) => {
+  const { className, children, ...otherProps } = props;
   return (
-    <div
-      className={cn("animate-pulse rounded-md bg-primary/10", className)}
-      {...props}
-    />
-  )
-}
+    <span
+      ref={ref}
+      className={cn(
+        "inline-block animate-pulse rounded-md bg-primary/10",
+        className,
+      )}
+      {...otherProps}
+    >
+      <span className="invisible">{children}</span>
+    </span>
+  );
+});
 
-export { Skeleton }
+Skeleton.displayName = "Skeleton";
+
+export { Skeleton };

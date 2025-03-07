@@ -2,8 +2,13 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { SiGithub } from "@icons-pack/react-simple-icons";
 import { ArrowRight } from "lucide-react";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
-export default function Header() {
+export default async function Header() {
+	const session = await getServerSession(authOptions);
+	const isAuthenticated = !!session;
+
 	return (
 		<header className="fixed top-0 z-40 w-full border-b border-white/10 bg-black/80 backdrop-blur supports-[backdrop-filter]:bg-black/50">
 			<div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -51,16 +56,26 @@ export default function Header() {
 							</Link>
 						</Button>
 
-						<Button
-							size="sm"
-							className="rounded-full bg-zinc-50 hover:bg-zinc-200 text-black py-4 px-4 flex items-center gap-2"
-							asChild
-						>
-							<Link href="/auth/signin">
-								<span>Sign in</span>
-								<ArrowRight className="h-3 w-3" strokeWidth={2.5} />
-							</Link>
-						</Button>
+						{isAuthenticated ? (
+							<Button
+								size="sm"
+								className="rounded-full bg-zinc-50 hover:bg-zinc-200 text-black py-4 px-4 flex items-center gap-2"
+								asChild
+							>
+								<Link href="/dashboard">Dashboard</Link>
+							</Button>
+						) : (
+							<Button
+								size="sm"
+								className="rounded-full bg-zinc-50 hover:bg-zinc-200 text-black py-4 px-4 flex items-center gap-2"
+								asChild
+							>
+								<Link href="/auth/signin">
+									<span>Sign in</span>
+									<ArrowRight className="h-3 w-3" strokeWidth={2.5} />
+								</Link>
+							</Button>
+						)}
 					</div>
 				</div>
 			</div>
