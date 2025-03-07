@@ -3,7 +3,7 @@ import { SiGithub } from "@icons-pack/react-simple-icons";
 
 export default function Footer() {
 	return (
-		<footer className="w-full border-t border-white/10 py-4 md:py-6">
+		<footer className="w-full border-t border-white/10 py-4 md:py-6 mt-auto">
 			<div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 				<div className="flex flex-col items-center justify-center gap-4 md:flex-row md:justify-between">
 					<div className="flex flex-col items-center md:items-start justify-center gap-1">

@@ -19,6 +19,7 @@ interface BlurFadeStaggerProps {
   inViewMargin?: string;
   initialDelay?: number;
   delayStep?: number;
+  className?: string;
 }
 
 const BlurFadeStagger: React.FC<BlurFadeStaggerProps> = ({
@@ -29,6 +30,7 @@ const BlurFadeStagger: React.FC<BlurFadeStaggerProps> = ({
   inViewMargin = "-50px",
   initialDelay = blurFadeInitialDelay,
   delayStep = blurFadeDelay,
+  className,
 }) => {
   const childrenArray = Children.toArray(children);
   let delayCounter = 0; // Initialize delay counter
@@ -71,6 +73,7 @@ const BlurFadeStagger: React.FC<BlurFadeStaggerProps> = ({
               blur={blur}
               duration={duration}
               inViewMargin={inViewMargin}
+              className={className}
             >
               {childWithoutContinueFrom}
             </BlurFade>

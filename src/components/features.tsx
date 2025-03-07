@@ -76,7 +76,7 @@ export default function Features() {
 					{featuresConfig.map((feature, index) => {
 						const Icon = feature.icon;
 						return (
-							<div key={index} className="flex flex-col space-y-3 rounded-lg border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+							<div key={index} className="flex flex-col space-y-3 rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
 								<div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10">
 									<Icon className="h-5 w-5 text-zinc-400" />
 								</div>

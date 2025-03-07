@@ -31,7 +31,7 @@ export default function Usage() {
                 <TabsContent value="html" className="mt-6">
                   <div className="flex flex-col gap-8">
                     {/* Step 1 */}
-                    <div className="flex flex-col space-y-4 rounded-lg border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+                    <div className="flex flex-col space-y-4 rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
                       <div className="flex items-center space-x-2">
                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white">
                           <span className="text-sm font-bold">01</span>
@@ -46,7 +46,7 @@ export default function Usage() {
                     </div>
 
                     {/* Step 2 */}
-                    <div className="flex flex-col space-y-4 rounded-lg border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+                    <div className="flex flex-col space-y-4 rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
                       <div className="flex items-center space-x-2">
                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white">
                           <span className="text-sm font-bold">02</span>
@@ -65,7 +65,7 @@ Site Total Visitors <span id="vercount_value_site_uv">Loading</span>`}
                     </div>
 
                     {/* Step 3 */}
-                    <div className="flex flex-col space-y-4 rounded-lg border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+                    <div className="flex flex-col space-y-4 rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
                       <div className="flex items-center space-x-2">
                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white">
                           <span className="text-sm font-bold">03</span>
@@ -82,7 +82,7 @@ Site Total Visitors <span id="vercount_value_site_uv">Loading</span>`}
                 <TabsContent value="react" className="mt-6">
                   <div className="flex flex-col gap-8">
                     {/* Introduction */}
-                    <div className="flex flex-col space-y-4 rounded-lg border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+                    <div className="flex flex-col space-y-4 rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
                       <h3 className="text-xl font-bold">vercount-react</h3>
                       <p className="text-zinc-300">
                         vercount-react is a React hook designed for Vercount, providing real-time website traffic statistics while being reliable, fast, and secure.
@@ -93,7 +93,7 @@ Site Total Visitors <span id="vercount_value_site_uv">Loading</span>`}
                     </div>
                     
                     {/* Step 1 */}
-                    <div className="flex flex-col space-y-4 rounded-lg border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+                    <div className="flex flex-col space-y-4 rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
                       <div className="flex items-center space-x-2">
                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white">
                           <span className="text-sm font-bold">01</span>
@@ -116,7 +116,7 @@ yarn add vercount-react`}
 
 
                     {/* Step 2: Hook Approach */}
-                    <div className="flex flex-col space-y-4 rounded-lg border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+                    <div className="flex flex-col space-y-4 rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
                       <div className="flex items-center space-x-2">
                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white">
                           <span className="text-sm font-bold">02</span>
