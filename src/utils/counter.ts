@@ -145,6 +145,8 @@ export async function fetchSitePVHistory(host: string, path: string): Promise<nu
     const [sitePV, busuanziPV] = await Promise.all([
       kv.get(siteKey),
       kv.get(busuanziSiteKey),
+      kv.expire(siteKey, EXPIRATION_TIME),
+      kv.expire(busuanziSiteKey, EXPIRATION_TIME),
     ]);
     
     if (!sitePV) {
@@ -182,8 +184,9 @@ export async function fetchPagePVHistory(host: string, path: string): Promise<nu
     const [pagePV, busuanziPV] = await Promise.all([
       kv.get(pageKey),
       kv.get(busuanziPageKey),
+      kv.expire(pageKey, EXPIRATION_TIME),
+      kv.expire(busuanziPageKey, EXPIRATION_TIME),
     ]);
-    logger.info(`Page PV: ${pagePV}, Busuanzi PV: ${busuanziPV}`);
 
     if (!pagePV) {
       logger.debug(`Page PV not found for host: https://${hostSanitized}${pathSanitized}`);
@@ -191,7 +194,7 @@ export async function fetchPagePVHistory(host: string, path: string): Promise<nu
       return Number(pagePVData || 0);
     }
     logger.debug(
-      `Page PV found for host: https://${hostSanitized}${pathSanitized}, page_pv: ${pagePV}`
+      `Page PV found for host: https://${hostSanitized}${pathSanitized}, page_pv: ${pagePV}, busuanzi_pv: ${busuanziPV}`
     );
     return Number(pagePV) + Number(busuanziPV || 0);
     
@@ -218,17 +221,19 @@ export async function incrementPagePV(host: string, path: string): Promise<numbe
     const pageKey = `pv:local:page:${hostSanitized}:${pathSanitized}`;
     const busuanziPageKey = `pv:busuanzi:page:${hostSanitized}:${pathSanitized}`;
 
-    const pagePV = await kv.incr(pageKey);
-    logger.debug(
-      `Page PV updated for host: https://${hostSanitized}${pathSanitized}, page_pv: ${pagePV}`,
-    );
-
-    await Promise.all([
+    const [pagePV, busuanziPV] = await Promise.all([
+      kv.incr(pageKey),
+      kv.get(busuanziPageKey),
       kv.expire(pageKey, EXPIRATION_TIME),
       kv.expire(busuanziPageKey, EXPIRATION_TIME),
     ]);
 
-    return pagePV;
+    
+    logger.debug(
+      `Page PV updated for host: https://${hostSanitized}${pathSanitized}, page_pv: ${pagePV}, busuanzi_pv: ${busuanziPV}`,
+    );
+
+    return Number(pagePV) + Number(busuanziPV || 0);
   } catch (error) {
     logger.error(`Error updating page PV: ${error}`);
     return 0;
@@ -250,15 +255,17 @@ export async function incrementSitePV(host: string): Promise<number> {
     const siteKey = `pv:local:site:${hostSanitized}`;
     const busuanziSiteKey = `pv:busuanzi:site:${hostSanitized}`;
 
-    const sitePV = await kv.incr(siteKey);
-    logger.debug(`Site PV updated for host: https://${hostSanitized}, site_pv: ${sitePV}`);
-
-    await Promise.all([
+    const [sitePV, busuanziPV] = await Promise.all([
+      kv.incr(siteKey),
+      kv.get(busuanziSiteKey),
       kv.expire(siteKey, EXPIRATION_TIME),
       kv.expire(busuanziSiteKey, EXPIRATION_TIME),
     ]);
 
-    return sitePV;
+    logger.debug(`Site PV updated for host: https://${hostSanitized}, site_pv: ${sitePV}, busuanzi_pv: ${busuanziPV}`);
+
+
+    return Number(sitePV) + Number(busuanziPV || 0);
   } catch (error) {
     logger.error(`Error updating site PV: ${error}`);
     return 0;
@@ -284,20 +291,21 @@ export async function recordSiteUV(host: string, ip: string): Promise<number> {
 
     // Add IP to the set
     await kv.sadd(siteKey, ip);
-    
-    // Calculate total UV using the utility function
-    const { setCount, adjustment, total } = await calculateTotalUV(hostSanitized);
-    
-    logger.debug(
-      `Site UV updated for host: https://${hostSanitized}, site_uv_set: ${setCount}, total_site_uv: ${total}`
-    );
 
-    // Set expiration for all keys in parallel
-    await Promise.all([
+    const [resAdd, totalUVresult] = await Promise.all([
+      kv.sadd(siteKey, ip),
+      calculateTotalUV(hostSanitized),
       kv.expire(siteKey, EXPIRATION_TIME),
       kv.expire(busuanziSiteKey, EXPIRATION_TIME),
       kv.expire(siteUVAdjustKey, EXPIRATION_TIME),
     ]);
+    
+    // Calculate total UV using the utility function
+    const { setCount, adjustment, total } = totalUVresult;
+
+    logger.debug(
+      `Site UV updated for host: https://${hostSanitized}, site_uv_set: ${setCount}, site_uv_adjust: ${adjustment}, total_site_uv: ${total}`
+    );
 
     return total;
   } catch (error) {

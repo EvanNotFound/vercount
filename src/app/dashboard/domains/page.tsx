@@ -332,7 +332,7 @@ export default function DomainsPage() {
                       
                       {/* Verification instructions or analytics summary */}
                       {!domain.verified ? (
-                        <div className="border-t p-4 bg-white">
+                        <div className="border-t p-4 bg-black">
                           <h4 className="text-sm font-medium mb-3">Verification required</h4>
                           <p className="text-xs text-muted-foreground mb-4">
                             Add this TXT record to your DNS configuration to verify ownership:
