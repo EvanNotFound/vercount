@@ -13,6 +13,16 @@ import { HomeIcon, Globe, ArrowRight } from "lucide-react";
 import DashboardHeader from "@/components/dashboard/dashboard-header";
 import { Separator } from "@/components/ui/separator";
 import { safeDecodeURIComponent } from "@/utils/url";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // Types
 interface Domain {
@@ -49,6 +59,8 @@ export default function DomainsPage() {
   const [newDomain, setNewDomain] = useState("");
   const [domainsLoading, setDomainsLoading] = useState(true);
   const [addingDomain, setAddingDomain] = useState(false);
+  const [showUnlinkDialog, setShowUnlinkDialog] = useState(false);
+  const [domainToUnlink, setDomainToUnlink] = useState<string | null>(null);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -172,6 +184,41 @@ export default function DomainsPage() {
     });
   };
 
+  // Unlink a domain
+  const handleUnlinkDomain = async (e: React.MouseEvent, domainId: string) => {
+    e.stopPropagation();
+    
+    // Open the dialog and set the domain to unlink
+    setDomainToUnlink(domainId);
+    setShowUnlinkDialog(true);
+  };
+  
+  // Perform the actual unlinking after confirmation
+  const confirmUnlinkDomain = async () => {
+    if (!domainToUnlink) return;
+    
+    try {
+      const response = await fetch(`/api/domains/unlink?id=${domainToUnlink}`, {
+        method: "POST",
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.status === "success") {
+        toast.success(data.message || "Domain unlinked successfully");
+        fetchDomains(); // Refresh the domains list
+      } else {
+        throw new Error(data.message || "Failed to unlink domain");
+      }
+    } catch (error) {
+      console.error("Error unlinking domain:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to unlink domain");
+    } finally {
+      setShowUnlinkDialog(false);
+      setDomainToUnlink(null);
+    }
+  };
+
   return (
     <div className="flex-1 flex flex-col">
       {/* Breadcrumb header */}
@@ -267,13 +314,18 @@ export default function DomainsPage() {
                             )}
                             <Button 
                               variant="secondary" 
-                          
                               onClick={(e) => {
                                 e.stopPropagation();
                                 // Edit functionality would go here
                               }}
                             >
                               Edit
+                            </Button>
+                            <Button 
+                              variant="destructive" 
+                              onClick={(e) => handleUnlinkDomain(e, domain.id)}
+                            >
+                              Unlink
                             </Button>
                           </div>
                         </div>
@@ -378,6 +430,22 @@ export default function DomainsPage() {
           </div>
         </div>
       </div>
+
+      {/* Domain unlink confirmation dialog */}
+      <AlertDialog open={showUnlinkDialog} onOpenChange={setShowUnlinkDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unlink Domain</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to unlink this domain? This will remove it from your dashboard but preserve the analytics data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmUnlinkDomain}>Unlink</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 } 
