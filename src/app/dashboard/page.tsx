@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { HomeIcon, ArrowUpRight, Users, Globe, BarChart3, TrendingUp } from "lucide-react";
 import DashboardHeader from "@/components/dashboard/dashboard-header";
+import { safeDecodeURIComponent } from "@/utils/url"; 
 
 // Types
 interface Domain {
@@ -45,24 +46,14 @@ export default function Dashboard() {
   const [domains, setDomains] = useState<Domain[]>([]);
   const [domainsLoading, setDomainsLoading] = useState(true);
 
-  // Dummy data for statistics
+  // Stats state with real data structure
   const [stats, setStats] = useState({
-    totalPageViews: 12487,
-    totalUniqueVisitors: 3254,
+    totalPageViews: 0,
+    totalUniqueVisitors: 0,
     totalDomains: 0,
     totalMonitoredPages: 0,
-    recentActivity: [
-      { domain: "example.com", path: "/", views: 245, change: "+12%" },
-      { domain: "mysite.org", path: "/blog", views: 187, change: "+8%" },
-      { domain: "example.com", path: "/products", views: 132, change: "+5%" },
-      { domain: "mysite.org", path: "/about", views: 98, change: "-3%" },
-    ],
-    topPages: [
-      { domain: "example.com", path: "/", views: 3245 },
-      { domain: "mysite.org", path: "/blog", views: 2187 },
-      { domain: "example.com", path: "/products", views: 1932 },
-      { domain: "mysite.org", path: "/about", views: 1098 },
-    ]
+    recentActivity: [] as { domain: string; path: string; views: number }[],
+    topPages: [] as { domain: string; path: string; views: number }[]
   });
 
   // Redirect if not authenticated
@@ -83,15 +74,57 @@ export default function Dashboard() {
   useEffect(() => {
     if (domains.length > 0) {
       let totalPages = 0;
+      let totalPageViews = 0;
+      let totalUniqueVisitors = 0;
+      const recentActivity: { domain: string; path: string; views: number }[] = [];
+      const allPages: { domain: string; path: string; views: number }[] = [];
+      
       domains.forEach(domain => {
+        // Count total monitored pages
         totalPages += domain.monitoredPages.length;
+        
+        // Sum up page views and unique visitors
+        if (domain.counters) {
+          totalPageViews += domain.counters.sitePv;
+          totalUniqueVisitors += domain.counters.siteUv;
+          
+          // Process page views data for each domain
+          domain.counters.pageViews.forEach((pageView) => {
+            // Use the path directly from the pageView data
+            const path = pageView.path;
+            
+            // Add to all pages for sorting later
+            allPages.push({
+              domain: domain.name,
+              path: safeDecodeURIComponent(path),
+              views: pageView.views
+            });
+            
+            // Add to recent activity (without change percentage)
+            if (recentActivity.length < 4) {
+              recentActivity.push({
+                domain: domain.name,
+                path: safeDecodeURIComponent(path),
+                views: pageView.views
+              });
+            }
+          });
+        }
       });
       
-      setStats(prev => ({
-        ...prev,
+      // Sort pages by views and get top 4
+      const topPages = allPages
+        .sort((a, b) => b.views - a.views)
+        .slice(0, 4);
+      
+      setStats({
+        totalPageViews,
+        totalUniqueVisitors,
         totalDomains: domains.length,
-        totalMonitoredPages: totalPages
-      }));
+        totalMonitoredPages: totalPages,
+        recentActivity,
+        topPages
+      });
     }
   }, [domains]);
 
@@ -118,9 +151,6 @@ export default function Dashboard() {
     }
   };
 
-  // Rest of your existing functions...
-  // ... (keep all the existing functions)
-
   return (
     <div className="flex-1 flex flex-col">
       {/* Breadcrumb header */}
@@ -142,15 +172,15 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between">
-                  <div className="text-2xl font-bold">{stats.totalPageViews.toLocaleString()}</div>
+                  <div className="text-2xl font-bold">
+                  {domainsLoading ? <Skeleton className="h-7 w-10" /> : stats.totalPageViews.toLocaleString()}
+                  </div>
                   <div className="p-2 bg-primary/10 rounded-full">
                     <BarChart3 className="h-4 w-4 text-primary" />
                   </div>
                 </div>
                 <div className="text-xs text-muted-foreground mt-1 flex items-center">
-                  <ArrowUpRight className="h-3 w-3 mr-1 text-green-500" />
-                  <span className="text-green-500 font-medium">+14%</span>
-                  <span className="ml-1">from last month</span>
+                    {domainsLoading ? <Skeleton className="h-4 w-24" /> : `Across ${stats.totalDomains} domains`}
                 </div>
               </CardContent>
             </Card>
@@ -161,15 +191,15 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between">
-                  <div className="text-2xl font-bold">{stats.totalUniqueVisitors.toLocaleString()}</div>
+                  <div className="text-2xl font-bold">
+                  {domainsLoading ? <Skeleton className="h-7 w-10" /> : stats.totalUniqueVisitors.toLocaleString()}
+                  </div>
                   <div className="p-2 bg-primary/10 rounded-full">
                     <Users className="h-4 w-4 text-primary" />
                   </div>
                 </div>
                 <div className="text-xs text-muted-foreground mt-1 flex items-center">
-                  <ArrowUpRight className="h-3 w-3 mr-1 text-green-500" />
-                  <span className="text-green-500 font-medium">+8%</span>
-                  <span className="ml-1">from last month</span>
+                  {domainsLoading ? <Skeleton className="h-4 w-24" /> : `Across ${stats.totalDomains} domains`}
                 </div>
               </CardContent>
             </Card>
@@ -218,14 +248,14 @@ export default function Dashboard() {
             <Card>
               <CardHeader>
                 <CardTitle>Recent Activity</CardTitle>
-                <CardDescription>Page view changes in the last 24 hours</CardDescription>
+                <CardDescription>Recently viewed pages across all domains</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   {domainsLoading ? (
                     Array(4).fill(0).map((_, i) => (
                       <div key={i} className="flex items-center justify-between">
-                        <div>
+                        <div className="flex flex-col gap-0">
                           <Skeleton className="h-5 w-32 mb-1" />
                           <Skeleton className="h-4 w-24" />
                         </div>
@@ -237,16 +267,11 @@ export default function Dashboard() {
                   ) : (
                     stats.recentActivity.map((item, i) => (
                       <div key={i} className="flex items-center justify-between">
-                        <div>
-                          <div className="font-medium">{item.domain}</div>
+                        <div className="flex flex-col gap-0">
+                          <div className="">{item.domain}</div>
                           <div className="text-sm text-muted-foreground">{item.path}</div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <div className="font-medium">{item.views} views</div>
-                          <div className={`text-xs ${item.change.startsWith('+') ? 'text-green-500' : 'text-red-500'}`}>
-                            {item.change}
-                          </div>
-                        </div>
+                        <div className="font-medium">{item.views} views</div>
                       </div>
                     ))
                   )}
@@ -264,7 +289,7 @@ export default function Dashboard() {
                   {domainsLoading ? (
                     Array(4).fill(0).map((_, i) => (
                       <div key={i} className="flex items-center justify-between">
-                        <div>
+                        <div className="flex flex-col gap-0">
                           <Skeleton className="h-5 w-32 mb-1" />
                           <Skeleton className="h-4 w-24" />
                         </div>
@@ -274,8 +299,8 @@ export default function Dashboard() {
                   ) : (
                     stats.topPages.map((item, i) => (
                       <div key={i} className="flex items-center justify-between">
-                        <div>
-                          <div className="font-medium">{item.domain}</div>
+                        <div className="flex flex-col gap-0">
+                          <div className="">{item.domain}</div>
                           <div className="text-sm text-muted-foreground">{item.path}</div>
                         </div>
                         <div className="font-medium">{item.views.toLocaleString()} views</div>

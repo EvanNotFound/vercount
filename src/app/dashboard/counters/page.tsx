@@ -42,15 +42,6 @@ interface PageViewData {
   views: number;
 }
 
-// Utility function to decode URL-encoded paths
-const decodeUrlPath = (path: string): string => {
-  try {
-    return decodeURIComponent(path);
-  } catch (error) {
-    console.error("Error decoding path:", path, error);
-    return path; // Return original path if decoding fails
-  }
-};
 
 export default function CountersPage() {
   const { data: session, status } = useSession();
@@ -227,7 +218,6 @@ export default function CountersPage() {
       
       const resData = await response.json();
       const data = resData.data;
-      console.log("Domain counters fetched:", data);
       
       if ((resData.status === "success") && data && data.counters) {
         const counters = data.counters;
@@ -444,7 +434,7 @@ export default function CountersPage() {
       <div className="flex-1 p-4 md:p-8">
         <div className="max-w-6xl w-full mx-auto">
           <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl md:text-3xl font-bold">Update Counters</h1>
+            <h1 className="text-2xl md:text-3xl font-bold">Analytics Counters</h1>
             <Button onClick={() => router.push('/dashboard')}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Dashboard
@@ -455,7 +445,7 @@ export default function CountersPage() {
           <Card className="mb-6">
             <CardHeader>
               <CardTitle>Select Domain</CardTitle>
-              <CardDescription>Choose a domain to update its counters</CardDescription>
+              <CardDescription>Choose a domain to view and update its analytics data</CardDescription>
             </CardHeader>
             <CardContent>
               {domainsLoading ? (
@@ -499,36 +489,30 @@ export default function CountersPage() {
             </CardContent>
           </Card>
           
-          {/* Counters form */}
+          {/* Counters form - Consolidated UI */}
           {selectedDomain ? (
-            <div className="space-y-6">
-              <Card className="mb-6">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>Update Counters for {selectedDomain.name}</CardTitle>
-                      <CardDescription>Modify the counter values for this domain</CardDescription>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
-                        onClick={handleSyncPathsFromKV}
-                        disabled={syncingPaths}
-                      >
-                        {syncingPaths ? "Syncing..." : "Sync Paths from KV"}
-                      </Button>
-                      <Button 
-                        onClick={handleUpdateCounters}
-                        disabled={updatingCounters}
-                      >
-                        {updatingCounters ? "Updating..." : "Update Counters"}
-                      </Button>
-                    </div>
+            <Card className="mb-6">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Analytics for {selectedDomain.name}</CardTitle>
+                    <CardDescription>View and update analytics data for this domain</CardDescription>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid gap-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Button 
+                    variant="outline" 
+                    onClick={handleSyncPathsFromKV}
+                    disabled={syncingPaths}
+                  >
+                    {syncingPaths ? "Syncing..." : "Sync Paths from KV"}
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {/* Site-wide counters */}
+                  <div>
+                    <h3 className="text-lg font-medium mb-4">Site-wide Analytics</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                       <div className="space-y-2">
                         <Label htmlFor="sitePv">Site Page Views</Label>
                         <Input
@@ -551,31 +535,14 @@ export default function CountersPage() {
                       </div>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="mb-6">
-                <CardHeader>
-                  <CardTitle>Add Monitored Page</CardTitle>
-                  <CardDescription>Add a new page to monitor for this domain</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {/* Add new page form */}
-                    <div className="flex items-end gap-2">
-                      <div className="flex-1">
-                        <Label htmlFor="new-page-path">Add New Page</Label>
-                        <Input
-                          id="new-page-path"
-                          placeholder="/path/to/page"
-                          value={newPagePath}
-                          onChange={(e) => setNewPagePath(e.target.value)}
-                          disabled={addingPage}
-                        />
+
+                  {/* Page-specific counters */}
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-medium">Page-specific Analytics</h3>
+                      <div className="flex items-center gap-2">
+                        {/* Removed Add Page functionality */}
                       </div>
-                      <Button onClick={handleAddMonitoredPage} disabled={addingPage || !newPagePath}>
-                        {addingPage ? "Adding..." : "Add Page"}
-                      </Button>
                     </div>
                     
                     {/* Page views list */}
@@ -590,7 +557,7 @@ export default function CountersPage() {
                       <div className="divide-y">
                         {Object.keys(pageViewUpdates).length === 0 ? (
                           <div className="px-4 py-3 text-center text-muted-foreground">
-                            No monitored pages. Add a page or sync from KV.
+                            No monitored pages. Use "Sync Paths from KV" to import pages.
                           </div>
                         ) : (
                           Object.entries(pageViewUpdates).map(([path, views]) => (
@@ -633,9 +600,28 @@ Decoded: ${safeDecodeURIComponent(path)}`}
                       </div>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
+
+                  {/* Update button - Prominently placed at the bottom */}
+                  <div className="flex justify-end mt-6">
+                    <Button 
+                      onClick={handleUpdateCounters}
+                      disabled={updatingCounters}
+                      size="lg"
+                      className="px-8"
+                    >
+                      {updatingCounters ? (
+                        <>
+                          <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                          Updating...
+                        </>
+                      ) : (
+                        "Save All Changes"
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           ) : (
             <Card>
               <CardContent className="p-8 text-center">

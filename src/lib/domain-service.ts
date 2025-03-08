@@ -168,25 +168,53 @@ export const domainService = {
       // Combine the set cardinality with the manual adjustment
       const siteUv = Number(siteUvSetCount) + Number(siteUvAdjust);
       
+      // Get monitored pages for this domain
+      const monitoredPages = await prisma.monitoredPage.findMany({
+        where: { domain: { name: normalizedDomain } }
+      });
+      
+      // If no monitored pages, return empty page views
+      if (monitoredPages.length === 0) {
+        return {
+          sitePv,
+          siteUv,
+          pageViews: [],
+        };
+      }
+      
       // Get page views
       const pageKeys = await kv.keys(`pv:local:page:${normalizedDomain}:*`);
-      const pageViews = await Promise.all(
-        pageKeys.map(async (key) => {
-          const parts = key.split(':');
-          const path = parts[2]; // Extract path from key
-          const views = await kv.get<number>(key) || 0;
-          
-          return {
-            path,
-            views,
-          };
-        })
-      );
+      
+      // Batch get all page view counts at once
+      const pageViewPromises = pageKeys.map(key => kv.get<number>(key));
+      const pageViewCounts = await Promise.all(pageViewPromises);
+      
+      // Create a map of path to view count from Redis
+      const pathToViewsMap = new Map();
+      pageKeys.forEach((key, index) => {
+        // Extract the path part more robustly by finding the position after the domain prefix
+        const prefix = `pv:local:page:${normalizedDomain}:`;
+        const pathPart = key.substring(key.indexOf(prefix) + prefix.length);
+        pathToViewsMap.set(pathPart, Number(pageViewCounts[index] || 0));
+      });
+      
+      // Create page views data using monitored pages
+      // First, use exact matches from Redis if available
+      const pageViewsData = monitoredPages.map(page => {
+        const views = pathToViewsMap.get(page.path) || 0;
+        return {
+          path: page.path,
+          views
+        };
+      });
+      
+      // Sort by view count (highest first)
+      pageViewsData.sort((a, b) => b.views - a.views);
       
       return {
         sitePv,
         siteUv,
-        pageViews,
+        pageViews: pageViewsData,
       };
     } catch (error) {
       logger.error("Error getting counters for domain", { error, domainName });
@@ -366,6 +394,9 @@ function normalizeDomain(domain: string): string {
   
   // Remove path if present
   normalizedDomain = normalizedDomain.split('/')[0];
+  
+  // Remove port number if present
+  normalizedDomain = normalizedDomain.split(':')[0];
   
   return normalizedDomain.toLowerCase();
 }

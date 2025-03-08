@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { HomeIcon, Globe, ArrowRight } from "lucide-react";
 import DashboardHeader from "@/components/dashboard/dashboard-header";
 import { Separator } from "@/components/ui/separator";
+import { safeDecodeURIComponent } from "@/utils/url";
 
 // Types
 interface Domain {
@@ -358,7 +359,7 @@ export default function DomainsPage() {
                                 <div className="space-y-2">
                                   {domain.counters.pageViews.slice(0, 3).map((page, i) => (
                                     <div key={i} className="flex justify-between items-center text-sm">
-                                      <span className="truncate max-w-[70%]">{page.path}</span>
+                                      <span className="truncate max-w-[70%]">{safeDecodeURIComponent(page.path)}</span>
                                       <span className="font-medium">{page.views}</span>
                                     </div>
                                   ))}
