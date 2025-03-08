@@ -105,7 +105,7 @@ export default function CountersPage() {
       
       // Fetch both counters and paths in parallel
       const [countersResponse, pathsResponse] = await Promise.all([
-        fetch(`/api/domains/counters?domain=${domainName}`),
+        fetch(`/api/domains/analytics?domain=${domainName}`),
         fetch(`/api/domains/pages?domain=${domainName}`)
       ]);
       
@@ -175,7 +175,7 @@ export default function CountersPage() {
     try {
       setLoading(prev => ({ ...prev, saving: true }));
       
-      const response = await fetch("/api/domains/counters", {
+      const response = await fetch("/api/domains/analytics", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

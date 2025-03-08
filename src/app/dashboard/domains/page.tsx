@@ -369,7 +369,7 @@ export default function DomainsPage() {
                       ) : (
                         <div 
                           className="border-t p-4 cursor-pointer hover:bg-primary/[0.03] transition-colors bg-black" 
-                          onClick={() => router.push(`/dashboard/counters?domain=${domain.name}`)}
+                          onClick={() => router.push(`/dashboard/analytics?domain=${domain.name}`)}
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex gap-6">
@@ -389,7 +389,7 @@ export default function DomainsPage() {
                               className="gap-1 text-primary/80 hover:text-primary hover:bg-primary/[0.05]"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                router.push(`/dashboard/counters?domain=${domain.name}`);
+                                router.push(`/dashboard/analytics?domain=${domain.name}`);
                               }}
                             >
                               View Analytics <ArrowRight className="w-3 h-3 ml-1" />

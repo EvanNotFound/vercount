@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
       "Domain counters updated successfully"
     );
   } catch (error) {
-    logger.error("Error in POST /api/domains/counters", { error });
+    logger.error("Error in POST /api/domains/analytics", { error });
     return ApiErrors.internalError();
   }
 }
@@ -139,7 +139,7 @@ export async function GET(req: NextRequest) {
     
     return successResponse({ counters });
   } catch (error) {
-    logger.error("Error in GET /api/domains/counters", { error });
+    logger.error("Error in GET /api/domains/analytics", { error });
     return ApiErrors.internalError();
   }
 } 
