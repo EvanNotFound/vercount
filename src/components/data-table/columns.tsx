@@ -80,10 +80,25 @@ export const columns: ColumnDef<PageViewData>[] = [
           value={views}
           onChange={(e) => {
             if (handlePageViewChange) {
-              handlePageViewChange(path, parseInt(e.target.value) || 0)
+              // Convert to number and back to string to remove leading zeros
+              const numValue = parseInt(e.target.value, 10);
+              // Only update if it's a valid number, otherwise use 0
+              handlePageViewChange(path, isNaN(numValue) ? 0 : numValue);
             }
           }}
+          // Remove default browser spinners and ensure proper formatting
           className="w-24 text-center no-spinners"
+          // Add step attribute to ensure proper number handling
+          step="1"
+          min="0"
+          // Add onInput handler to remove leading zeros
+          onInput={(e) => {
+            const input = e.target as HTMLInputElement;
+            // Remove leading zeros but keep single zero
+            if (input.value.length > 1 && input.value.startsWith('0')) {
+              input.value = input.value.replace(/^0+/, '');
+            }
+          }}
         />
       )
     },

@@ -166,6 +166,7 @@ export async function GET(req: NextRequest) {
     const pageViewPromises = domain.monitoredPages.map(async (page) => {
       const pageKey = `pv:local:page:${hostSanitized}:${page.path}`;
       const views = await kv.get(pageKey);
+      logger.debug("Page views", { pageKey, views });
       return {
         path: page.path,
         decodedPath: safeDecodeURIComponent(page.path),

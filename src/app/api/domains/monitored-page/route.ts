@@ -45,8 +45,7 @@ export async function DELETE(req: NextRequest) {
     const hostSanitized = domainName;
     const pathSanitized = path;
     const pageKey = `pv:local:page:${hostSanitized}:${pathSanitized}`;
-    
-    await kv.del(pageKey);
+  
     
     logger.info("Monitored page deleted from KV", {
       domainId: domain.id,

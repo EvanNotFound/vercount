@@ -105,11 +105,6 @@ export async function DELETE(req: NextRequest) {
       return ApiErrors.notFound("Domain not found or does not belong to you");
     }
     
-    // Delete the page view counter from KV
-    const hostSanitized = domainName;
-    const pageKey = `pv:local:page:${hostSanitized}:${path}`;
-    
-    await kv.del(pageKey);
     
     logger.info("Page deleted from KV", {
       domainId: domain.id,

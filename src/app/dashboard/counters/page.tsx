@@ -9,11 +9,18 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { HomeIcon, ArrowLeft, Trash2 } from "lucide-react";
+import { HomeIcon, ArrowLeft, RefreshCw } from "lucide-react";
 import DashboardHeader from "@/components/dashboard/dashboard-header";
 import { safeDecodeURIComponent } from "@/utils/url";
 import { CounterTable } from "@/components/data-table/counter-table";
-import { Domain, MonitoredPage, PageViewData } from "@/types/domain";
+import { Domain, PageViewData } from "@/types/domain";
+
+// Define types for our state
+interface CounterData {
+  sitePv: number;
+  siteUv: number;
+  pageViews: Record<string, number>;
+}
 
 export default function CountersPage() {
   const { data: session, status } = useSession();
@@ -21,17 +28,22 @@ export default function CountersPage() {
   const searchParams = useSearchParams();
   const domainParam = searchParams.get('domain');
   
+  // Simplified state management
   const [domains, setDomains] = useState<Domain[]>([]);
   const [selectedDomain, setSelectedDomain] = useState<Domain | null>(null);
-  const [sitePv, setSitePv] = useState<number>(0);
-  const [siteUv, setSiteUv] = useState<number>(0);
-  const [pageViewUpdates, setPageViewUpdates] = useState<Record<string, number>>({});
-  const [domainsLoading, setDomainsLoading] = useState(true);
-  const [updatingCounters, setUpdatingCounters] = useState(false);
-  const [updatingPageView, setUpdatingPageView] = useState<string | null>(null);
+  const [counterData, setCounterData] = useState<CounterData>({
+    sitePv: 0,
+    siteUv: 0,
+    pageViews: {}
+  });
+  const [loading, setLoading] = useState({
+    domains: true,
+    counters: false,
+    saving: false,
+    syncing: false
+  });
+  const [monitoredPaths, setMonitoredPaths] = useState<string[]>([]);
   const [newPagePath, setNewPagePath] = useState<string>("");
-  const [addingPage, setAddingPage] = useState(false);
-  const [syncingPaths, setSyncingPaths] = useState(false);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -40,7 +52,7 @@ export default function CountersPage() {
     }
   }, [status, router]);
 
-  // Fetch domains
+  // Fetch domains on initial load
   useEffect(() => {
     if (status === "authenticated") {
       fetchDomains();
@@ -50,13 +62,9 @@ export default function CountersPage() {
   // Select domain from URL parameter
   useEffect(() => {
     if (domains.length > 0 && domainParam) {
-      console.log("Looking for domain:", domainParam, "in domains:", domains);
       const domain = domains.find((d: Domain) => d.name === domainParam);
       if (domain) {
-        console.log("Found domain:", domain);
-        handleSelectDomain(domain);
-      } else {
-        console.log("Domain not found in domains list");
+        selectDomain(domain);
       }
     }
   }, [domains, domainParam]);
@@ -64,7 +72,7 @@ export default function CountersPage() {
   // Fetch domains from API
   const fetchDomains = async () => {
     try {
-      setDomainsLoading(true);
+      setLoading(prev => ({ ...prev, domains: true }));
       const response = await fetch("/api/domains");
       
       if (!response.ok) {
@@ -72,54 +80,101 @@ export default function CountersPage() {
       }
       
       const resData = await response.json();
-      const data = resData.data;
       
       if (resData.status === "success") {
-        console.log("Domains fetched:", data.domains);
-        
-        // Since we're not storing paths in PostgreSQL anymore,
-        // initialize each domain with an empty monitoredPages array
-        const domainsWithEmptyPages = data.domains.map((domain: Domain) => ({
-          ...domain,
-          monitoredPages: []
-        }));
-        
-        setDomains(domainsWithEmptyPages || []);
-        
-        // If there's a domain parameter and domains are loaded, select it
-        if (domainParam && domainsWithEmptyPages && domainsWithEmptyPages.length > 0) {
-          const domain = domainsWithEmptyPages.find((d: Domain) => d.name === domainParam);
-          if (domain) {
-            // Just set the selected domain and call fetchDomainCounters directly
-            // instead of going through handleSelectDomain to avoid duplicate API calls
-            setSelectedDomain(domain);
-            fetchDomainCounters(domain.name);
-          }
-        }
+        setDomains(resData.data.domains || []);
       }
     } catch (error) {
       console.error("Error fetching domains:", error);
       toast.error("Failed to load domains");
     } finally {
-      setDomainsLoading(false);
+      setLoading(prev => ({ ...prev, domains: false }));
     }
   };
 
-  // Handle domain selection
-  const handleSelectDomain = async (domain: Domain) => {
-    console.log("Selected domain:", domain);
+  // Select a domain and load its data
+  const selectDomain = async (domain: Domain) => {
     setSelectedDomain(domain);
-    
-    // Fetch domain counters - this will also fetch paths from KV and update the UI
-    fetchDomainCounters(domain.name);
+    loadDomainData(domain.name);
   };
 
-  // Update counters
-  const handleUpdateCounters = async () => {
+  // Load all domain data in a single function
+  const loadDomainData = async (domainName: string) => {
+    try {
+      setLoading(prev => ({ ...prev, counters: true }));
+      
+      // Fetch both counters and paths in parallel
+      const [countersResponse, pathsResponse] = await Promise.all([
+        fetch(`/api/domains/counters?domain=${domainName}`),
+        fetch(`/api/domains/pages?domain=${domainName}`)
+      ]);
+      
+      if (!countersResponse.ok || !pathsResponse.ok) {
+        throw new Error("Failed to fetch domain data");
+      }
+      
+      const countersData = await countersResponse.json();
+      const pathsData = await pathsResponse.json();
+      
+      if (countersData.status === "success" && pathsData.status === "success") {
+        // Process counter data
+        const counters = countersData.data.counters;
+        
+        // Convert page views array to a record for easier updates
+        const pageViewsRecord: Record<string, number> = {};
+        if (Array.isArray(counters.pageViews)) {
+          counters.pageViews.forEach((pv: { path: string; views: number }) => {
+            pageViewsRecord[pv.path] = pv.views || 0;
+          });
+        }
+        
+        // Get paths from the paths API
+        const paths = pathsData.data.paths || [];
+        
+        // Create a mapping of original to decoded paths if available
+        const pathMapping: Record<string, string> = {};
+        if (pathsData.data.decodedPaths && Array.isArray(pathsData.data.decodedPaths)) {
+          pathsData.data.decodedPaths.forEach((item: { original: string; decoded: string }) => {
+            pathMapping[item.original] = item.decoded;
+          });
+        }
+        
+        // Make sure all paths from KV are in the pageViews record
+        // If a path exists in KV but not in counters, initialize it with 0 views
+        paths.forEach((path: string) => {
+          if (!pageViewsRecord[path]) {
+            pageViewsRecord[path] = 0;
+          }
+        });
+        
+        // Update state with all data
+        setCounterData({
+          sitePv: counters.sitePv || 0,
+          siteUv: counters.siteUv || 0,
+          pageViews: pageViewsRecord
+        });
+        
+        // Store monitored paths
+        setMonitoredPaths(paths);
+        
+        console.log('Loaded paths:', paths);
+        console.log('Decoded paths mapping:', pathMapping);
+      }
+    } catch (error) {
+      console.error("Error loading domain data:", error);
+      toast.error("Failed to load domain data");
+    } finally {
+      setLoading(prev => ({ ...prev, counters: false }));
+    }
+  };
+
+  // Save all counter changes
+  const saveCounters = async () => {
     if (!selectedDomain) return;
     
     try {
-      setUpdatingCounters(true);
+      setLoading(prev => ({ ...prev, saving: true }));
+      
       const response = await fetch("/api/domains/counters", {
         method: "POST",
         headers: {
@@ -127,9 +182,9 @@ export default function CountersPage() {
         },
         body: JSON.stringify({
           domainName: selectedDomain.name,
-          sitePv,
-          siteUv,
-          pageViews: Object.entries(pageViewUpdates).map(([path, views]) => ({
+          sitePv: counterData.sitePv,
+          siteUv: counterData.siteUv,
+          pageViews: Object.entries(counterData.pageViews).map(([path, views]) => ({
             path,
             views,
           })),
@@ -137,241 +192,59 @@ export default function CountersPage() {
       });
       
       const resData = await response.json();
-      const data = resData.data;
-      console.log("Update counters response:", data);
       
       if (resData.status === "success") {
         toast.success("Counters updated successfully");
-        // Refresh domain data
-        fetchDomains();
-        // Fetch updated counter data for the selected domain
-        fetchDomainCounters(selectedDomain.name);
+        // Refresh data to ensure UI is in sync with server
+        loadDomainData(selectedDomain.name);
       } else {
-        toast.error(data.message || "Failed to update counters");
+        toast.error(resData.message || "Failed to update counters");
       }
     } catch (error) {
-      console.error("Error updating counters:", error);
+      console.error("Error saving counters:", error);
       toast.error("Failed to update counters");
     } finally {
-      setUpdatingCounters(false);
+      setLoading(prev => ({ ...prev, saving: false }));
     }
   };
 
-  // Update a single page view
-  const handleUpdatePageView = async (path: string) => {
-    if (!selectedDomain) return;
-    
-    try {
-      setUpdatingPageView(path);
-      // Add the page view to the pageViewUpdates state
-      setPageViewUpdates((prev) => ({
-        ...prev,
-        [path]: pageViewUpdates[path] || 0,
-      }));
-      
-      // Update all counters
-      await handleUpdateCounters();
-      
-      toast.success(`Page view for ${path} updated`);
-    } catch (error) {
-      console.error("Error updating page view:", error);
-      toast.error("Failed to update page view");
-    } finally {
-      setUpdatingPageView(null);
-    }
-  };
-
-  // Handle page view input change
-  const handlePageViewChange = (path: string, value: number) => {
-    setPageViewUpdates((prev) => ({
+  // Update site-wide counter values
+  const updateSiteCounter = (field: 'sitePv' | 'siteUv', value: number) => {
+    setCounterData(prev => ({
       ...prev,
-      [path]: value,
+      [field]: value
     }));
   };
 
-  // Add a new function to fetch domain counters
-  const fetchDomainCounters = async (domainName: string) => {
-    try {
-      // Fetch paths from KV directly instead of calling syncPathsFromKV
-      // to avoid duplicate API calls and toast notifications
-      const paths = await fetchPathsFromKV(domainName);
-      
-      // Update the selected domain with paths from KV if we have a selected domain
-      if (selectedDomain && paths.length > 0) {
-        const updatedDomain = {
-          ...selectedDomain,
-          monitoredPages: paths.map((path: string) => ({
-            id: `kv-${path}`, // Generate a fake ID since we don't store in PostgreSQL
-            path,
-            domainId: selectedDomain.id,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          }))
-        };
-        
-        setSelectedDomain(updatedDomain);
-        
-        // Also update the domain in the domains list
-        setDomains(prevDomains => 
-          prevDomains.map(d => 
-            d.id === selectedDomain.id ? updatedDomain : d
-          )
-        );
+  // Update a page view counter
+  const updatePageView = (path: string, value: number) => {
+    setCounterData(prev => ({
+      ...prev,
+      pageViews: {
+        ...prev.pageViews,
+        [path]: value
       }
-      
-      // Fetch counter data
-      const response = await fetch(`/api/domains/counters?domain=${domainName}`);
-      
-      if (!response.ok) {
-        throw new Error("Failed to fetch domain counters");
-      }
-      
-      const resData = await response.json();
-      const data = resData.data;
-      
-      if ((resData.status === "success") && data && data.counters) {
-        const counters = data.counters;
-        setSitePv(counters.sitePv || 0);
-        setSiteUv(counters.siteUv || 0);
-        
-        // Initialize page view updates
-        const initialPageViews: Record<string, number> = {};
-        if (Array.isArray(counters.pageViews)) {
-          counters.pageViews.forEach((pv: { path: string; decodedPath?: string; views: number }) => {
-            initialPageViews[pv.path] = pv.views || 0;
-          });
-        }
-        setPageViewUpdates(initialPageViews);
-      } else if (selectedDomain && selectedDomain.counters) {
-        // Fallback to using counters from the domain object if API fails
-        setSitePv(selectedDomain.counters.sitePv || 0);
-        setSiteUv(selectedDomain.counters.siteUv || 0);
-      }
-    } catch (error) {
-      console.error("Error fetching domain counters:", error);
-      toast.error("Failed to fetch domain counters");
-    }
-  };
-
-  // New function to sync paths from KV
-  const syncPathsFromKV = async (domainName: string, showToast = false) => {
-    try {
-      // Since we're not storing paths in PostgreSQL anymore,
-      // we just need to fetch the paths from KV and update the UI
-      const paths = await fetchPathsFromKV(domainName);
-      
-      if (paths.length > 0) {
-        // Only show toast when explicitly requested (e.g., when user clicks "Sync Paths" button)
-        if (showToast) {
-          toast.success(`Found ${paths.length} pages in KV`);
-        }
-        
-        // Update the UI with the paths from KV
-        if (selectedDomain) {
-          // Create a new domain object with the paths from KV
-          const updatedDomain = {
-            ...selectedDomain,
-            monitoredPages: paths.map((path: string) => ({
-              id: `kv-${path}`, // Generate a fake ID since we don't store in PostgreSQL
-              path,
-              domainId: selectedDomain.id,
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString()
-            }))
-          };
-          
-          // Update the selected domain
-          setSelectedDomain(updatedDomain);
-          
-          // Also update the domain in the domains list
-          setDomains(prevDomains => 
-            prevDomains.map(domain => 
-              domain.id === selectedDomain.id ? updatedDomain : domain
-            )
-          );
-        }
-      }
-      
-      return { paths };
-    } catch (error) {
-      console.error("Error syncing paths from KV:", error);
-      if (showToast) {
-        toast.error("Failed to sync paths from KV");
-      }
-      return { paths: [] };
-    }
-  };
-
-  // Add a new function to fetch all paths from KV
-  const fetchPathsFromKV = async (domainName: string) => {
-    try {
-      const response = await fetch(`/api/domains/pages?domain=${domainName}`);
-      
-      if (!response.ok) {
-        throw new Error("Failed to fetch paths from KV");
-      }
-      
-      const resData = await response.json();
-      const data = resData.data;
-      
-      return data.paths || [];
-    } catch (error) {
-      console.error("Error fetching paths from KV:", error);
-      toast.error("Failed to fetch paths from KV");
-      return [];
-    }
-  };
-
-  // Add a new monitored page
-  const handleAddMonitoredPage = async () => {
-    if (!selectedDomain || !newPagePath) return;
-    
-    try {
-      setAddingPage(true);
-      
-      // Normalize the path
-      let path = newPagePath;
-      if (!path.startsWith('/')) {
-        path = '/' + path;
-      }
-      
-      // Add the page to the pageViewUpdates state with 0 views
-      setPageViewUpdates((prev) => ({
-        ...prev,
-        [path]: 0,
-      }));
-      
-      // Update all counters to save the new page to KV
-      await handleUpdateCounters();
-      
-      // After updating counters, refresh the paths from KV
-      await syncPathsFromKV(selectedDomain.name);
-      
-      // Clear the input
-      setNewPagePath("");
-      
-      toast.success(`Page ${path} added successfully`);
-    } catch (error) {
-      console.error("Error adding monitored page:", error);
-      toast.error("Failed to add monitored page");
-    } finally {
-      setAddingPage(false);
-    }
+    }));
   };
 
   // Delete a monitored page
-  const handleDeleteMonitoredPage = async (path: string) => {
+  const deleteMonitoredPage = async (path: string) => {
     if (!selectedDomain) return;
     
     try {
-      setUpdatingPageView(path);
+      // Remove from local state first for immediate UI feedback
+      setCounterData(prev => {
+        const updatedPageViews = { ...prev.pageViews };
+        delete updatedPageViews[path];
+        return {
+          ...prev,
+          pageViews: updatedPageViews
+        };
+      });
       
-      // Remove the page from the pageViewUpdates state
-      const updatedPageViews = { ...pageViewUpdates };
-      delete updatedPageViews[path];
-      setPageViewUpdates(updatedPageViews);
+      setMonitoredPaths(prev => prev.filter(p => p !== path));
       
-      // Delete the monitored page directly from KV
+      // Delete from server
       const response = await fetch(`/api/domains/monitored-page?domain=${selectedDomain.name}&path=${encodeURIComponent(path)}`, {
         method: "DELETE",
       });
@@ -380,36 +253,41 @@ export default function CountersPage() {
       
       if (resData.status === "success") {
         toast.success(`Page ${path} deleted successfully`);
-        // Refresh domain data
-        fetchDomains();
-        // Also refresh paths from KV to ensure UI is in sync
-        fetchPathsFromKV(selectedDomain.name);
       } else {
+        // If server deletion fails, reload data to ensure UI is in sync
+        loadDomainData(selectedDomain.name);
         toast.error(`Failed to delete page: ${resData.message || 'Unknown error'}`);
       }
     } catch (error) {
       console.error("Error deleting monitored page:", error);
       toast.error("Failed to delete page. Please try again.");
-    } finally {
-      setUpdatingPageView("");
+      // Reload data to ensure UI is in sync
+      loadDomainData(selectedDomain.name);
     }
   };
 
-  // Add a function to manually sync paths from KV
-  const handleSyncPathsFromKV = async () => {
+  // Sync paths from KV
+  const syncPathsFromKV = async () => {
     if (!selectedDomain) return;
     
     try {
-      setSyncingPaths(true);
-      // Pass true to show toast notifications since this is a user-initiated action
-      await syncPathsFromKV(selectedDomain.name, true);
-      // No need to call fetchDomainCounters here as syncPathsFromKV already updates the UI
+      setLoading(prev => ({ ...prev, syncing: true }));
+      // Simply reload all domain data
+      await loadDomainData(selectedDomain.name);
+      toast.success("Paths synced successfully");
     } catch (error) {
-      console.error("Error syncing paths from KV:", error);
-      toast.error("Failed to sync paths from KV");
+      console.error("Error syncing paths:", error);
+      toast.error("Failed to sync paths");
     } finally {
-      setSyncingPaths(false);
+      setLoading(prev => ({ ...prev, syncing: false }));
     }
+  };
+
+  // Dummy function for the CounterTable component
+  const handleUpdatePageViewDummy = async (path: string): Promise<void> => {
+    // This function is not needed in our simplified approach
+    // but we need to provide it to satisfy the CounterTable props
+    return Promise.resolve();
   };
 
   return (
@@ -439,7 +317,7 @@ export default function CountersPage() {
               <CardDescription>Choose a domain to view and update its analytics data</CardDescription>
             </CardHeader>
             <CardContent>
-              {domainsLoading ? (
+              {loading.domains ? (
                 <div className="space-y-2">
                   <Skeleton className="h-10 w-full" />
                   <div className="flex gap-2">
@@ -459,7 +337,7 @@ export default function CountersPage() {
                       <Button
                         key={domain.id}
                         variant={selectedDomain?.id === domain.id ? "default" : "outline"}
-                        onClick={() => handleSelectDomain(domain)}
+                        onClick={() => selectDomain(domain)}
                         className="justify-start overflow-hidden"
                         disabled={!domain.verified}
                       >
@@ -480,7 +358,7 @@ export default function CountersPage() {
             </CardContent>
           </Card>
           
-          {/* Counters form - Consolidated UI */}
+          {/* Counters form */}
           {selectedDomain ? (
             <Card className="mb-6">
               <CardHeader>
@@ -491,91 +369,130 @@ export default function CountersPage() {
                   </div>
                   <Button 
                     variant="outline" 
-                    onClick={handleSyncPathsFromKV}
-                    disabled={syncingPaths}
+                    onClick={syncPathsFromKV}
+                    disabled={loading.syncing}
                   >
-                    {syncingPaths ? "Syncing..." : "Sync Paths from KV"}
+                    {loading.syncing ? "Syncing..." : (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Sync Paths
+                      </>
+                    )}
                   </Button>
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-6">
-                  {/* Site-wide counters */}
-                  <div>
-                    <h3 className="text-lg font-medium mb-4">Site-wide Analytics</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="sitePv">Site Page Views</Label>
-                        <Input
-                          id="sitePv"
-                          type="number"
-                          min="0"
-                          value={sitePv}
-                          onChange={(e) => setSitePv(Number(e.target.value))}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="siteUv">Site Unique Visitors</Label>
-                        <Input
-                          id="siteUv"
-                          type="number"
-                          min="0"
-                          value={siteUv}
-                          onChange={(e) => setSiteUv(Number(e.target.value))}
-                        />
+                {loading.counters ? (
+                  <div className="space-y-4">
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-40 w-full" />
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {/* Site-wide counters */}
+                    <div>
+                      <h3 className="text-lg font-medium mb-4">Site-wide Analytics</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="sitePv">Site Page Views</Label>
+                          <Input
+                            id="sitePv"
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={counterData.sitePv}
+                            onChange={(e) => {
+                              const numValue = parseInt(e.target.value, 10);
+                              updateSiteCounter('sitePv', isNaN(numValue) ? 0 : numValue);
+                            }}
+                            onInput={(e) => {
+                              const input = e.target as HTMLInputElement;
+                              // Remove leading zeros but keep single zero
+                              if (input.value.length > 1 && input.value.startsWith('0')) {
+                                input.value = input.value.replace(/^0+/, '');
+                              }
+                            }}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="siteUv">Site Unique Visitors</Label>
+                          <Input
+                            id="siteUv"
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={counterData.siteUv}
+                            onChange={(e) => {
+                              const numValue = parseInt(e.target.value, 10);
+                              updateSiteCounter('siteUv', isNaN(numValue) ? 0 : numValue);
+                            }}
+                            onInput={(e) => {
+                              const input = e.target as HTMLInputElement;
+                              // Remove leading zeros but keep single zero
+                              if (input.value.length > 1 && input.value.startsWith('0')) {
+                                input.value = input.value.replace(/^0+/, '');
+                              }
+                            }}
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Page-specific counters - Using the new data table component */}
-                  <div>
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-medium">Page-specific Analytics</h3>
-                    </div>
-                    
-                    {/* Page views data table */}
-                    {Object.keys(pageViewUpdates).length === 0 ? (
-                      <div className="border rounded-md px-4 py-3 text-center text-muted-foreground">
-                        No monitored pages. Use &quot;Sync Paths from KV&quot; to import pages.
-                      </div>
-                    ) : (
-                      <CounterTable
-                        data={Object.entries(pageViewUpdates).map(([path, views]) => ({
-                          path,
-                          views,
-                        }))}
-                        handlePageViewChange={handlePageViewChange}
-                        handleUpdatePageView={handleUpdatePageView}
-                        handleDeleteMonitoredPage={handleDeleteMonitoredPage}
-                      />
-                    )}
-                  </div>
-
-                  {/* Update button - Prominently placed at the bottom */}
-                  <div className="flex justify-end mt-6">
-                    <Button 
-                      onClick={handleUpdateCounters}
-                      disabled={updatingCounters}
-                      size="lg"
-                      className="px-8"
-                    >
-                      {updatingCounters ? (
-                        <>
-                          <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                          Updating...
-                        </>
+                    {/* Page-specific counters */}
+                    <div>
+                      <h3 className="text-lg font-medium mb-4">
+                        Page-specific Analytics
+                        {Object.keys(counterData.pageViews).length > 0 && (
+                          <span className="text-sm font-normal text-muted-foreground ml-2">
+                            ({Object.keys(counterData.pageViews).length} pages)
+                          </span>
+                        )}
+                      </h3>
+                      
+                      {Object.keys(counterData.pageViews).length === 0 ? (
+                        <div className="border rounded-md px-4 py-3 text-center text-muted-foreground">
+                          No monitored pages. Use &quot;Sync Paths&quot; to import pages or add a new page above.
+                        </div>
                       ) : (
-                        "Save All Changes"
+                        <CounterTable
+                          data={Object.entries(counterData.pageViews).map(([path, views]) => ({
+                            path,
+                            views,
+                          }))}
+                          handlePageViewChange={(path, value) => updatePageView(path, value)}
+                          handleUpdatePageView={handleUpdatePageViewDummy}
+                          handleDeleteMonitoredPage={deleteMonitoredPage}
+                        />
                       )}
-                    </Button>
+                    </div>
+
+                    {/* Save button */}
+                    <div className="flex justify-end mt-6">
+                      <Button 
+                        onClick={saveCounters}
+                        disabled={loading.saving}
+                        size="lg"
+                        className="px-8"
+                      >
+                        {loading.saving ? (
+                          <>
+                            <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                            Saving...
+                          </>
+                        ) : (
+                          "Save All Changes"
+                        )}
+                      </Button>
+                    </div>
                   </div>
-                </div>
+                )}
               </CardContent>
             </Card>
           ) : (
             <Card>
               <CardContent className="p-8 text-center">
-                {domainsLoading ? (
+                {loading.domains ? (
                   <div className="space-y-4 flex flex-col items-center">
                     <Skeleton className="h-6 w-64" />
                     <Skeleton className="h-4 w-48" />
