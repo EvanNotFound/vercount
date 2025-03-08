@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { useState } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { ChevronLeft, ChevronRight, Search } from "lucide-react"
 import {
   Select,
@@ -60,7 +60,15 @@ export function DataTable<TData, TValue>({
     pageIndex: 0,
     pageSize: 10,
   })
-
+  
+  // Create a more stable reference to the current page index
+  const pageIndexRef = useRef(0)
+  
+  // Update the ref whenever pagination state changes
+  useEffect(() => {
+    pageIndexRef.current = pagination.pageIndex
+  }, [pagination.pageIndex])
+  
   const table = useReactTable({
     data,
     columns,
@@ -78,6 +86,16 @@ export function DataTable<TData, TValue>({
     },
     meta,
   })
+  
+  // Buttons for direct pagination control
+  const goToPage = useCallback((page: number) => {
+    if (page >= 0 && page < table.getPageCount()) {
+      setPagination(prev => ({
+        ...prev,
+        pageIndex: page
+      }))
+    }
+  }, [table])
 
   return (
     <div className="space-y-4">
@@ -177,21 +195,21 @@ export function DataTable<TData, TValue>({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
+            onClick={() => goToPage(pagination.pageIndex - 1)}
+            disabled={pagination.pageIndex <= 0}
           >
             <ChevronLeft className="h-4 w-4 mr-1" />
             Previous
           </Button>
           <div className="flex items-center gap-1 px-2">
-            <span className="text-sm font-medium">{table.getState().pagination.pageIndex + 1}</span>
+            <span className="text-sm font-medium">{pagination.pageIndex + 1}</span>
             <span className="text-sm text-muted-foreground">of {table.getPageCount()}</span>
           </div>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
+            onClick={() => goToPage(pagination.pageIndex + 1)}
+            disabled={pagination.pageIndex >= table.getPageCount() - 1}
           >
             Next
             <ChevronRight className="h-4 w-4 ml-1" />

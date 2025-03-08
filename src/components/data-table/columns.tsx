@@ -25,7 +25,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 
 // Declare module augmentation for TableMeta
 declare module '@tanstack/react-table' {
@@ -92,41 +92,49 @@ export const columns: ColumnDef<PageViewData>[] = [
       // Access the meta data from the table
       const { handlePageViewChange } = table.options.meta || {}
       
-      return (
-        <Input
-          type="number"
-          value={views}
-          onChange={(e) => {
-            if (handlePageViewChange) {
-              // Convert to number and back to string to remove leading zeros
-              const numValue = parseInt(e.target.value, 10);
-              // Only update if it's a valid number, otherwise use 0
-              handlePageViewChange(path, isNaN(numValue) ? 0 : numValue);
-            }
-          }}
-          // Prevent form submission which could cause page resets
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              e.stopPropagation();
-              (e.target as HTMLInputElement).blur();
-            }
-          }}
-          // Remove default browser spinners and ensure proper formatting
-          className="w-24 text-center no-spinners"
-          // Add step attribute to ensure proper number handling
-          step="1"
-          min="0"
-          // Add onInput handler to remove leading zeros
-          onInput={(e) => {
-            const input = e.target as HTMLInputElement;
-            // Remove leading zeros but keep single zero
-            if (input.value.length > 1 && input.value.startsWith('0')) {
-              input.value = input.value.replace(/^0+/, '');
-            }
-          }}
-        />
-      )
+      // Create a self-contained EditableCell component to avoid focus issues
+      const EditableCell = () => {
+        const [localValue, setLocalValue] = useState(views.toString())
+        const [hasFocus, setHasFocus] = useState(false)
+        
+        // Only update parent when focus is lost or Enter is pressed
+        const commitChange = () => {
+          if (handlePageViewChange) {
+            const numValue = parseInt(localValue, 10)
+            handlePageViewChange(path, isNaN(numValue) ? 0 : numValue)
+          }
+        }
+        
+        return (
+          <Input
+            type="number"
+            value={hasFocus ? localValue : views.toString()}
+            onChange={(e) => {
+              setLocalValue(e.target.value)
+            }}
+            onFocus={() => setHasFocus(true)}
+            onBlur={() => {
+              setHasFocus(false)
+              commitChange()
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                e.stopPropagation()
+                commitChange()
+                setHasFocus(false)
+                ;(e.target as HTMLInputElement).blur()
+              }
+            }}
+            className="w-24 text-center no-spinners"
+            step="1"
+            min="0"
+          />
+        )
+      }
+      
+      // Return the isolated component
+      return <EditableCell />
     },
   },
   {
