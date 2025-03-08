@@ -117,7 +117,7 @@ export const columns: ColumnDef<PageViewData>[] = [
       
       return (
         <div className="flex items-center justify-end gap-2">
-          <TooltipProvider>
+          {/* <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button 
@@ -138,7 +138,7 @@ export const columns: ColumnDef<PageViewData>[] = [
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-          
+           */}
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
