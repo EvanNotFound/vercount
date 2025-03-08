@@ -148,3 +148,17 @@
 
 /* Import Shiki styles */
 @import '../styles/shiki.css';
+
+@layer components {
+  /* Hide number input spinners */
+  .no-spinners::-webkit-outer-spin-button,
+  .no-spinners::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  
+  .no-spinners {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+}

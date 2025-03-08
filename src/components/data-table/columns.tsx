@@ -1,11 +1,13 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { ArrowUpDown, MoreHorizontal } from "lucide-react"
+import { ArrowUpDown, ExternalLink, RefreshCw, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { PageViewData, CounterTableMeta } from "@/types/domain"
 import { safeDecodeURIComponent } from "@/utils/url"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { cn } from "@/lib/utils"
 
 // Declare module augmentation for TableMeta
 declare module '@tanstack/react-table' {
@@ -24,6 +26,7 @@ export const columns: ColumnDef<PageViewData>[] = [
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="w-full justify-start font-semibold"
         >
           Path
           <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -32,7 +35,22 @@ export const columns: ColumnDef<PageViewData>[] = [
     },
     cell: ({ row }) => {
       const path = row.getValue("path") as string
-      return <div className="font-medium">{safeDecodeURIComponent(path)}</div>
+      const decodedPath = safeDecodeURIComponent(path)
+      
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="font-medium max-w-[300px] truncate hover:text-blue-600 transition-colors">
+                {decodedPath}
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-[400px]">
+              <p className="break-words">{decodedPath}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )
     },
   },
   {
@@ -42,6 +60,7 @@ export const columns: ColumnDef<PageViewData>[] = [
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="w-full justify-start font-semibold"
         >
           Views
           <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -64,13 +83,17 @@ export const columns: ColumnDef<PageViewData>[] = [
               handlePageViewChange(path, parseInt(e.target.value) || 0)
             }
           }}
-          className="w-24"
+          className="w-24 text-center no-spinners"
         />
       )
     },
   },
   {
     id: "actions",
+    enableHiding: false,
+    meta: {
+      align: "right",
+    },
     cell: ({ row, table }) => {
       const path = row.getValue("path") as string
       
@@ -78,29 +101,50 @@ export const columns: ColumnDef<PageViewData>[] = [
       const { handleUpdatePageView, handleDeleteMonitoredPage } = table.options.meta || {}
       
       return (
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => {
-              if (handleUpdatePageView) {
-                handleUpdatePageView(path)
-              }
-            }}
-          >
-            Update
-          </Button>
-          <Button 
-            variant="destructive" 
-            size="sm"
-            onClick={() => {
-              if (handleDeleteMonitoredPage) {
-                handleDeleteMonitoredPage(path)
-              }
-            }}
-          >
-            Delete
-          </Button>
+        <div className="flex items-center justify-end gap-2">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => {
+                    if (handleUpdatePageView) {
+                      handleUpdatePageView(path)
+                    }
+                  }}
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="left">
+                <p>Update page views</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                  onClick={() => {
+                    if (handleDeleteMonitoredPage) {
+                      handleDeleteMonitoredPage(path)
+                    }
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="left">
+                <p>Delete monitored page</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       )
     },
