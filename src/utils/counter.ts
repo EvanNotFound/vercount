@@ -183,7 +183,7 @@ export async function fetchPagePVHistory(host: string, path: string): Promise<nu
       kv.get(pageKey),
       kv.get(busuanziPageKey),
     ]);
-    logger.debug(`Page PV: ${pagePV}, page_key: ${pageKey}`);
+    logger.info(`Page PV: ${pagePV}, Busuanzi PV: ${busuanziPV}`);
 
     if (!pagePV) {
       logger.debug(`Page PV not found for host: https://${hostSanitized}${pathSanitized}`);
