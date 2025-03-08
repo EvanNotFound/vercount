@@ -517,7 +517,7 @@ export default function CountersPage() {
                     {/* Page views data table */}
                     {Object.keys(pageViewUpdates).length === 0 ? (
                       <div className="border rounded-md px-4 py-3 text-center text-muted-foreground">
-                        No monitored pages. Use "Sync Paths from KV" to import pages.
+                        No monitored pages. Use &quot;Sync Paths from KV&quot; to import pages.
                       </div>
                     ) : (
                       <CounterTable
