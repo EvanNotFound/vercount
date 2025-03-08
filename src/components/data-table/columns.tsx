@@ -214,7 +214,7 @@ export const columns: ColumnDef<PageViewData>[] = [
               <AlertDialogHeader>
                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This will permanently delete the monitored page "{path}".
+                  This will permanently delete the monitored page &quot;{path}&quot;.
                   This action cannot be undone.
                 </AlertDialogDescription>
               </AlertDialogHeader>
