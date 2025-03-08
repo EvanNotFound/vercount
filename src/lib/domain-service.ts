@@ -41,6 +41,42 @@ export const domainService = {
           userId,
         },
       });
+
+      // Check if there's existing Redis data for this domain
+      // and recreate monitored pages if needed
+      try {
+        // Get page keys from Redis
+        const pageKeys = await kv.keys(`pv:local:page:${normalizedDomain}:*`);
+        
+        if (pageKeys.length > 0) {
+          logger.info(`Found ${pageKeys.length} existing page keys in Redis for domain ${normalizedDomain}. Recreating monitored pages.`);
+          
+          // Create monitored pages for each Redis key
+          const createPagesPromises = pageKeys.map(key => {
+            // Extract the path part from the key
+            const prefix = `pv:local:page:${normalizedDomain}:`;
+            const path = key.substring(key.indexOf(prefix) + prefix.length);
+            
+            // Create the monitored page
+            return prisma.monitoredPage.create({
+              data: {
+                path,
+                domainId: domain.id,
+              },
+            });
+          });
+          
+          await Promise.all(createPagesPromises);
+          logger.info(`Successfully recreated ${pageKeys.length} monitored pages for domain ${normalizedDomain}`);
+        }
+      } catch (redisError) {
+        // Log the error but don't fail the domain creation
+        logger.error("Error recreating monitored pages from Redis data", { 
+          error: redisError, 
+          domainId: domain.id, 
+          domainName: normalizedDomain 
+        });
+      }
       
       return { success: true, domain };
     } catch (error) {
