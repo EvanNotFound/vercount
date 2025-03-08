@@ -162,19 +162,45 @@ export async function GET(req: NextRequest) {
     
     const siteUv = uvData.total;
     
-    // Get page views for each monitored page
-    const pageViewPromises = domain.monitoredPages.map(async (page) => {
-      const pageKey = `pv:local:page:${hostSanitized}:${page.path}`;
-      const views = await kv.get(pageKey);
-      logger.debug("Page views", { pageKey, views });
+    // Batch fetch page views using pipeline or MGET instead of individual calls
+    if (domain.monitoredPages.length === 0) {
+      // No monitored pages, return early with empty pageViews
+      const counters = {
+        sitePv: Number(sitePv || 0),
+        siteUv: Number(siteUv || 0),
+        pageViews: [],
+      };
+      return successResponse({ counters });
+    }
+    
+    // Create an array of keys for all monitored pages
+    const pageKeys = domain.monitoredPages.map(page => 
+      `pv:local:page:${hostSanitized}:${page.path}`
+    );
+    
+    // Use pipeline to batch fetch all page view counts in a single Redis operation
+    const pipeline = kv.pipeline();
+    pageKeys.forEach(key => {
+      pipeline.get(key);
+    });
+    
+    // Execute the pipeline to get all values at once
+    const pageViewCounts = await pipeline.exec();
+    
+    // Map the results back to the monitored pages
+    const pageViews = domain.monitoredPages.map((page, index) => {
+      const views = pageViewCounts[index];
+      logger.debug("Page views", { 
+        pageKey: pageKeys[index], 
+        views 
+      });
+      
       return {
         path: page.path,
         decodedPath: safeDecodeURIComponent(page.path),
         views: Number(views || 0),
       };
     });
-    
-    const pageViews = await Promise.all(pageViewPromises);
     
     const counters = {
       sitePv: Number(sitePv || 0),
