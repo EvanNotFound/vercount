@@ -261,7 +261,7 @@ export default function DomainsPage() {
               {domainsLoading ? (
                 <div className="space-y-4">
                   {[1, 2, 3].map((i) => (
-                    <div key={i} className="p-4 border rounded-lg">
+                    <div key={i} className="p-4 border rounded-lg bg-secondary/5">
                       <div className="flex flex-col md:flex-row justify-between md:items-center gap-2">
                         <div className="flex flex-col gap-2">
                           <Skeleton className="h-5 w-40" />
@@ -276,7 +276,7 @@ export default function DomainsPage() {
                   ))}
                 </div>
               ) : domains.length === 0 ? (
-                <div className="border border-dashed rounded-lg p-8 text-center">
+                <div className="border border-dashed rounded-lg p-8 text-center bg-secondary/[0.02]">
                   <Globe className="w-10 h-10 text-muted-foreground mx-auto mb-4" />
                   <p className="text-muted-foreground">No domains added yet.</p>
                   <p className="text-sm text-muted-foreground mt-1">Add your first domain to start tracking analytics.</p>
@@ -286,7 +286,7 @@ export default function DomainsPage() {
                   {domains.map((domain) => (
                     <div
                       key={domain.id}
-                      className="border rounded-lg overflow-hidden"
+                      className="border rounded-lg overflow-hidden bg-secondary/5 hover:bg-secondary/10 transition-colors"
                     >
                       <div className="p-4 flex justify-between items-center">
                         <div className="flex items-center gap-3">
@@ -332,7 +332,7 @@ export default function DomainsPage() {
                       
                       {/* Verification instructions or analytics summary */}
                       {!domain.verified ? (
-                        <div className="border-t p-4">
+                        <div className="border-t p-4 bg-white">
                           <h4 className="text-sm font-medium mb-3">Verification required</h4>
                           <p className="text-xs text-muted-foreground mb-4">
                             Add this TXT record to your DNS configuration to verify ownership:
@@ -368,7 +368,7 @@ export default function DomainsPage() {
                         </div>
                       ) : (
                         <div 
-                          className="border-t p-4 cursor-pointer hover:bg-secondary/5 transition-colors" 
+                          className="border-t p-4 cursor-pointer hover:bg-primary/[0.03] transition-colors bg-black" 
                           onClick={() => router.push(`/dashboard/counters?domain=${domain.name}`)}
                         >
                           <div className="flex items-center justify-between">
@@ -386,7 +386,7 @@ export default function DomainsPage() {
                             <Button 
                               variant="ghost" 
                               size="sm"
-                              className="gap-1"
+                              className="gap-1 text-primary/80 hover:text-primary hover:bg-primary/[0.05]"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 router.push(`/dashboard/counters?domain=${domain.name}`);

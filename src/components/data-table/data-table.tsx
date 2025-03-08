@@ -118,7 +118,7 @@ export function DataTable<TData, TValue>({
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id} className="border-b hover:bg-transparent">
+              <TableRow key={headerGroup.id} className="border-b bg-secondary/5 hover:bg-secondary/10 transition-colors">
                 {headerGroup.headers.map((header) => {
                   const alignment = header.column.columnDef.meta?.align === "right" ? "text-right" : "";
                   return (

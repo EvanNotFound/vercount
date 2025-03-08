@@ -160,7 +160,7 @@ export default function Dashboard() {
           
           {/* Stats cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <div className="border rounded-lg p-4">
+            <div className="border rounded-lg p-4 bg-secondary/5 hover:bg-secondary/10 transition-colors">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-sm font-medium text-muted-foreground">Page Views</h3>
                 <BarChart3 className="h-4 w-4 text-muted-foreground" />
@@ -173,7 +173,7 @@ export default function Dashboard() {
               </div>
             </div>
             
-            <div className="border rounded-lg p-4">
+            <div className="border rounded-lg p-4 bg-secondary/5 hover:bg-secondary/10 transition-colors">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-sm font-medium text-muted-foreground">Unique Visitors</h3>
                 <Users className="h-4 w-4 text-muted-foreground" />
@@ -186,7 +186,7 @@ export default function Dashboard() {
               </div>
             </div>
             
-            <div className="border rounded-lg p-4">
+            <div className="border rounded-lg p-4 bg-secondary/5 hover:bg-secondary/10 transition-colors">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-sm font-medium text-muted-foreground">Domains</h3>
                 <Globe className="h-4 w-4 text-muted-foreground" />
@@ -199,7 +199,7 @@ export default function Dashboard() {
               </div>
             </div>
             
-            <div className="border rounded-lg p-4">
+            <div className="border rounded-lg p-4 bg-secondary/5 hover:bg-secondary/10 transition-colors">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-sm font-medium text-muted-foreground">Monitored Pages</h3>
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
@@ -216,36 +216,36 @@ export default function Dashboard() {
           {/* Navigation cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
             <div 
-              className="border rounded-lg p-5 hover:border-primary/50 transition-colors cursor-pointer"
+              className="border rounded-lg p-5 bg-primary/[0.03] hover:bg-primary/[0.06] hover:border-primary/30 transition-colors cursor-pointer"
               onClick={() => router.push('/dashboard/domains')}
             >
               <div className="flex items-center justify-between mb-4">
-                <Globe className="h-5 w-5" />
-                <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
+                <Globe className="h-5 w-5 text-primary/80" />
+                <ArrowUpRight className="h-4 w-4 text-primary/60" />
               </div>
               <h3 className="font-medium mb-1">Domains</h3>
               <p className="text-sm text-muted-foreground">Manage your domains and verification</p>
             </div>
             
             <div 
-              className="border rounded-lg p-5 hover:border-primary/50 transition-colors cursor-pointer"
+              className="border rounded-lg p-5 bg-primary/[0.03] hover:bg-primary/[0.06] hover:border-primary/30 transition-colors cursor-pointer"
               onClick={() => router.push('/dashboard/counters')}
             >
               <div className="flex items-center justify-between mb-4">
-                <BarChart3 className="h-5 w-5" />
-                <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
+                <BarChart3 className="h-5 w-5 text-primary/80" />
+                <ArrowUpRight className="h-4 w-4 text-primary/60" />
               </div>
               <h3 className="font-medium mb-1">Counters</h3>
               <p className="text-sm text-muted-foreground">Update and manage your analytics data</p>
             </div>
             
             <div 
-              className="border rounded-lg p-5 hover:border-primary/50 transition-colors cursor-pointer"
+              className="border rounded-lg p-5 bg-primary/[0.03] hover:bg-primary/[0.06] hover:border-primary/30 transition-colors cursor-pointer"
               onClick={() => router.push('/dashboard/analytics')}
             >
               <div className="flex items-center justify-between mb-4">
-                <TrendingUp className="h-5 w-5" />
-                <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
+                <TrendingUp className="h-5 w-5 text-primary/80" />
+                <ArrowUpRight className="h-4 w-4 text-primary/60" />
               </div>
               <h3 className="font-medium mb-1">Analytics</h3>
               <p className="text-sm text-muted-foreground">View detailed analytics and reports</p>
@@ -260,7 +260,7 @@ export default function Dashboard() {
               {domainsLoading ? (
                 <div className="space-y-4">
                   {Array(4).fill(0).map((_, i) => (
-                    <div key={i} className="border rounded-lg p-4">
+                    <div key={i} className="border rounded-lg p-4 bg-secondary/5">
                       <div className="flex items-center justify-between">
                         <div className="flex flex-col gap-1">
                           <Skeleton className="h-5 w-32 mb-1" />
@@ -274,7 +274,7 @@ export default function Dashboard() {
               ) : stats.topPages.length > 0 ? (
                 <div className="space-y-2">
                   {stats.topPages.map((item, i) => (
-                    <div key={i} className="border rounded-lg p-4">
+                    <div key={i} className="border rounded-lg p-4 bg-secondary/5 hover:bg-secondary/10 transition-colors">
                       <div className="flex items-center justify-between">
                         <div className="flex flex-col">
                           <div className="font-medium">{item.domain}</div>
@@ -288,7 +288,7 @@ export default function Dashboard() {
                   ))}
                 </div>
               ) : (
-                <div className="border border-dashed rounded-lg p-8 text-center">
+                <div className="border border-dashed rounded-lg p-8 text-center bg-secondary/[0.02]">
                   <p className="text-muted-foreground">No page data found.</p>
                 </div>
               )}

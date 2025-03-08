@@ -340,7 +340,7 @@ export default function CountersPage() {
                 ))}
               </div>
             ) : domains.length === 0 ? (
-              <div className="border border-dashed rounded-lg p-8 text-center">
+              <div className="border border-dashed rounded-lg p-8 text-center bg-secondary/[0.02]">
                 <p className="text-muted-foreground mb-4">No verified domains found.</p>
                 <Button onClick={() => router.push('/dashboard/domains')}>
                   Add a Domain
@@ -353,7 +353,7 @@ export default function CountersPage() {
                     key={domain.id}
                     variant={selectedDomain?.id === domain.id ? "default" : "outline"}
                     onClick={() => selectDomain(domain)}
-                    className="h-auto py-2 px-4"
+                    className={`h-auto py-2 px-4 ${selectedDomain?.id === domain.id ? "" : "hover:bg-secondary/20"}`}
                     disabled={!domain.verified}
                   >
                     {domain.name}
@@ -390,7 +390,7 @@ export default function CountersPage() {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="border rounded-lg p-5">
+                    <div className="border rounded-lg p-5 bg-secondary/10 hover:bg-secondary/15 transition-colors">
                       <div className="flex justify-between items-center mb-1">
                         <h3 className="text-sm font-medium text-muted-foreground">Page Views</h3>
                       </div>
@@ -405,12 +405,12 @@ export default function CountersPage() {
                             const numValue = parseInt(e.target.value, 10);
                             updateSiteCounter('sitePv', isNaN(numValue) ? 0 : numValue);
                           }}
-                          className="h-8"
+                          className="h-8 bg-background/80"
                         />
                       </div>
                     </div>
                     
-                    <div className="border rounded-lg p-5">
+                    <div className="border rounded-lg p-5 bg-secondary/10 hover:bg-secondary/15 transition-colors">
                       <div className="flex justify-between items-center mb-1">
                         <h3 className="text-sm font-medium text-muted-foreground">Unique Visitors</h3>
                       </div>
@@ -425,7 +425,7 @@ export default function CountersPage() {
                             const numValue = parseInt(e.target.value, 10);
                             updateSiteCounter('siteUv', isNaN(numValue) ? 0 : numValue);
                           }}
-                          className="h-8"
+                          className="h-8 bg-background/80"
                         />
                       </div>
                     </div>
@@ -454,7 +454,7 @@ export default function CountersPage() {
                 ) : (
                   <div>
                     {Object.keys(counterData.pageViews).length === 0 ? (
-                      <div className="border border-dashed rounded-lg p-8 text-center">
+                      <div className="border border-dashed rounded-lg p-8 text-center bg-secondary/[0.02]">
                         <p className="text-muted-foreground mb-4">No monitored pages found for this domain.</p>
                         <Button variant="outline" onClick={syncPathsFromKV} size="sm">
                           <RefreshCw className="h-4 w-4 mr-2" />
@@ -479,7 +479,7 @@ export default function CountersPage() {
               </div>
             </div>
           ) : (
-            <div className="border border-dashed rounded-lg p-12 text-center">
+            <div className="border border-dashed rounded-lg p-12 text-center bg-secondary/[0.02]">
               {loading.domains ? (
                 <div className="flex flex-col items-center">
                   <Skeleton className="h-6 w-64 mb-4" />
