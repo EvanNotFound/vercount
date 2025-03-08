@@ -29,7 +29,6 @@ export async function POST(req: NextRequest) {
     // Find the domain and ensure it belongs to the user
     const domain = await prisma.domain.findUnique({
       where: { id: domainId },
-      include: { monitoredPages: true },
     });
     
     if (!domain) {

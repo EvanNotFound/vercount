@@ -80,8 +80,9 @@ export default function Dashboard() {
       const allPages: { domain: string; path: string; views: number }[] = [];
       
       domains.forEach(domain => {
-        // Count total monitored pages
-        totalPages += domain.monitoredPages.length;
+        // Count total monitored pages from pageViews instead of monitoredPages
+        const pageViewsCount = domain.counters?.pageViews?.length || 0;
+        totalPages += pageViewsCount;
         
         // Sum up page views and unique visitors
         if (domain.counters) {

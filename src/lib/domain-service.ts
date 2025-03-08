@@ -60,9 +60,6 @@ export const domainService = {
     try {
       const domains = await prisma.domain.findMany({
         where: { userId },
-        include: {
-          monitoredPages: true,
-        },
       });
       
       // Enrich domains with counter data from Redis
@@ -71,7 +68,9 @@ export const domainService = {
           const counterData = await this.getCountersForDomain(domain.name);
           return {
             ...domain,
-            counters: counterData
+            counters: counterData,
+            // Add an empty monitoredPages array for backward compatibility
+            monitoredPages: []
           };
         })
       );

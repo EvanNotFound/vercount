@@ -37,9 +37,6 @@ export async function POST(req: NextRequest) {
         name: data.domainName,
         userId,
       },
-      include: {
-        monitoredPages: true,
-      },
     });
     
     if (!domain) {
@@ -67,20 +64,7 @@ export async function POST(req: NextRequest) {
     // Update page views in Redis
     if (pageViews && Array.isArray(pageViews)) {
       const pageViewPromises = pageViews.map(async (pv: { path: string; views: number }) => {
-        // Ensure the path is monitored
-        let monitoredPage = domain.monitoredPages.find(mp => mp.path === pv.path);
-        
-        if (!monitoredPage) {
-          // Create a new monitored page if it doesn't exist
-          monitoredPage = await prisma.monitoredPage.create({
-            data: {
-              path: pv.path,
-              domainId: domain.id,
-            },
-          });
-        }
-        
-        // Save page view count to Redis
+        // Save page view count directly to Redis without creating monitored pages in PostgreSQL
         const pageKey = `pv:local:page:${hostSanitized}:${pv.path}`;
         await kv.set(pageKey, pv.views || 0);
         await kv.expire(pageKey, EXPIRATION_TIME); // 3 months

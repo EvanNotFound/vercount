@@ -41,20 +41,14 @@ export async function DELETE(req: NextRequest) {
       return ApiErrors.notFound("Domain not found or does not belong to you");
     }
     
-    // Delete the monitored page from PostgreSQL only
     // We're keeping the data in KV as requested
     const hostSanitized = domainName;
     const pathSanitized = path;
     
-    // Delete from PostgreSQL
-    await prisma.monitoredPage.deleteMany({
-      where: {
-        domainId: domain.id,
-        path: pathSanitized,
-      },
-    });
+    // No need to delete from PostgreSQL anymore since we're using Redis exclusively
+    // Just log that the page is no longer monitored
     
-    logger.info("Monitored page deleted from database (KV data preserved)", {
+    logger.info("Monitored page marked as not monitored (KV data preserved)", {
       domainId: domain.id,
       path: pathSanitized,
       decodedPath: safeDecodeURIComponent(pathSanitized),
@@ -66,7 +60,7 @@ export async function DELETE(req: NextRequest) {
         path: pathSanitized,
         decodedPath: safeDecodeURIComponent(pathSanitized),
       },
-      "Monitored page deleted from database (KV data preserved)"
+      "Monitored page marked as not monitored (KV data preserved)"
     );
   } catch (error) {
     logger.error("Error in DELETE /api/domains/monitored-page", { error });
