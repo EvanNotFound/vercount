@@ -41,13 +41,20 @@ export async function DELETE(req: NextRequest) {
       return ApiErrors.notFound("Domain not found or does not belong to you");
     }
     
-    // Delete the page view counter from KV
+    // Delete the monitored page from PostgreSQL only
+    // We're keeping the data in KV as requested
     const hostSanitized = domainName;
     const pathSanitized = path;
-    const pageKey = `pv:local:page:${hostSanitized}:${pathSanitized}`;
-  
     
-    logger.info("Monitored page deleted from KV", {
+    // Delete from PostgreSQL
+    await prisma.monitoredPage.deleteMany({
+      where: {
+        domainId: domain.id,
+        path: pathSanitized,
+      },
+    });
+    
+    logger.info("Monitored page deleted from database (KV data preserved)", {
       domainId: domain.id,
       path: pathSanitized,
       decodedPath: safeDecodeURIComponent(pathSanitized),
@@ -59,7 +66,7 @@ export async function DELETE(req: NextRequest) {
         path: pathSanitized,
         decodedPath: safeDecodeURIComponent(pathSanitized),
       },
-      "Monitored page deleted successfully"
+      "Monitored page deleted from database (KV data preserved)"
     );
   } catch (error) {
     logger.error("Error in DELETE /api/domains/monitored-page", { error });

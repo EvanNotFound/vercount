@@ -366,7 +366,7 @@ export const domainService = {
         return { success: false, message: "Domain not found" };
       }
       
-      // Delete the monitored page
+      // Delete the monitored page from PostgreSQL only
       await prisma.monitoredPage.deleteMany({
         where: {
           domainId,
@@ -374,11 +374,11 @@ export const domainService = {
         },
       });
       
-      // Also remove the page view counter from Redis
-      const pageViewKey = `pv:local:page:${domain.name}:${normalizedPath}`;
-      await kv.del(pageViewKey);
+      // We're keeping the data in KV as requested
+      // const pageViewKey = `pv:local:page:${domain.name}:${normalizedPath}`;
+      // await kv.del(pageViewKey);
       
-      return { success: true, message: "Monitored page removed" };
+      return { success: true, message: "Monitored page removed from database (KV data preserved)" };
     } catch (error) {
       logger.error("Error removing monitored page", { error, domainId, path });
       return { success: false, message: "Failed to remove monitored page" };
