@@ -72,14 +72,16 @@ export function sanitizeUrlPath(host: string, path: string): SanitizedUrl {
  * @param hostSanitized The sanitized hostname
  * @returns An object containing the set count, adjustment value, and total UV count
  */
-export async function calculateTotalUV(hostSanitized: string): Promise<{ setCount: number; adjustment: number; total: number }> {
+export async function calculateTotalUV(hostSanitized: string): Promise<{ setCount: number; adjustment: number; total: number; busuanzi: number }> {
   const siteKey = `uv:local:site:${hostSanitized}`;
   const siteUVAdjustKey = `uv:adjust:site:${hostSanitized}`;
+  const busuanziSiteKey = `uv:busuanzi:site:${hostSanitized}`;
   
   // Execute Redis operations in parallel
-  const [siteUVSetCount, siteUVAdjust] = await Promise.all([
+  const [siteUVSetCount, siteUVAdjust, busuanziSiteUV] = await Promise.all([
     kv.scard(siteKey),
-    kv.get(siteUVAdjustKey)
+    kv.get(siteUVAdjustKey),
+    kv.get(busuanziSiteKey),
   ]);
   
   // Combine the set cardinality with the manual adjustment
@@ -88,6 +90,7 @@ export async function calculateTotalUV(hostSanitized: string): Promise<{ setCoun
   return {
     setCount: Number(siteUVSetCount || 0),
     adjustment: Number(siteUVAdjust || 0),
+    busuanzi: Number(busuanziSiteUV || 0),
     total: totalUV
   };
 }
@@ -106,18 +109,18 @@ export async function fetchSiteUVHistory(host: string, path: string): Promise<nu
     const pathSanitized = sanitized.path;
     
     // Calculate total UV using the utility function
-    const { setCount, adjustment, total } = await calculateTotalUV(hostSanitized);
+    const { setCount, adjustment, total, busuanzi } = await calculateTotalUV(hostSanitized);
     
     if (!setCount) {
       logger.debug(`Site UV not found for host: https://${hostSanitized}${pathSanitized}`);
       const siteUVData = await fetchBusuanziSiteUV(hostSanitized, host);
       return Number(siteUVData || 0) + adjustment;
-    } else {
-      logger.debug(
-        `Site UV found for host: https://${hostSanitized}${pathSanitized}, site_uv: ${total}`
-      );
-      return total;
-    }
+    } 
+    logger.debug(
+      `Site UV found for host: https://${hostSanitized}${pathSanitized}, site_uv: ${total}`
+    );
+    return total;
+    
   } catch (error) {
     logger.error(`Error getting site UV data: ${error}`);
     return 0;
@@ -138,19 +141,23 @@ export async function fetchSitePVHistory(host: string, path: string): Promise<nu
     const pathSanitized = sanitized.path;
     
     const siteKey = `pv:local:site:${hostSanitized}`;
-    const sitePV = await kv.get(siteKey);
+    const busuanziSiteKey = `pv:busuanzi:site:${hostSanitized}`;
+    const [sitePV, busuanziPV] = await Promise.all([
+      kv.get(siteKey),
+      kv.get(busuanziSiteKey),
+    ]);
     
     if (!sitePV) {
       logger.debug(`Site PV not found for host: https://${hostSanitized}${pathSanitized}`);
       const sitePVData = await fetchBusuanziSitePV(hostSanitized, host);
       logger.debug(`Site PV data: ${sitePVData}, site_pv: ${sitePVData || 0}`);
       return Number(sitePVData || 0);
-    } else {
-      logger.debug(
-        `Site PV found for host: https://${hostSanitized}${pathSanitized}, site_pv: ${sitePV}`
-      );
-      return Number(sitePV);
-    }
+    } 
+    logger.debug(
+      `Site PV found for host: https://${hostSanitized}${pathSanitized}, site_pv: ${sitePV}`
+    );
+    return Number(sitePV) + Number(busuanziPV || 0);
+    
   } catch (error) {
     logger.error(`Error getting site PV data: ${error}`);
     return 0;
@@ -171,19 +178,23 @@ export async function fetchPagePVHistory(host: string, path: string): Promise<nu
     const pathSanitized = sanitized.path;
     
     const pageKey = `pv:local:page:${hostSanitized}:${pathSanitized}`;
-    const pagePV = await kv.get(pageKey);
+    const busuanziPageKey = `pv:busuanzi:page:${hostSanitized}:${pathSanitized}`;
+    const [pagePV, busuanziPV] = await Promise.all([
+      kv.get(pageKey),
+      kv.get(busuanziPageKey),
+    ]);
     logger.debug(`Page PV: ${pagePV}, page_key: ${pageKey}`);
 
     if (!pagePV) {
       logger.debug(`Page PV not found for host: https://${hostSanitized}${pathSanitized}`);
       const pagePVData = await fetchBusuanziPagePV(hostSanitized, pathSanitized, host, path);
       return Number(pagePVData || 0);
-    } else {
-      logger.debug(
-        `Page PV found for host: https://${hostSanitized}${pathSanitized}, page_pv: ${pagePV}`
-      );
-      return Number(pagePV);
     }
+    logger.debug(
+      `Page PV found for host: https://${hostSanitized}${pathSanitized}, page_pv: ${pagePV}`
+    );
+    return Number(pagePV) + Number(busuanziPV || 0);
+    
   } catch (error) {
     logger.error(`Error getting page PV data: ${error}`);
     return 0;
