@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { HomeIcon, ArrowUpRight, Users, Globe, BarChart3, TrendingUp } from "lucide-react";
 import DashboardHeader from "@/components/dashboard/dashboard-header";
 import { safeDecodeURIComponent } from "@/utils/url"; 
-
+import { SiGithub } from "@icons-pack/react-simple-icons";
 // Types
 interface Domain {
   id: string;
@@ -229,26 +229,26 @@ export default function Dashboard() {
             
             <div 
               className="border rounded-lg p-5 bg-primary/[0.03] hover:bg-primary/[0.06] hover:border-primary/30 transition-colors cursor-pointer"
-              onClick={() => router.push('/dashboard/counters')}
+              onClick={() => router.push('/dashboard/analytics')}
             >
               <div className="flex items-center justify-between mb-4">
                 <BarChart3 className="h-5 w-5 text-primary/80" />
                 <ArrowUpRight className="h-4 w-4 text-primary/60" />
               </div>
-              <h3 className="font-medium mb-1">Counters</h3>
+              <h3 className="font-medium mb-1">Analytics</h3>
               <p className="text-sm text-muted-foreground">Update and manage your analytics data</p>
             </div>
             
             <div 
               className="border rounded-lg p-5 bg-primary/[0.03] hover:bg-primary/[0.06] hover:border-primary/30 transition-colors cursor-pointer"
-              onClick={() => router.push('/dashboard/analytics')}
+              onClick={() => router.push('https://github.com/evannotfound/vercount')}
             >
               <div className="flex items-center justify-between mb-4">
-                <TrendingUp className="h-5 w-5 text-primary/80" />
+                <SiGithub className="h-5 w-5 text-primary/80" />
                 <ArrowUpRight className="h-4 w-4 text-primary/60" />
               </div>
-              <h3 className="font-medium mb-1">Analytics</h3>
-              <p className="text-sm text-muted-foreground">View detailed analytics and reports</p>
+              <h3 className="font-medium mb-1">GitHub</h3>
+              <p className="text-sm text-muted-foreground">View the source code of Vercount</p>
             </div>
           </div>
           

@@ -34,7 +34,7 @@ export function DashboardSidebar() {
       icon: <Globe className="h-4 w-4" />,
     },
     {
-      href: "/dashboard/counters",
+      href: "/dashboard/analytics",
       label: "Analytics",
       icon: <PieChart className="h-4 w-4" />,
     },

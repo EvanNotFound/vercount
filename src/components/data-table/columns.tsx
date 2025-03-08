@@ -154,87 +154,91 @@ export const columns: ColumnDef<PageViewData>[] = [
       // Access the meta data from the table
       const { handleUpdatePageView, handleDeleteMonitoredPage } = table.options.meta || {}
       
-      // State for alert dialog
-      const [showDeleteAlert, setShowDeleteAlert] = useState(false)
-      
-      return (
-        <div className="flex items-center justify-end">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-7 w-7">
-                <MoreHorizontal className="h-4 w-4" />
-                <span className="sr-only">Open menu</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[160px]">
-              <DropdownMenuItem
-                onClick={() => {
-                  if (handleUpdatePageView) {
-                    handleUpdatePageView(path)
-                  }
-                }}
-                className="text-xs"
-              >
-                <RefreshCw className="mr-2 h-3.5 w-3.5" />
-                <span>Refresh</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  window.open(path, '_blank')
-                }}
-                className="text-xs"
-              >
-                <Eye className="mr-2 h-3.5 w-3.5" />
-                <span>View page</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  // Add edit functionality here
-                  console.log(`Edit ${path}`)
-                }}
-                className="text-xs"
-              >
-                <Edit className="mr-2 h-3.5 w-3.5" />
-                <span>Edit</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                className="text-destructive focus:text-destructive text-xs"
-                onClick={() => setShowDeleteAlert(true)}
-              >
-                <Trash2 className="mr-2 h-3.5 w-3.5" />
-                <span>Delete</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          
-          {/* Delete Alert Dialog */}
-          <AlertDialog open={showDeleteAlert} onOpenChange={setShowDeleteAlert}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will permanently delete the monitored page &quot;{path}&quot;.
-                  This action cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+      // Create a proper React component for the cell content
+      const ActionCell = () => {
+        const [showDeleteAlert, setShowDeleteAlert] = useState(false)
+        
+        return (
+          <div className="flex items-center justify-end">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-7 w-7">
+                  <MoreHorizontal className="h-4 w-4" />
+                  <span className="sr-only">Open menu</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-[160px]">
+                <DropdownMenuItem
                   onClick={() => {
-                    if (handleDeleteMonitoredPage) {
-                      handleDeleteMonitoredPage(path)
+                    if (handleUpdatePageView) {
+                      handleUpdatePageView(path)
                     }
                   }}
+                  className="text-xs"
                 >
-                  Delete
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
-      )
+                  <RefreshCw className="mr-2 h-3.5 w-3.5" />
+                  <span>Refresh</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    window.open(path, '_blank')
+                  }}
+                  className="text-xs"
+                >
+                  <Eye className="mr-2 h-3.5 w-3.5" />
+                  <span>View page</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    // Add edit functionality here
+                    console.log(`Edit ${path}`)
+                  }}
+                  className="text-xs"
+                >
+                  <Edit className="mr-2 h-3.5 w-3.5" />
+                  <span>Edit</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive text-xs"
+                  onClick={() => setShowDeleteAlert(true)}
+                >
+                  <Trash2 className="mr-2 h-3.5 w-3.5" />
+                  <span>Delete</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
+            {/* Delete Alert Dialog */}
+            <AlertDialog open={showDeleteAlert} onOpenChange={setShowDeleteAlert}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete the monitored page &quot;{path}&quot;.
+                    This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    onClick={() => {
+                      if (handleDeleteMonitoredPage) {
+                        handleDeleteMonitoredPage(path)
+                      }
+                    }}
+                  >
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        )
+      }
+      
+      return <ActionCell />
     },
   },
 ] 
