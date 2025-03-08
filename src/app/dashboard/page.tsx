@@ -20,7 +20,6 @@ interface Domain {
   verificationCode: string;
   createdAt: string;
   updatedAt: string;
-  monitoredPages: MonitoredPage[];
   counters?: {
     sitePv: number;
     siteUv: number;
@@ -28,12 +27,6 @@ interface Domain {
   };
 }
 
-interface MonitoredPage {
-  id: string;
-  path: string;
-  createdAt: string;
-  updatedAt: string;
-}
 
 interface PageViewData {
   path: string;

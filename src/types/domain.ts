@@ -6,21 +6,13 @@ export interface Domain {
   createdAt: string;
   updatedAt: string;
   userId: string;
-  monitoredPages: MonitoredPage[];
+  // This is kept for backward compatibility but will always be an empty array
   counters?: {
     sitePv: number;
     siteUv: number;
     pageViews: PageViewData[];
   };
 }
-
-export interface MonitoredPage {
-  id: string;
-  path: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface PageViewData {
   path: string;
   views: number;

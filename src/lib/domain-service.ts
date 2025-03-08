@@ -69,8 +69,6 @@ export const domainService = {
           return {
             ...domain,
             counters: counterData,
-            // Add an empty monitoredPages array for backward compatibility
-            monitoredPages: []
           };
         })
       );
