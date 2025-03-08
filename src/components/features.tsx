@@ -53,13 +53,13 @@ const featuresConfig: FeatureItem[] = [
 	},
 	{
 		icon: VercelIcon,
-		title: "Vercel 驱动",
-		description: "使用 Vercel Serverless Functions 作为后端，保证 99.99% 可用性",
+		title: "全球 CDN 加速",
+		description: "使用 Vercel Serverless Functions 和全球 CDN，提供快速、可靠的服务，确保 99.99% 的可用性",
 	},
 	{
-		icon: Globe,
-		title: "全球加速",
-		description: "可选使用中国加速版本（国内访问优化），或者使用 Vercel 全球 CDN，保证 99.99% 可用性",
+		icon: RefreshCw,
+		title: "编辑访客数据",
+		description: "支持编辑访客数据，提供更灵活的数据管理选项",
 	},
 ];
 

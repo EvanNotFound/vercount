@@ -22,6 +22,7 @@ Vercount 是一个基于 NextJS 和 Redis 的高效网站计数器，具有以�
 - **持久数据存储**：使用 Redis 定期备份，确保数据不丢失。
 - **Serverless 架构**：通过 Vercel Serverless Functions 提供后端支持，保证 99.99% 的可用性。
 - **自托管**：支持自托管，可以部署到任何支持 NextJS 的平台。
+- **编辑访客数据**：支持自定义网站的访客数据，前往 [vercount.one](https://vercount.one) 登录即可
 
 ## 为什么要做这个项目？
 
