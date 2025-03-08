@@ -151,48 +151,28 @@ export async function POST(req: NextRequest) {
     parsedUrl.pathname.replace(/\/index$/, ""),
   ];
 
-  // Get initial data and update counts in parallel
-  const [
-    initialData,
-    updateResults
-  ] = await Promise.all([
-    // Get initial data - use migratePagePV instead of fetchPagePVHistory
-    Promise.all([
-      fetchSiteUVHistory(host, path),
-      fetchSitePVHistory(host, path),
-      fetchPagePVHistory(host, path),
-    ]),
-    // Update counts - use incrementPagePVWithMigration instead of incrementPagePV
-    Promise.all([
-      recordSiteUV(host, clientHost),
-      incrementSitePV(host),
-      incrementPagePV(host, path),
-    ])
+  // Update counts
+  const [siteUV, sitePV, pagePV] = await Promise.all([
+    recordSiteUV(host, clientHost),
+    incrementSitePV(host),
+    incrementPagePV(host, path),
   ]);
-
-  const [siteUVBefore, sitePVBefore, pagePVBefore] = initialData;
-  const [siteUVAfter, sitePVAfter, pagePVAfter] = updateResults;
-
-  // Add the before values to the after values
-  const finalSiteUV = siteUVAfter + siteUVBefore;
-  const finalSitePV = sitePVAfter + sitePVBefore;
-  const finalPagePV = pagePVAfter + pagePVBefore;
 
   logger.info(`Data updated`, {
     host,
     path,
-    siteUVAfter: finalSiteUV,
-    sitePVAfter: finalSitePV,
-    pagePVAfter: finalPagePV,
+    siteUV,
+    sitePV,
+    pagePV,
   });
 
   // Fire and forget
   notifyBusuanziService(host, path);
 
   return successResponse({
-    site_uv: finalSiteUV,
-    site_pv: finalSitePV,
-    page_pv: finalPagePV,
+    site_uv: siteUV,
+    site_pv: sitePV,
+    page_pv: pagePV,
   }, "Data updated successfully");
 }
 

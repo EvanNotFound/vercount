@@ -76,13 +76,24 @@ export default function CountersPage() {
       
       if (resData.status === "success") {
         console.log("Domains fetched:", data.domains);
-        setDomains(data.domains || []);
+        
+        // Since we're not storing paths in PostgreSQL anymore,
+        // initialize each domain with an empty monitoredPages array
+        const domainsWithEmptyPages = data.domains.map((domain: Domain) => ({
+          ...domain,
+          monitoredPages: []
+        }));
+        
+        setDomains(domainsWithEmptyPages || []);
         
         // If there's a domain parameter and domains are loaded, select it
-        if (domainParam && data.domains && data.domains.length > 0) {
-          const domain = data.domains.find((d: Domain) => d.name === domainParam);
+        if (domainParam && domainsWithEmptyPages && domainsWithEmptyPages.length > 0) {
+          const domain = domainsWithEmptyPages.find((d: Domain) => d.name === domainParam);
           if (domain) {
-            handleSelectDomain(domain);
+            // Just set the selected domain and call fetchDomainCounters directly
+            // instead of going through handleSelectDomain to avoid duplicate API calls
+            setSelectedDomain(domain);
+            fetchDomainCounters(domain.name);
           }
         }
       }
@@ -95,9 +106,11 @@ export default function CountersPage() {
   };
 
   // Handle domain selection
-  const handleSelectDomain = (domain: Domain) => {
+  const handleSelectDomain = async (domain: Domain) => {
     console.log("Selected domain:", domain);
     setSelectedDomain(domain);
+    
+    // Fetch domain counters - this will also fetch paths from KV and update the UI
     fetchDomainCounters(domain.name);
   };
 
@@ -179,9 +192,34 @@ export default function CountersPage() {
   // Add a new function to fetch domain counters
   const fetchDomainCounters = async (domainName: string) => {
     try {
-      // First, sync the monitored pages with KV
-      await syncPathsFromKV(domainName);
+      // Fetch paths from KV directly instead of calling syncPathsFromKV
+      // to avoid duplicate API calls and toast notifications
+      const paths = await fetchPathsFromKV(domainName);
       
+      // Update the selected domain with paths from KV if we have a selected domain
+      if (selectedDomain && paths.length > 0) {
+        const updatedDomain = {
+          ...selectedDomain,
+          monitoredPages: paths.map((path: string) => ({
+            id: `kv-${path}`, // Generate a fake ID since we don't store in PostgreSQL
+            path,
+            domainId: selectedDomain.id,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          }))
+        };
+        
+        setSelectedDomain(updatedDomain);
+        
+        // Also update the domain in the domains list
+        setDomains(prevDomains => 
+          prevDomains.map(d => 
+            d.id === selectedDomain.id ? updatedDomain : d
+          )
+        );
+      }
+      
+      // Fetch counter data
       const response = await fetch(`/api/domains/counters?domain=${domainName}`);
       
       if (!response.ok) {
@@ -208,72 +246,59 @@ export default function CountersPage() {
         // Fallback to using counters from the domain object if API fails
         setSitePv(selectedDomain.counters.sitePv || 0);
         setSiteUv(selectedDomain.counters.siteUv || 0);
-        
-        const initialPageViews: Record<string, number> = {};
-        if (Array.isArray(selectedDomain.counters.pageViews)) {
-          selectedDomain.counters.pageViews.forEach((pv: PageViewData) => {
-            initialPageViews[pv.path] = pv.views || 0;
-          });
-        }
-        setPageViewUpdates(initialPageViews);
-      } else {
-        // Reset to defaults if no counters data is available
-        setSitePv(0);
-        setSiteUv(0);
-        setPageViewUpdates({});
       }
     } catch (error) {
       console.error("Error fetching domain counters:", error);
-      toast.error("Failed to load domain counters");
-      
-      // Fallback to using counters from the domain object if API fails
-      if (selectedDomain && selectedDomain.counters) {
-        setSitePv(selectedDomain.counters.sitePv || 0);
-        setSiteUv(selectedDomain.counters.siteUv || 0);
-        
-        const initialPageViews: Record<string, number> = {};
-        if (Array.isArray(selectedDomain.counters.pageViews)) {
-          selectedDomain.counters.pageViews.forEach((pv: PageViewData) => {
-            initialPageViews[pv.path] = pv.views || 0;
-          });
-        }
-        setPageViewUpdates(initialPageViews);
-      } else {
-        setSitePv(0);
-        setSiteUv(0);
-        setPageViewUpdates({});
-      }
+      toast.error("Failed to fetch domain counters");
     }
   };
 
   // New function to sync paths from KV
-  const syncPathsFromKV = async (domainName: string) => {
+  const syncPathsFromKV = async (domainName: string, showToast = false) => {
     try {
-      const response = await fetch(`/api/domains/pages`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ domainName }),
-      });
+      // Since we're not storing paths in PostgreSQL anymore,
+      // we just need to fetch the paths from KV and update the UI
+      const paths = await fetchPathsFromKV(domainName);
       
-      if (!response.ok) {
-        throw new Error("Failed to sync paths from KV");
+      if (paths.length > 0) {
+        // Only show toast when explicitly requested (e.g., when user clicks "Sync Paths" button)
+        if (showToast) {
+          toast.success(`Found ${paths.length} pages in KV`);
+        }
+        
+        // Update the UI with the paths from KV
+        if (selectedDomain) {
+          // Create a new domain object with the paths from KV
+          const updatedDomain = {
+            ...selectedDomain,
+            monitoredPages: paths.map((path: string) => ({
+              id: `kv-${path}`, // Generate a fake ID since we don't store in PostgreSQL
+              path,
+              domainId: selectedDomain.id,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            }))
+          };
+          
+          // Update the selected domain
+          setSelectedDomain(updatedDomain);
+          
+          // Also update the domain in the domains list
+          setDomains(prevDomains => 
+            prevDomains.map(domain => 
+              domain.id === selectedDomain.id ? updatedDomain : domain
+            )
+          );
+        }
       }
       
-      const resData = await response.json();
-      const data = resData.data;
-      
-      if (resData.status === "success" && data.newPagesCount > 0) {
-        toast.success(`Synced ${data.newPagesCount} new pages from KV`);
-        // Refresh domain data to get the updated monitored pages
-        await fetchDomains();
-      }
-      
-      return data;
+      return { paths };
     } catch (error) {
       console.error("Error syncing paths from KV:", error);
-      toast.error("Failed to sync paths from KV");
+      if (showToast) {
+        toast.error("Failed to sync paths from KV");
+      }
+      return { paths: [] };
     }
   };
 
@@ -316,8 +341,11 @@ export default function CountersPage() {
         [path]: 0,
       }));
       
-      // Update all counters to save the new page
+      // Update all counters to save the new page to KV
       await handleUpdateCounters();
+      
+      // After updating counters, refresh the paths from KV
+      await syncPathsFromKV(selectedDomain.name);
       
       // Clear the input
       setNewPagePath("");
@@ -343,36 +371,27 @@ export default function CountersPage() {
       delete updatedPageViews[path];
       setPageViewUpdates(updatedPageViews);
       
-      // Find the monitored page in the domain
-      const monitoredPage = selectedDomain.monitoredPages.find(mp => mp.path === path);
+      // Delete the monitored page directly from KV
+      const response = await fetch(`/api/domains/monitored-page?domain=${selectedDomain.name}&path=${encodeURIComponent(path)}`, {
+        method: "DELETE",
+      });
       
-      if (monitoredPage) {
-        // Delete the monitored page from the database
-        const response = await fetch(`/api/domains/monitored-page?id=${monitoredPage.id}`, {
-          method: "DELETE",
-        });
-        
-        const resData = await response.json();
-        
-        if (resData.status === "success") {
-          toast.success(`Page ${path} deleted successfully`);
-          // Refresh domain data
-          fetchDomains();
-          // Fetch updated counter data for the selected domain
-          fetchDomainCounters(selectedDomain.name);
-        } else {
-          toast.error(resData.message || "Failed to delete page");
-        }
+      const resData = await response.json();
+      
+      if (resData.status === "success") {
+        toast.success(`Page ${path} deleted successfully`);
+        // Refresh domain data
+        fetchDomains();
+        // Also refresh paths from KV to ensure UI is in sync
+        fetchPathsFromKV(selectedDomain.name);
       } else {
-        // Just update the counters to remove the page from Redis
-        await handleUpdateCounters();
-        toast.success(`Page ${path} removed successfully`);
+        toast.error(`Failed to delete page: ${resData.message || 'Unknown error'}`);
       }
     } catch (error) {
       console.error("Error deleting monitored page:", error);
-      toast.error("Failed to delete monitored page");
+      toast.error("Failed to delete page. Please try again.");
     } finally {
-      setUpdatingPageView(null);
+      setUpdatingPageView("");
     }
   };
 
@@ -382,9 +401,9 @@ export default function CountersPage() {
     
     try {
       setSyncingPaths(true);
-      await syncPathsFromKV(selectedDomain.name);
-      // Fetch updated counter data for the selected domain
-      fetchDomainCounters(selectedDomain.name);
+      // Pass true to show toast notifications since this is a user-initiated action
+      await syncPathsFromKV(selectedDomain.name, true);
+      // No need to call fetchDomainCounters here as syncPathsFromKV already updates the UI
     } catch (error) {
       console.error("Error syncing paths from KV:", error);
       toast.error("Failed to sync paths from KV");

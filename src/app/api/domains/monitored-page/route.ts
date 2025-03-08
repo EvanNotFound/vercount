@@ -22,50 +22,43 @@ export async function DELETE(req: NextRequest) {
     }
     
     const url = new URL(req.url);
-    const pageId = url.searchParams.get("id");
+    const domainName = url.searchParams.get("domain");
+    const path = url.searchParams.get("path");
     
-    if (!pageId) {
-      return ApiErrors.badRequest("Monitored page ID is required");
+    if (!domainName || !path) {
+      return ApiErrors.badRequest("Domain name and path are required");
     }
     
-    // Find the monitored page and ensure it belongs to the user
-    const monitoredPage = await prisma.monitoredPage.findUnique({
-      where: { id: pageId },
-      include: { domain: true },
+    // Check if the domain belongs to the user
+    const domain = await prisma.domain.findFirst({
+      where: {
+        name: domainName,
+        userId,
+      },
     });
     
-    if (!monitoredPage) {
-      return ApiErrors.notFound("Monitored page not found");
+    if (!domain) {
+      return ApiErrors.notFound("Domain not found or does not belong to you");
     }
     
-    if (monitoredPage.domain.userId !== userId) {
-      return errorResponse("You don't have permission to delete this monitored page", 403);
-    }
-    
-    // Delete the monitored page
-    await prisma.monitoredPage.delete({
-      where: { id: pageId },
-    });
-    
-    // Delete the page view counter from Redis
-    const hostSanitized = monitoredPage.domain.name;
-    const pathSanitized = monitoredPage.path;
+    // Delete the page view counter from KV
+    const hostSanitized = domainName;
+    const pathSanitized = path;
     const pageKey = `pv:local:page:${hostSanitized}:${pathSanitized}`;
     
     await kv.del(pageKey);
     
-    logger.info("Monitored page deleted", {
-      pageId,
-      domainId: monitoredPage.domain.id,
-      path: monitoredPage.path,
-      decodedPath: safeDecodeURIComponent(monitoredPage.path),
+    logger.info("Monitored page deleted from KV", {
+      domainId: domain.id,
+      path: pathSanitized,
+      decodedPath: safeDecodeURIComponent(pathSanitized),
     });
     
     return successResponse(
       { 
         deleted: true,
-        path: monitoredPage.path,
-        decodedPath: safeDecodeURIComponent(monitoredPage.path),
+        path: pathSanitized,
+        decodedPath: safeDecodeURIComponent(pathSanitized),
       },
       "Monitored page deleted successfully"
     );
