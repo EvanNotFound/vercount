@@ -11,6 +11,7 @@ import {
   ColumnFiltersState,
   getFilteredRowModel,
   TableMeta,
+  PaginationState,
 } from "@tanstack/react-table"
 
 import {
@@ -25,6 +26,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useState } from "react"
 import { ChevronLeft, ChevronRight, Search } from "lucide-react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 // Define custom column meta type
 declare module '@tanstack/react-table' {
@@ -48,6 +56,10 @@ export function DataTable<TData, TValue>({
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
+  })
 
   const table = useReactTable({
     data,
@@ -58,16 +70,13 @@ export function DataTable<TData, TValue>({
     getSortedRowModel: getSortedRowModel(),
     onColumnFiltersChange: setColumnFilters,
     getFilteredRowModel: getFilteredRowModel(),
+    onPaginationChange: setPagination,
     state: {
       sorting,
       columnFilters,
+      pagination,
     },
     meta,
-    initialState: {
-      pagination: {
-        pageSize: 10,
-      },
-    },
   })
 
   return (
@@ -136,32 +145,56 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-      <div className="flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">
-          Showing {table.getRowModel().rows.length} of {data.length} entries
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-2">
+        <div className="flex items-center gap-2">
+          <Select
+            value={pagination.pageSize.toString()}
+            onValueChange={(value: string) => {
+              table.setPageSize(Number(value));
+            }}
+          >
+            <SelectTrigger className="h-8 w-[70px]">
+              <SelectValue placeholder={pagination.pageSize.toString()} />
+            </SelectTrigger>
+            <SelectContent side="top">
+              {[5, 10, 20, 50, 100].map((pageSize) => (
+                <SelectItem key={pageSize} value={pageSize.toString()}>
+                  {pageSize}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-sm text-muted-foreground">
+            rows per page
+          </p>
         </div>
-        <div className="flex items-center space-x-2">
-          <div className="text-sm text-muted-foreground mr-2">
-            Page {table.getState().pagination.pageIndex + 1} of{" "}
-            {table.getPageCount()}
+
+        <div className="text-sm text-muted-foreground">
+          Showing {table.getRowModel().rows.length} of {data.length} results
+        </div>
+        
+        <div className="flex items-center gap-1">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+          >
+            <ChevronLeft className="h-4 w-4 mr-1" />
+            Previous
+          </Button>
+          <div className="flex items-center gap-1 px-2">
+            <span className="text-sm font-medium">{table.getState().pagination.pageIndex + 1}</span>
+            <span className="text-sm text-muted-foreground">of {table.getPageCount()}</span>
           </div>
           <Button
             variant="outline"
-            size="icon"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-            className="h-8 w-8"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
+            size="sm"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
-            className="h-8 w-8"
           >
-            <ChevronRight className="h-4 w-4" />
+            Next
+            <ChevronRight className="h-4 w-4 ml-1" />
           </Button>
         </div>
       </div>

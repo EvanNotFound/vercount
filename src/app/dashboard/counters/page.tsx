@@ -218,13 +218,17 @@ export default function CountersPage() {
 
   // Update a page view counter
   const updatePageView = (path: string, value: number) => {
-    setCounterData(prev => ({
-      ...prev,
-      pageViews: {
-        ...prev.pageViews,
-        [path]: value
-      }
-    }));
+    // Use a callback form of setState to ensure we're working with the latest state
+    setCounterData(prev => {
+      // Create a new object to avoid direct mutation
+      const newPageViews = { ...prev.pageViews };
+      newPageViews[path] = value;
+      
+      return {
+        ...prev,
+        pageViews: newPageViews
+      };
+    });
   };
 
   // Delete a monitored page
