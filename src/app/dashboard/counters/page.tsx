@@ -12,36 +12,8 @@ import { toast } from "sonner";
 import { HomeIcon, ArrowLeft, Trash2 } from "lucide-react";
 import DashboardHeader from "@/components/dashboard/dashboard-header";
 import { safeDecodeURIComponent } from "@/utils/url";
-
-// Types
-interface Domain {
-  id: string;
-  name: string;
-  verified: boolean;
-  verificationCode: string;
-  createdAt: string;
-  updatedAt: string;
-  userId: string;
-  monitoredPages: MonitoredPage[];
-  counters?: {
-    sitePv: number;
-    siteUv: number;
-    pageViews: PageViewData[];
-  };
-}
-
-interface MonitoredPage {
-  id: string;
-  path: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface PageViewData {
-  path: string;
-  views: number;
-}
-
+import { CounterTable } from "@/components/data-table/counter-table";
+import { Domain, MonitoredPage, PageViewData } from "@/types/domain";
 
 export default function CountersPage() {
   const { data: session, status } = useSession();
@@ -536,69 +508,28 @@ export default function CountersPage() {
                     </div>
                   </div>
 
-                  {/* Page-specific counters */}
+                  {/* Page-specific counters - Using the new data table component */}
                   <div>
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-lg font-medium">Page-specific Analytics</h3>
-                      <div className="flex items-center gap-2">
-                        {/* Removed Add Page functionality */}
-                      </div>
                     </div>
                     
-                    {/* Page views list */}
-                    <div className="border rounded-md">
-                      <div className="bg-muted px-4 py-2 border-b">
-                        <div className="grid grid-cols-12 gap-2 font-medium">
-                          <div className="col-span-7">Path</div>
-                          <div className="col-span-3">Views</div>
-                          <div className="col-span-2 text-right">Actions</div>
-                        </div>
+                    {/* Page views data table */}
+                    {Object.keys(pageViewUpdates).length === 0 ? (
+                      <div className="border rounded-md px-4 py-3 text-center text-muted-foreground">
+                        No monitored pages. Use "Sync Paths from KV" to import pages.
                       </div>
-                      <div className="divide-y">
-                        {Object.keys(pageViewUpdates).length === 0 ? (
-                          <div className="px-4 py-3 text-center text-muted-foreground">
-                            No monitored pages. Use "Sync Paths from KV" to import pages.
-                          </div>
-                        ) : (
-                          Object.entries(pageViewUpdates).map(([path, views]) => (
-                            <div key={path} className="px-4 py-2">
-                              <div className="grid grid-cols-12 gap-2 items-center">
-                                <div 
-                                  className="col-span-7 truncate" 
-                                  title={`Original: ${path}
-Decoded: ${safeDecodeURIComponent(path)}`}
-                                >
-                                  {safeDecodeURIComponent(path)}
-                                </div>
-                                <div className="col-span-3">
-                                  <Input
-                                    type="number"
-                                    min="0"
-                                    value={views}
-                                    onChange={(e) => handlePageViewChange(path, Number(e.target.value))}
-                                    disabled={updatingPageView === path}
-                                  />
-                                </div>
-                                <div className="col-span-2 flex justify-end">
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => handleDeleteMonitoredPage(path)}
-                                    disabled={updatingPageView === path}
-                                  >
-                                    {updatingPageView === path ? (
-                                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                                    ) : (
-                                      <Trash2 className="h-4 w-4" />
-                                    )}
-                                  </Button>
-                                </div>
-                              </div>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    </div>
+                    ) : (
+                      <CounterTable
+                        data={Object.entries(pageViewUpdates).map(([path, views]) => ({
+                          path,
+                          views,
+                        }))}
+                        handlePageViewChange={handlePageViewChange}
+                        handleUpdatePageView={handleUpdatePageView}
+                        handleDeleteMonitoredPage={handleDeleteMonitoredPage}
+                      />
+                    )}
                   </div>
 
                   {/* Update button - Prominently placed at the bottom */}
