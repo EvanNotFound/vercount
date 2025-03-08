@@ -20,13 +20,18 @@ export const domainService = {
       // Normalize domain name (remove protocol, www, etc.)
       const normalizedDomain = normalizeDomain(domainName);
       
-      // Check if domain already exists
+      // Check if domain already exists for any user
       const existingDomain = await prisma.domain.findUnique({
         where: { name: normalizedDomain },
       });
       
       if (existingDomain) {
-        return { success: false, message: "Domain already exists" };
+        // Check if the domain belongs to the current user
+        if (existingDomain.userId === userId) {
+          return { success: false, message: "You have already added this domain" };
+        } else {
+          return { success: false, message: "This domain has already been registered by another user" };
+        }
       }
       
       // Create new domain
