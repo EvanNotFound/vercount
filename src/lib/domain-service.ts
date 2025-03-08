@@ -4,6 +4,7 @@ import logger from "@/lib/logger";
 import dns from "dns";
 import { promisify } from "util";
 import { updateTotalUV } from "@/utils/counter";
+import { EXPIRATION_TIME } from "@/utils/counter";
 
 // Promisify DNS methods
 const resolveTxt = promisify(dns.resolveTxt);
@@ -42,41 +43,8 @@ export const domainService = {
         },
       });
 
-      // Check if there's existing Redis data for this domain
-      // and recreate monitored pages if needed
-      try {
-        // Get page keys from Redis
-        const pageKeys = await kv.keys(`pv:local:page:${normalizedDomain}:*`);
-        
-        if (pageKeys.length > 0) {
-          logger.info(`Found ${pageKeys.length} existing page keys in Redis for domain ${normalizedDomain}. Recreating monitored pages.`);
-          
-          // Create monitored pages for each Redis key
-          const createPagesPromises = pageKeys.map(key => {
-            // Extract the path part from the key
-            const prefix = `pv:local:page:${normalizedDomain}:`;
-            const path = key.substring(key.indexOf(prefix) + prefix.length);
-            
-            // Create the monitored page
-            return prisma.monitoredPage.create({
-              data: {
-                path,
-                domainId: domain.id,
-              },
-            });
-          });
-          
-          await Promise.all(createPagesPromises);
-          logger.info(`Successfully recreated ${pageKeys.length} monitored pages for domain ${normalizedDomain}`);
-        }
-      } catch (redisError) {
-        // Log the error but don't fail the domain creation
-        logger.error("Error recreating monitored pages from Redis data", { 
-          error: redisError, 
-          domainId: domain.id, 
-          domainName: normalizedDomain 
-        });
-      }
+      // No need to recreate monitored pages in PostgreSQL anymore
+      // since we're using Redis exclusively for page views
       
       return { success: true, domain };
     } catch (error) {
@@ -193,58 +161,53 @@ export const domainService = {
     try {
       const normalizedDomain = normalizeDomain(domainName);
       
-      // Get site PV from Redis
+      // Get site PV and UV data in parallel
       const sitePvKey = `pv:local:site:${normalizedDomain}`;
-      const sitePv = await kv.get<number>(sitePvKey) || 0;
-      
-      // Get site UV from Redis
       const siteUvKey = `uv:local:site:${normalizedDomain}`;
-      // Get the cardinality of the UV set
-      const siteUvSetCount = await kv.scard(siteUvKey) || 0;
-      
-      // Get any manual UV adjustment
       const siteUvAdjustKey = `uv:adjust:site:${normalizedDomain}`;
-      const siteUvAdjust = await kv.get<number>(siteUvAdjustKey) || 0;
+      
+      // Use pipeline for better performance
+      const pipeline = kv.pipeline();
+      pipeline.get(sitePvKey);
+      pipeline.scard(siteUvKey);
+      pipeline.get(siteUvAdjustKey);
+      
+      // Execute the pipeline to get all values at once
+      const [sitePv, siteUvSetCount, siteUvAdjust] = await pipeline.exec();
       
       // Combine the set cardinality with the manual adjustment
-      const siteUv = Number(siteUvSetCount) + Number(siteUvAdjust);
+      const siteUv = Number(siteUvSetCount || 0) + Number(siteUvAdjust || 0);
       
-      // Get monitored pages for this domain
-      const monitoredPages = await prisma.monitoredPage.findMany({
-        where: { domain: { name: normalizedDomain } }
-      });
+      // Get all page keys directly from Redis
+      const pageKeys = await kv.keys(`pv:local:page:${normalizedDomain}:*`);
       
-      // If no monitored pages, return empty page views
-      if (monitoredPages.length === 0) {
+      // If no page keys, return early with empty pageViews
+      if (pageKeys.length === 0) {
         return {
-          sitePv,
+          sitePv: Number(sitePv || 0),
           siteUv,
           pageViews: [],
         };
       }
       
-      // Get page views
-      const pageKeys = await kv.keys(`pv:local:page:${normalizedDomain}:*`);
-      
-      // Batch get all page view counts at once
-      const pageViewPromises = pageKeys.map(key => kv.get<number>(key));
-      const pageViewCounts = await Promise.all(pageViewPromises);
-      
-      // Create a map of path to view count from Redis
-      const pathToViewsMap = new Map();
-      pageKeys.forEach((key, index) => {
-        // Extract the path part more robustly by finding the position after the domain prefix
-        const prefix = `pv:local:page:${normalizedDomain}:`;
-        const pathPart = key.substring(key.indexOf(prefix) + prefix.length);
-        pathToViewsMap.set(pathPart, Number(pageViewCounts[index] || 0));
+      // Use pipeline to batch fetch all page view counts in a single Redis operation
+      const pagesPipeline = kv.pipeline();
+      pageKeys.forEach(key => {
+        pagesPipeline.get(key);
       });
       
-      // Create page views data using monitored pages
-      // First, use exact matches from Redis if available
-      const pageViewsData = monitoredPages.map(page => {
-        const views = pathToViewsMap.get(page.path) || 0;
+      // Execute the pipeline to get all values at once
+      const pageViewCounts = await pagesPipeline.exec();
+      
+      // Map the results to create pageViews data
+      const pageViewsData = pageKeys.map((key, index) => {
+        // Extract the path part from the key
+        const prefix = `pv:local:page:${normalizedDomain}:`;
+        const path = key.substring(key.indexOf(prefix) + prefix.length);
+        const views = Number(pageViewCounts[index] || 0);
+        
         return {
-          path: page.path,
+          path,
           views
         };
       });
@@ -253,7 +216,7 @@ export const domainService = {
       pageViewsData.sort((a, b) => b.views - a.views);
       
       return {
-        sitePv,
+        sitePv: Number(sitePv || 0),
         siteUv,
         pageViews: pageViewsData,
       };
@@ -326,28 +289,21 @@ export const domainService = {
         return { success: false, message: "Domain not found" };
       }
       
-      // Create or update the monitored page entry
-      const monitoredPage = await prisma.monitoredPage.upsert({
-        where: {
-          domainId_path: {
-            domainId,
-            path: normalizedPath,
-          },
-        },
-        update: {},
-        create: {
-          domainId,
-          path: normalizedPath,
-        },
-      });
-      
-      // If page views were provided, update the Redis counter
+      // Store page view in Redis only
       if (pageViews !== undefined) {
         const pageViewKey = `pv:local:page:${domain.name}:${normalizedPath}`;
         await kv.set(pageViewKey, pageViews);
+        // Set expiration time
+        await kv.expire(pageViewKey, EXPIRATION_TIME); // 3 months
       }
       
-      return { success: true, monitoredPage };
+      return { 
+        success: true, 
+        monitoredPage: {
+          path: normalizedPath,
+          domainId
+        }
+      };
     } catch (error) {
       logger.error("Error adding monitored page", { error, domainId, path });
       return { success: false, message: "Failed to add monitored page" };
@@ -374,9 +330,8 @@ export const domainService = {
       // Update the page view in Redis
       const pageViewKey = `pv:local:page:${normalizedDomain}:${normalizedPath}`;
       await kv.set(pageViewKey, pageViews);
-      
-      // Ensure the page is in our monitored pages list
-      await this.addMonitoredPage(domain.id, normalizedPath);
+      // Set expiration time
+      await kv.expire(pageViewKey, EXPIRATION_TIME); // 3 months
       
       return { success: true, message: "Page view counter updated" };
     } catch (error) {
@@ -387,6 +342,7 @@ export const domainService = {
   
   /**
    * Remove a monitored page from a domain
+   * Note: This only marks the page as not monitored, but preserves the data in Redis
    */
   async removeMonitoredPage(domainId: string, path: string) {
     try {
@@ -402,19 +358,11 @@ export const domainService = {
         return { success: false, message: "Domain not found" };
       }
       
-      // Delete the monitored page from PostgreSQL only
-      await prisma.monitoredPage.deleteMany({
-        where: {
-          domainId,
-          path: normalizedPath,
-        },
-      });
-      
       // We're keeping the data in KV as requested
       // const pageViewKey = `pv:local:page:${domain.name}:${normalizedPath}`;
       // await kv.del(pageViewKey);
       
-      return { success: true, message: "Monitored page removed from database (KV data preserved)" };
+      return { success: true, message: "Monitored page removed (KV data preserved)" };
     } catch (error) {
       logger.error("Error removing monitored page", { error, domainId, path });
       return { success: false, message: "Failed to remove monitored page" };

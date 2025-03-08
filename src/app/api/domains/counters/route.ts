@@ -8,6 +8,7 @@ import kv from "@/lib/kv";
 import { calculateTotalUV, updateTotalUV } from "@/utils/counter";
 import { EXPIRATION_TIME } from "@/utils/counter";
 import { safeDecodeURIComponent } from "@/utils/url";
+import { domainService } from "@/lib/domain-service";
 
 // POST handler - Update counter values for a domain
 export async function POST(req: NextRequest) {
@@ -142,71 +143,15 @@ export async function GET(req: NextRequest) {
         name: domainName,
         userId,
       },
-      include: {
-        monitoredPages: true,
-      },
     });
     
     if (!domain) {
       return ApiErrors.notFound("Domain not found or does not belong to you");
     }
     
-    // Fetch counter values from Redis
-    const hostSanitized = domain.name;
-    
-    // Get site PV from Redis and calculate UV using the utility function
-    const [sitePv, uvData] = await Promise.all([
-      kv.get(`pv:local:site:${hostSanitized}`),
-      calculateTotalUV(hostSanitized)
-    ]);
-    
-    const siteUv = uvData.total;
-    
-    // Batch fetch page views using pipeline or MGET instead of individual calls
-    if (domain.monitoredPages.length === 0) {
-      // No monitored pages, return early with empty pageViews
-      const counters = {
-        sitePv: Number(sitePv || 0),
-        siteUv: Number(siteUv || 0),
-        pageViews: [],
-      };
-      return successResponse({ counters });
-    }
-    
-    // Create an array of keys for all monitored pages
-    const pageKeys = domain.monitoredPages.map(page => 
-      `pv:local:page:${hostSanitized}:${page.path}`
-    );
-    
-    // Use pipeline to batch fetch all page view counts in a single Redis operation
-    const pipeline = kv.pipeline();
-    pageKeys.forEach(key => {
-      pipeline.get(key);
-    });
-    
-    // Execute the pipeline to get all values at once
-    const pageViewCounts = await pipeline.exec();
-    
-    // Map the results back to the monitored pages
-    const pageViews = domain.monitoredPages.map((page, index) => {
-      const views = pageViewCounts[index];
-      logger.debug("Page views", { 
-        pageKey: pageKeys[index], 
-        views 
-      });
-      
-      return {
-        path: page.path,
-        decodedPath: safeDecodeURIComponent(page.path),
-        views: Number(views || 0),
-      };
-    });
-    
-    const counters = {
-      sitePv: Number(sitePv || 0),
-      siteUv: Number(siteUv || 0),
-      pageViews,
-    };
+    // Use the domain service to get counters
+    // This now uses Redis exclusively and is optimized with pipelines
+    const counters = await domainService.getCountersForDomain(domainName);
     
     return successResponse({ counters });
   } catch (error) {
