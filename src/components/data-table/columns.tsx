@@ -44,10 +44,10 @@ export const columns: ColumnDef<PageViewData>[] = [
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="w-full justify-start font-semibold px-3 hover:bg-transparent"
+          className="p-0 font-medium hover:bg-transparent hover:text-foreground text-xs flex items-center h-auto"
         >
           Path
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="ml-1 h-3 w-3" />
         </Button>
       )
     },
@@ -59,7 +59,7 @@ export const columns: ColumnDef<PageViewData>[] = [
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="max-w-[400px] truncate hover:text-zinc-300 transition-colors px-3">
+              <div className="max-w-[400px] truncate text-sm">
                 {decodedPath}
               </div>
             </TooltipTrigger>
@@ -74,17 +74,17 @@ export const columns: ColumnDef<PageViewData>[] = [
   {
     accessorKey: "views",
     meta: {
-        align: "right",
-      },
+      align: "right",
+    },
     header: ({ column }) => {
       return (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="w-fit  justify-start font-semibold px-3 hover:bg-transparent"
+          className="p-0 font-medium hover:bg-transparent hover:text-foreground text-xs flex items-center h-auto justify-end w-full"
         >
           Views
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="ml-1 h-3 w-3" />
         </Button>
       )
     },
@@ -109,32 +109,32 @@ export const columns: ColumnDef<PageViewData>[] = [
         }
         
         return (
-            <div className="w-full flex justify-end">
+          <div className="w-full flex justify-end">
             <Input
-            type="number"
-            value={hasFocus ? localValue : views.toString()}
-            onChange={(e) => {
-              setLocalValue(e.target.value)
-            }}
-            onFocus={() => setHasFocus(true)}
-            onBlur={() => {
-              setHasFocus(false)
-              commitChange()
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault()
-                e.stopPropagation()
-                commitChange()
+              type="number"
+              value={hasFocus ? localValue : views.toString()}
+              onChange={(e) => {
+                setLocalValue(e.target.value)
+              }}
+              onFocus={() => setHasFocus(true)}
+              onBlur={() => {
                 setHasFocus(false)
-                ;(e.target as HTMLInputElement).blur()
-              }
-            }}
-            className="w-24 text-right no-spinners"
-            step="1"
-            min="0"
-          /></div>
-
+                commitChange()
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  commitChange()
+                  setHasFocus(false)
+                  ;(e.target as HTMLInputElement).blur()
+                }
+              }}
+              className="w-20 text-right no-spinners h-8 text-sm"
+              step="1"
+              min="0"
+            />
+          </div>
         )
       }
       
@@ -161,28 +161,30 @@ export const columns: ColumnDef<PageViewData>[] = [
         <div className="flex items-center justify-end">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
+              <Button variant="ghost" size="icon" className="h-7 w-7">
                 <MoreHorizontal className="h-4 w-4" />
                 <span className="sr-only">Open menu</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="w-[160px]">
               <DropdownMenuItem
                 onClick={() => {
                   if (handleUpdatePageView) {
                     handleUpdatePageView(path)
                   }
                 }}
+                className="text-xs"
               >
-                <RefreshCw className="mr-2 h-4 w-4" />
+                <RefreshCw className="mr-2 h-3.5 w-3.5" />
                 <span>Refresh</span>
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => {
                   window.open(path, '_blank')
                 }}
+                className="text-xs"
               >
-                <Eye className="mr-2 h-4 w-4" />
+                <Eye className="mr-2 h-3.5 w-3.5" />
                 <span>View page</span>
               </DropdownMenuItem>
               <DropdownMenuItem
@@ -190,16 +192,17 @@ export const columns: ColumnDef<PageViewData>[] = [
                   // Add edit functionality here
                   console.log(`Edit ${path}`)
                 }}
+                className="text-xs"
               >
-                <Edit className="mr-2 h-4 w-4" />
+                <Edit className="mr-2 h-3.5 w-3.5" />
                 <span>Edit</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                className="text-destructive focus:text-destructive"
+                className="text-destructive focus:text-destructive text-xs"
                 onClick={() => setShowDeleteAlert(true)}
               >
-                <Trash2 className="mr-2 h-4 w-4" />
+                <Trash2 className="mr-2 h-3.5 w-3.5" />
                 <span>Delete</span>
               </DropdownMenuItem>
             </DropdownMenuContent>

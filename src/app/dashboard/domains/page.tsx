@@ -222,203 +222,200 @@ export default function DomainsPage() {
 
       {/* Main content */}
       <div className="flex-1 p-4 md:p-8">
-        <div className="max-w-6xl w-full mx-auto">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl md:text-3xl font-bold">My Domains</h1>
-            <Button onClick={() => router.push('/dashboard')}>
+        <div className="max-w-5xl w-full mx-auto">
+          <div className="flex items-center justify-between mb-8">
+            <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">Domains</h1>
+            <Button variant="outline" onClick={() => router.push('/dashboard')}>
               Back to Dashboard
             </Button>
           </div>
           
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Add New Domain</CardTitle>
-                <CardDescription>Enter a domain name to start tracking</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleAddDomain} className="flex gap-2 items-end">
-                  <div className="flex-1">
-                    <Label htmlFor="domain-name">Domain Name</Label>
-                    <Input
-                      id="domain-name"
-                      placeholder="example.com"
-                      value={newDomain}
-                      onChange={(e) => setNewDomain(e.target.value)}
-                      disabled={addingDomain}
-                    />
-                  </div>
-                  <Button type="submit" disabled={addingDomain}>
-                    {addingDomain ? "Adding..." : "Add Domain"}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
+          <div className="space-y-8">
+            {/* Add domain form */}
+            <div className="flex gap-3 items-end">
+              <div className="flex-1">
+                <Label htmlFor="domain-name" className="text-sm font-medium mb-2">Add a domain</Label>
+                <Input
+                  id="domain-name"
+                  placeholder="example.com"
+                  value={newDomain}
+                  onChange={(e) => setNewDomain(e.target.value)}
+                  disabled={addingDomain}
+                  className="h-10"
+                />
+              </div>
+              <Button 
+                type="submit" 
+                disabled={addingDomain} 
+                onClick={handleAddDomain}
+                className="h-10"
+              >
+                {addingDomain ? "Adding..." : "Add"}
+              </Button>
+            </div>
             
-            <Card>
-              <CardHeader>
-                <CardTitle>My Domains</CardTitle>
-                <CardDescription>Manage your registered domains</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {domainsLoading ? (
-                  <div className="space-y-4">
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="p-4 border rounded-lg">
-                        <div className="flex flex-col md:flex-row justify-between md:items-center gap-2">
-                          <div className="flex flex-col gap-2">
-                            <Skeleton className="h-5 w-40" />
-                            <Skeleton className="h-4 w-24" />
-                          </div>
-                          <div className="flex flex-col gap-2">
-                            <Skeleton className="h-4 w-32" />
-                            <Skeleton className="h-4 w-32" />
-                          </div>
+            {/* Domains list */}
+            <div>
+              <h2 className="text-lg font-medium mb-4">My domains</h2>
+              
+              {domainsLoading ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="p-4 border rounded-lg">
+                      <div className="flex flex-col md:flex-row justify-between md:items-center gap-2">
+                        <div className="flex flex-col gap-2">
+                          <Skeleton className="h-5 w-40" />
+                          <Skeleton className="h-4 w-24" />
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <Skeleton className="h-4 w-32" />
+                          <Skeleton className="h-4 w-32" />
                         </div>
                       </div>
-                    ))}
-                  </div>
-                ) : domains.length === 0 ? (
+                    </div>
+                  ))}
+                </div>
+              ) : domains.length === 0 ? (
+                <div className="border border-dashed rounded-lg p-8 text-center">
+                  <Globe className="w-10 h-10 text-muted-foreground mx-auto mb-4" />
                   <p className="text-muted-foreground">No domains added yet.</p>
-                ) : (
-                  <div className="flex flex-col gap-4">
-                    {domains.map((domain) => (
-                      <div
-                        key={domain.id}
-                        className="p-4 border rounded-lg bg-secondary/30"
-                      >
-                        {/* First row: Domain name on left, action buttons on right */}
-                        <div className="flex justify-between items-center mb-4">
-                          <div>
-                            <h3 className="font-medium">{domain.name}</h3>
-                          </div>
-                          
-                          <div className="flex gap-2">
-                            {!domain.verified && (
-                              <Button 
-                                variant="outline" 
-                                onClick={(e) => {
-                                  handleVerifyDomain(e, domain.id);
-                                }}
-                              >
-                                Refresh
-                              </Button>
-                            )}
-                            <Button 
-                              variant="secondary" 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                // Edit functionality would go here
-                              }}
-                            >
-                              Edit
-                            </Button>
-                            <Button 
-                              variant="destructive" 
-                              onClick={(e) => handleUnlinkDomain(e, domain.id)}
-                            >
-                              Unlink
-                            </Button>
-                          </div>
+                  <p className="text-sm text-muted-foreground mt-1">Add your first domain to start tracking analytics.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {domains.map((domain) => (
+                    <div
+                      key={domain.id}
+                      className="border rounded-lg overflow-hidden"
+                    >
+                      <div className="p-4 flex justify-between items-center">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-2 h-2 rounded-full ${domain.verified ? 'bg-green-500' : 'bg-amber-500'}`} />
+                          <h3 className="font-medium">{domain.name}</h3>
+                          {!domain.verified && (
+                            <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+                              Pending verification
+                            </span>
+                          )}
                         </div>
                         
-                        {/* Second row: Verification section or stats */}
-                        {!domain.verified ? (
-                          <div className="w-full">
-                            <div className="flex items-center gap-2 bg-red-500/10 text-red-500 p-2 rounded mb-4">
-                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-alert-triangle">
-                                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
-                                <path d="M12 9v4"></path>
-                                <path d="M12 17h.01"></path>
-                              </svg>
-                              <span className="text-sm">Domain is pending verification</span>
-                            </div>
-                            
-                            <div className="border rounded p-4 mb-2">
-                              <h4 className="text-sm font-medium mb-4">Domain verification (DNS)</h4>
-                              <div className="border-t border-b py-4 mb-4">
-                                <p className="text-xs mb-2">
-                                  Set the following TXT record on <span className="font-mono bg-secondary/30 px-1 rounded">_vercount.{domain.name}</span> to use <span className="font-mono bg-secondary/30 px-1 rounded">{domain.name}</span> in this project.
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  Once the verification is completed and the domain is successfully configured, the TXT record can be removed.
-                                </p>
-                              </div>
-                              
-                              <div className="overflow-x-auto">
-                                <table className="w-full text-xs">
-                                  <thead className="text-left">
-                                    <tr>
-                                      <th className="pb-2">Type</th>
-                                      <th className="pb-2">Name</th>
-                                      <th className="pb-2">Value</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    <tr>
-                                      <td className="py-2">TXT</td>
-                                      <td className="py-2 font-mono">_vercount.{domain.name}</td>
-                                      <td className="py-2 font-mono">vercount-domain-verify={domain.name},{domain.verificationCode}</td>
-                                    </tr>
-                                  </tbody>
-                                </table>
-                              </div>
-                            </div>
-                          </div>
-                        ) : (
-                          <>
-                          <Separator className="my-4" />
-                          <div 
-                            className="cursor-pointer hover:bg-secondary/50 transition-colors rounded-lg p-4" 
-                            onClick={() => router.push(`/dashboard/counters?domain=${domain.name}`)}
+                        <div className="flex gap-2">
+                          {!domain.verified && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={(e) => handleVerifyDomain(e, domain.id)}
+                            >
+                              Verify
+                            </Button>
+                          )}
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              // Edit functionality would go here
+                            }}
                           >
-                            <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-                              <div className="flex gap-6 items-center">
-                                <div className="flex flex-col items-center gap-1">
-                                  <span className="text-3xl font-bold">{domain.counters?.sitePv || 0}</span>
-                                  <span className="text-xs text-muted-foreground">Page Views</span>
-                                </div>
-                                <Separator orientation="vertical" className="hidden sm:block h-10" />
-                                <div className="flex flex-col items-center gap-1">
-                                  <span className="text-3xl font-bold">{domain.counters?.siteUv || 0}</span>
-                                  <span className="text-xs text-muted-foreground">Unique Visitors</span>
-                                </div>
+                            Edit
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                            onClick={(e) => handleUnlinkDomain(e, domain.id)}
+                          >
+                            Unlink
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      {/* Verification instructions or analytics summary */}
+                      {!domain.verified ? (
+                        <div className="border-t p-4">
+                          <h4 className="text-sm font-medium mb-3">Verification required</h4>
+                          <p className="text-xs text-muted-foreground mb-4">
+                            Add this TXT record to your DNS configuration to verify ownership:
+                          </p>
+                          
+                          <div className="bg-secondary/20 rounded-md p-3 mb-4 overflow-x-auto">
+                            <table className="w-full text-xs">
+                              <thead className="text-left">
+                                <tr>
+                                  <th className="pb-2 text-muted-foreground">Type</th>
+                                  <th className="pb-2 text-muted-foreground">Name</th>
+                                  <th className="pb-2 text-muted-foreground">Value</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                <tr>
+                                  <td className="py-1 font-mono">TXT</td>
+                                  <td className="py-1 font-mono">_vercount.{domain.name}</td>
+                                  <td className="py-1 font-mono">vercount-domain-verify={domain.name},{domain.verificationCode}</td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
+                          
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="w-full"
+                            onClick={(e) => handleVerifyDomain(e, domain.id)}
+                          >
+                            Check verification
+                          </Button>
+                        </div>
+                      ) : (
+                        <div 
+                          className="border-t p-4 cursor-pointer hover:bg-secondary/5 transition-colors" 
+                          onClick={() => router.push(`/dashboard/counters?domain=${domain.name}`)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex gap-6">
+                              <div>
+                                <p className="text-2xl font-semibold">{domain.counters?.sitePv || 0}</p>
+                                <p className="text-xs text-muted-foreground">Page Views</p>
                               </div>
-                              
-                              <Button 
-                                variant="default" 
-                                className="w-full sm:w-auto"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  router.push(`/dashboard/counters?domain=${domain.name}`);
-                                }}
-                              >
-                                View Analytics <ArrowRight className="w-4 h-4 ml-2" />
-                              </Button>
+                              <div>
+                                <p className="text-2xl font-semibold">{domain.counters?.siteUv || 0}</p>
+                                <p className="text-xs text-muted-foreground">Unique Visitors</p>
+                              </div>
                             </div>
                             
-                            {domain.counters?.pageViews && domain.counters.pageViews.length > 0 && (
-                              <div className="mt-4 pt-4 border-t">
-                                <p className="text-xs text-muted-foreground mb-2">Top Pages</p>
-                                <div className="space-y-2">
-                                  {domain.counters.pageViews.slice(0, 3).map((page, i) => (
-                                    <div key={i} className="flex justify-between items-center text-sm">
-                                      <span className="truncate max-w-[70%]">{safeDecodeURIComponent(page.path)}</span>
-                                      <span className="font-medium">{page.views}</span>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              className="gap-1"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                router.push(`/dashboard/counters?domain=${domain.name}`);
+                              }}
+                            >
+                              View Analytics <ArrowRight className="w-3 h-3 ml-1" />
+                            </Button>
                           </div>
-                          </>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                          
+                          {domain.counters?.pageViews && domain.counters.pageViews.length > 0 && (
+                            <div className="mt-4 pt-4 border-t">
+                              <p className="text-xs text-muted-foreground mb-2">Top Pages</p>
+                              <div className="space-y-2">
+                                {domain.counters.pageViews.slice(0, 3).map((page, i) => (
+                                  <div key={i} className="flex justify-between items-center text-sm">
+                                    <span className="truncate max-w-[70%] text-xs">{safeDecodeURIComponent(page.path)}</span>
+                                    <span className="text-xs font-medium">{page.views}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

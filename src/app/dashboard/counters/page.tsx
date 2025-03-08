@@ -305,12 +305,11 @@ export default function CountersPage() {
 
       {/* Main content */}
       <div className="flex-1 p-4 md:p-8">
-        <div className="max-w-6xl w-full mx-auto">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-            <h1 className="text-2xl md:text-3xl font-bold">Analytics Counters</h1>
+        <div className="max-w-5xl w-full mx-auto">
+          <div className="flex items-center justify-between mb-8">
+            <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">Analytics</h1>
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => router.push('/dashboard')}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Dashboard
               </Button>
               {selectedDomain && (
@@ -322,169 +321,148 @@ export default function CountersPage() {
                   {loading.syncing ? (
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
                   ) : (
-                    <RefreshCw className="h-4 w-4" />
+                    <RefreshCw className="h-4 w-4 mr-2" />
                   )}
-                  <span className="ml-2 hidden sm:inline">Sync Paths</span>
+                  Sync
                 </Button>
               )}
             </div>
           </div>
           
           {/* Domain selection */}
-          <Card className="mb-6">
-            <CardHeader className="pb-3">
-              <CardTitle>Select Domain</CardTitle>
-              <CardDescription>Choose a domain to view and update its analytics data</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {loading.domains ? (
-                <div className="space-y-2">
-                  <Skeleton className="h-10 w-full" />
-                  <div className="flex gap-2 flex-wrap">
-                    {[1, 2, 3].map((i) => (
-                      <Skeleton key={i} className="h-10 w-32" />
-                    ))}
-                  </div>
-                </div>
-              ) : domains.length === 0 ? (
-                <div className="text-center py-6 space-y-4">
-                  <p className="text-muted-foreground">No verified domains found.</p>
-                  <Button onClick={() => router.push('/dashboard/domains')}>
-                    Add a Domain
+          <div className="mb-8">
+            <h2 className="text-lg font-medium mb-4">Select Domain</h2>
+            
+            {loading.domains ? (
+              <div className="flex gap-2 flex-wrap">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-10 w-32" />
+                ))}
+              </div>
+            ) : domains.length === 0 ? (
+              <div className="border border-dashed rounded-lg p-8 text-center">
+                <p className="text-muted-foreground mb-4">No verified domains found.</p>
+                <Button onClick={() => router.push('/dashboard/domains')}>
+                  Add a Domain
+                </Button>
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {domains.map((domain) => (
+                  <Button
+                    key={domain.id}
+                    variant={selectedDomain?.id === domain.id ? "default" : "outline"}
+                    onClick={() => selectDomain(domain)}
+                    className="h-auto py-2 px-4"
+                    disabled={!domain.verified}
+                  >
+                    {domain.name}
+                    {!domain.verified && <span className="ml-2 text-xs opacity-70">(Unverified)</span>}
                   </Button>
-                </div>
-              ) : (
-                <>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mb-4">
-                    {domains.map((domain) => (
-                      <Button
-                        key={domain.id}
-                        variant={selectedDomain?.id === domain.id ? "default" : "outline"}
-                        onClick={() => selectDomain(domain)}
-                        className="justify-start overflow-hidden h-auto py-3"
-                        disabled={!domain.verified}
-                      >
-                        <div className="truncate">
-                          {domain.name}
-                          {!domain.verified && <span className="ml-2 text-xs text-muted-foreground">(Unverified)</span>}
-                        </div>
-                      </Button>
-                    ))}
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
+                ))}
+              </div>
+            )}
+          </div>
           
           {/* Counters section */}
           {selectedDomain ? (
-            <div className="space-y-6">
-              {/* Site-wide analytics card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Site-wide Analytics for {selectedDomain.name}</CardTitle>
-                  <CardDescription>Overall analytics for your entire domain</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {loading.counters ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <Skeleton className="h-24 w-full" />
-                      <Skeleton className="h-24 w-full" />
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="border rounded-lg p-6 flex flex-col">
-                        <div className="flex justify-between items-center mb-2">
-                          <h3 className="font-medium">Page Views</h3>
-                          <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">Site-wide</span>
-                        </div>
-                        <div className="text-3xl font-bold mb-4">{counterData.sitePv.toLocaleString()}</div>
-                        <div className="mt-auto">
-                          <Label htmlFor="sitePv" className="text-sm text-muted-foreground mb-1 block">
-                            Update count:
-                          </Label>
-                          <div className="flex items-center gap-2">
-                            <Input
-                              id="sitePv"
-                              type="number"
-                              min="0"
-                              step="1"
-                              value={counterData.sitePv}
-                              onChange={(e) => {
-                                const numValue = parseInt(e.target.value, 10);
-                                updateSiteCounter('sitePv', isNaN(numValue) ? 0 : numValue);
-                              }}
-                              className="w-full"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="border rounded-lg p-6 flex flex-col">
-                        <div className="flex justify-between items-center mb-2">
-                          <h3 className="font-medium">Unique Visitors</h3>
-                          <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">Site-wide</span>
-                        </div>
-                        <div className="text-3xl font-bold mb-4">{counterData.siteUv.toLocaleString()}</div>
-                        <div className="mt-auto">
-                          <Label htmlFor="siteUv" className="text-sm text-muted-foreground mb-1 block">
-                            Update count:
-                          </Label>
-                          <div className="flex items-center gap-2">
-                            <Input
-                              id="siteUv"
-                              type="number"
-                              min="0"
-                              step="1"
-                              value={counterData.siteUv}
-                              onChange={(e) => {
-                                const numValue = parseInt(e.target.value, 10);
-                                updateSiteCounter('siteUv', isNaN(numValue) ? 0 : numValue);
-                              }}
-                              className="w-full"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+            <div className="space-y-8">
+              {/* Domain header */}
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-medium">{selectedDomain.name}</h2>
+                <Button 
+                  onClick={saveCounters}
+                  disabled={loading.saving}
+                  className="h-9"
+                >
+                  {loading.saving ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
 
-              {/* Page-specific analytics card */}
-              <Card>
-                <CardHeader>
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div>
-                      <CardTitle>Page-specific Analytics</CardTitle>
-                      <CardDescription>
-                        View and update analytics for individual pages
-                        {Object.keys(counterData.pageViews).length > 0 && (
-                          <span className="ml-1">
-                            ({Object.keys(counterData.pageViews).length} pages)
-                          </span>
-                        )}
-                      </CardDescription>
+              {/* Site-wide analytics */}
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground mb-4">SITE OVERVIEW</h3>
+                
+                {loading.counters ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Skeleton className="h-24 w-full" />
+                    <Skeleton className="h-24 w-full" />
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="border rounded-lg p-5">
+                      <div className="flex justify-between items-center mb-1">
+                        <h3 className="text-sm font-medium text-muted-foreground">Page Views</h3>
+                      </div>
+                      <div className="text-3xl font-semibold mb-4">{counterData.sitePv.toLocaleString()}</div>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="number"
+                          min="0"
+                          step="1"
+                          value={counterData.sitePv}
+                          onChange={(e) => {
+                            const numValue = parseInt(e.target.value, 10);
+                            updateSiteCounter('sitePv', isNaN(numValue) ? 0 : numValue);
+                          }}
+                          className="h-8"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="border rounded-lg p-5">
+                      <div className="flex justify-between items-center mb-1">
+                        <h3 className="text-sm font-medium text-muted-foreground">Unique Visitors</h3>
+                      </div>
+                      <div className="text-3xl font-semibold mb-4">{counterData.siteUv.toLocaleString()}</div>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="number"
+                          min="0"
+                          step="1"
+                          value={counterData.siteUv}
+                          onChange={(e) => {
+                            const numValue = parseInt(e.target.value, 10);
+                            updateSiteCounter('siteUv', isNaN(numValue) ? 0 : numValue);
+                          }}
+                          className="h-8"
+                        />
+                      </div>
                     </div>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  {loading.counters ? (
-                    <div className="space-y-4">
-                      <Skeleton className="h-10 w-full" />
-                      <Skeleton className="h-40 w-full" />
-                    </div>
-                  ) : (
-                    <div>
-                      {Object.keys(counterData.pageViews).length === 0 ? (
-                        <div className="border rounded-md p-8 text-center space-y-4">
-                          <p className="text-muted-foreground">No monitored pages found for this domain.</p>
-                          <Button variant="outline" onClick={syncPathsFromKV}>
-                            <RefreshCw className="h-4 w-4 mr-2" />
-                            Sync Paths from KV
-                          </Button>
-                        </div>
-                      ) : (
+                )}
+              </div>
+
+              {/* Page-specific analytics */}
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-medium text-muted-foreground">
+                    PAGE ANALYTICS
+                    {Object.keys(counterData.pageViews).length > 0 && (
+                      <span className="ml-1 text-xs">
+                        ({Object.keys(counterData.pageViews).length} pages)
+                      </span>
+                    )}
+                  </h3>
+                </div>
+                
+                {loading.counters ? (
+                  <div className="space-y-4">
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-40 w-full" />
+                  </div>
+                ) : (
+                  <div>
+                    {Object.keys(counterData.pageViews).length === 0 ? (
+                      <div className="border border-dashed rounded-lg p-8 text-center">
+                        <p className="text-muted-foreground mb-4">No monitored pages found for this domain.</p>
+                        <Button variant="outline" onClick={syncPathsFromKV} size="sm">
+                          <RefreshCw className="h-4 w-4 mr-2" />
+                          Sync Paths
+                        </Button>
+                      </div>
+                    ) : (
+                      <div>
                         <CounterTable
                           data={Object.entries(counterData.pageViews).map(([path, views]) => ({
                             path,
@@ -494,52 +472,31 @@ export default function CountersPage() {
                           handleUpdatePageView={handleUpdatePageViewDummy}
                           handleDeleteMonitoredPage={deleteMonitoredPage}
                         />
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Save button */}
-              <div className="flex justify-end mt-6">
-                <Button 
-                  onClick={saveCounters}
-                  disabled={loading.saving}
-                  size="lg"
-                  className="px-8"
-                >
-                  {loading.saving ? (
-                    <>
-                      <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                      Saving...
-                    </>
-                  ) : (
-                    "Save All Changes"
-                  )}
-                </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           ) : (
-            <Card>
-              <CardContent className="p-8 text-center">
-                {loading.domains ? (
-                  <div className="space-y-4 flex flex-col items-center">
-                    <Skeleton className="h-6 w-64" />
-                    <Skeleton className="h-4 w-48" />
-                  </div>
-                ) : (
-                  <>
-                    <h3 className="text-lg font-medium mb-2">No Domain Selected</h3>
-                    <p className="text-muted-foreground mb-4">Please select a domain to update its counters.</p>
-                    {domains.length === 0 && (
-                      <Button onClick={() => router.push('/dashboard/domains')}>
-                        Add a Domain
-                      </Button>
-                    )}
-                  </>
-                )}
-              </CardContent>
-            </Card>
+            <div className="border border-dashed rounded-lg p-12 text-center">
+              {loading.domains ? (
+                <div className="flex flex-col items-center">
+                  <Skeleton className="h-6 w-64 mb-4" />
+                  <Skeleton className="h-4 w-48" />
+                </div>
+              ) : (
+                <>
+                  <h3 className="text-lg font-medium mb-2">Select a domain to view analytics</h3>
+                  <p className="text-muted-foreground mb-4">Choose a domain from the list above to view and update its analytics.</p>
+                  {domains.length === 0 && (
+                    <Button onClick={() => router.push('/dashboard/domains')}>
+                      Add a Domain
+                    </Button>
+                  )}
+                </>
+              )}
+            </div>
           )}
         </div>
       </div>

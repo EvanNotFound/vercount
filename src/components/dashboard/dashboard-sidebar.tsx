@@ -7,12 +7,6 @@ import {
   Globe,
   LayoutDashboard,
   Settings,
-  Users,
-  LogOut,
-  User,
-  ChevronUp,
-  LineChart,
-  ListFilter,
   PieChart,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -23,8 +17,6 @@ import {
   SidebarHeader,
 } from "@/components/ui/sidebar";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { toast } from "sonner";
 import SidebarUserInfo from "./sidebar-user-info";
 
 export function DashboardSidebar() {
@@ -38,17 +30,12 @@ export function DashboardSidebar() {
     },
     {
       href: "/dashboard/domains",
-      label: "My Domains",
+      label: "Domains",
       icon: <Globe className="h-4 w-4" />,
     },
     {
-      href: "/dashboard/analytics",
-      label: "Analytics",
-      icon: <BarChart3 className="h-4 w-4" />,
-    },
-    {
       href: "/dashboard/counters",
-      label: "Manage Counters",
+      label: "Analytics",
       icon: <PieChart className="h-4 w-4" />,
     },
   ];
@@ -64,21 +51,21 @@ export function DashboardSidebar() {
   return (
     <Sidebar>
       <SidebarHeader>
-        <Link href="/" className="flex items-center gap-2 px-4 py-3">
-          <span className="font-bold text-xl tracking-tighter">Vercount</span>
+        <Link href="/" className="flex items-center px-4 py-5">
+          <span className="font-semibold text-lg tracking-tight">Vercount</span>
         </Link>
       </SidebarHeader>
-      <SidebarContent>
-        <nav className="space-y-1 px-2">
+      <SidebarContent className="px-3">
+        <nav className="space-y-0.5">
           {navItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors",
+                "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
                 pathname === item.href
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                  : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                  ? "bg-primary/10 text-primary font-medium"
+                  : "text-muted-foreground hover:bg-secondary/40 hover:text-foreground"
               )}
             >
               {item.icon}
@@ -87,20 +74,20 @@ export function DashboardSidebar() {
           ))}
         </nav>
         
-        <div className="mt-6">
-          <div className="px-3 text-xs font-medium text-muted-foreground mb-2">
+        {/* <div className="mt-8">
+          <div className="px-3 text-xs uppercase tracking-wider text-muted-foreground/70 mb-2">
             Settings
           </div>
-          <nav className="space-y-1 px-2">
+          <nav className="space-y-0.5">
             {settingsItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors",
+                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
                   pathname === item.href
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                    ? "bg-primary/10 text-primary font-medium"
+                    : "text-muted-foreground hover:bg-secondary/40 hover:text-foreground"
                 )}
               >
                 {item.icon}
@@ -108,9 +95,9 @@ export function DashboardSidebar() {
               </Link>
             ))}
           </nav>
-        </div>
+        </div> */}
       </SidebarContent>
-      <SidebarFooter>
+      <SidebarFooter className="border-t">
         <SidebarUserInfo />
       </SidebarFooter>
     </Sidebar>

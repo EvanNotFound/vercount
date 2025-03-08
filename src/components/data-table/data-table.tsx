@@ -100,7 +100,7 @@ export function DataTable<TData, TValue>({
   return (
     <div className="space-y-4">
       {searchKey && (
-        <div className="flex items-center">
+        <div className="flex items-center mb-2">
           <div className="relative w-full max-w-sm">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
@@ -109,20 +109,20 @@ export function DataTable<TData, TValue>({
               onChange={(event) =>
                 table.getColumn(searchKey)?.setFilterValue(event.target.value)
               }
-              className="w-full pl-8 bg-background"
+              className="w-full pl-8 h-9"
             />
           </div>
         </div>
       )}
-      <div className="rounded-md border overflow-hidden bg-background shadow-sm">
+      <div className="rounded-md border overflow-hidden">
         <Table>
-          <TableHeader className="bg-muted/50">
+          <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
+              <TableRow key={headerGroup.id} className="border-b hover:bg-transparent">
                 {headerGroup.headers.map((header) => {
                   const alignment = header.column.columnDef.meta?.align === "right" ? "text-right" : "";
                   return (
-                    <TableHead key={header.id} className={alignment}>
+                    <TableHead key={header.id} className={`${alignment} h-10 px-2 text-xs font-medium text-muted-foreground`}>
                       {header.isPlaceholder
                         ? null
                         : flexRender(
@@ -141,12 +141,12 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  className="hover:bg-muted/50"
+                  className="border-b hover:bg-secondary/5"
                 >
                   {row.getVisibleCells().map((cell) => {
                     const alignment = cell.column.columnDef.meta?.align === "right" ? "text-right" : "";
                     return (
-                      <TableCell key={cell.id} className={alignment}>
+                      <TableCell key={cell.id} className={`${alignment} py-3 px-2`}>
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </TableCell>
                     )
@@ -155,7 +155,7 @@ export function DataTable<TData, TValue>({
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
                   No results.
                 </TableCell>
               </TableRow>
@@ -171,7 +171,7 @@ export function DataTable<TData, TValue>({
               table.setPageSize(Number(value));
             }}
           >
-            <SelectTrigger className="h-8 w-[70px]">
+            <SelectTrigger className="h-8 w-[70px] text-xs">
               <SelectValue placeholder={pagination.pageSize.toString()} />
             </SelectTrigger>
             <SelectContent side="top">
@@ -182,12 +182,12 @@ export function DataTable<TData, TValue>({
               ))}
             </SelectContent>
           </Select>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             rows per page
           </p>
         </div>
 
-        <div className="text-sm text-muted-foreground">
+        <div className="text-xs text-muted-foreground">
           Showing {table.getRowModel().rows.length} of {data.length} results
         </div>
         
@@ -195,24 +195,26 @@ export function DataTable<TData, TValue>({
           <Button
             variant="outline"
             size="sm"
+            className="h-8 px-2 text-xs"
             onClick={() => goToPage(pagination.pageIndex - 1)}
             disabled={pagination.pageIndex <= 0}
           >
-            <ChevronLeft className="h-4 w-4 mr-1" />
+            <ChevronLeft className="h-3 w-3 mr-1" />
             Previous
           </Button>
           <div className="flex items-center gap-1 px-2">
-            <span className="text-sm font-medium">{pagination.pageIndex + 1}</span>
-            <span className="text-sm text-muted-foreground">of {table.getPageCount()}</span>
+            <span className="text-xs font-medium">{pagination.pageIndex + 1}</span>
+            <span className="text-xs text-muted-foreground">of {table.getPageCount()}</span>
           </div>
           <Button
             variant="outline"
             size="sm"
+            className="h-8 px-2 text-xs"
             onClick={() => goToPage(pagination.pageIndex + 1)}
             disabled={pagination.pageIndex >= table.getPageCount() - 1}
           >
             Next
-            <ChevronRight className="h-4 w-4 ml-1" />
+            <ChevronRight className="h-3 w-3 ml-1" />
           </Button>
         </div>
       </div>

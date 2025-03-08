@@ -155,177 +155,145 @@ export default function Dashboard() {
 
       {/* Main content */}
       <div className="flex-1 p-4 md:p-8">
-        <div className="max-w-6xl w-full mx-auto">
-          <h1 className="text-2xl md:text-3xl font-bold mb-6">Dashboard Overview</h1>
+        <div className="max-w-5xl w-full mx-auto">
+          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight mb-8">Dashboard</h1>
           
           {/* Stats cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Total Page Views</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div className="text-2xl font-bold">
-                  {domainsLoading ? <Skeleton className="h-7 w-10" /> : stats.totalPageViews.toLocaleString()}
-                  </div>
-                  <div className="p-2 bg-primary/10 rounded-full">
-                    <BarChart3 className="h-4 w-4 text-primary" />
-                  </div>
-                </div>
-                <div className="text-xs text-muted-foreground mt-1 flex items-center">
-                    {domainsLoading ? <Skeleton className="h-4 w-24" /> : `Across ${stats.totalDomains} domains`}
-                </div>
-              </CardContent>
-            </Card>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div className="border rounded-lg p-4">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-medium text-muted-foreground">Page Views</h3>
+                <BarChart3 className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div className="text-2xl font-semibold">
+                {domainsLoading ? <Skeleton className="h-7 w-16" /> : stats.totalPageViews.toLocaleString()}
+              </div>
+              <div className="text-xs text-muted-foreground mt-1">
+                {domainsLoading ? <Skeleton className="h-4 w-24" /> : `Across ${stats.totalDomains} domains`}
+              </div>
+            </div>
             
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Unique Visitors</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div className="text-2xl font-bold">
-                  {domainsLoading ? <Skeleton className="h-7 w-10" /> : stats.totalUniqueVisitors.toLocaleString()}
-                  </div>
-                  <div className="p-2 bg-primary/10 rounded-full">
-                    <Users className="h-4 w-4 text-primary" />
-                  </div>
-                </div>
-                <div className="text-xs text-muted-foreground mt-1 flex items-center">
-                  {domainsLoading ? <Skeleton className="h-4 w-24" /> : `Across ${stats.totalDomains} domains`}
-                </div>
-              </CardContent>
-            </Card>
+            <div className="border rounded-lg p-4">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-medium text-muted-foreground">Unique Visitors</h3>
+                <Users className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div className="text-2xl font-semibold">
+                {domainsLoading ? <Skeleton className="h-7 w-16" /> : stats.totalUniqueVisitors.toLocaleString()}
+              </div>
+              <div className="text-xs text-muted-foreground mt-1">
+                {domainsLoading ? <Skeleton className="h-4 w-24" /> : `Across ${stats.totalDomains} domains`}
+              </div>
+            </div>
             
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Total Domains</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div className="text-2xl font-bold">
-                    {domainsLoading ? <Skeleton className="h-7 w-10" /> : stats.totalDomains}
-                  </div>
-                  <div className="p-2 bg-primary/10 rounded-full">
-                    <Globe className="h-4 w-4 text-primary" />
-                  </div>
-                </div>
-                <div className="text-xs text-muted-foreground mt-1">
-                  {domainsLoading ? <Skeleton className="h-4 w-24" /> : `${stats.totalDomains} active domains`}
-                </div>
-              </CardContent>
-            </Card>
+            <div className="border rounded-lg p-4">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-medium text-muted-foreground">Domains</h3>
+                <Globe className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div className="text-2xl font-semibold">
+                {domainsLoading ? <Skeleton className="h-7 w-16" /> : stats.totalDomains}
+              </div>
+              <div className="text-xs text-muted-foreground mt-1">
+                {domainsLoading ? <Skeleton className="h-4 w-24" /> : `${stats.totalDomains} active domains`}
+              </div>
+            </div>
             
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Monitored Pages</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div className="text-2xl font-bold">
-                    {domainsLoading ? <Skeleton className="h-7 w-10" /> : stats.totalMonitoredPages}
-                  </div>
-                  <div className="p-2 bg-primary/10 rounded-full">
-                    <TrendingUp className="h-4 w-4 text-primary" />
-                  </div>
-                </div>
-                <div className="text-xs text-muted-foreground mt-1">
-                  {domainsLoading ? <Skeleton className="h-4 w-24" /> : `Across ${stats.totalDomains} domains`}
-                </div>
-              </CardContent>
-            </Card>
+            <div className="border rounded-lg p-4">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-medium text-muted-foreground">Monitored Pages</h3>
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div className="text-2xl font-semibold">
+                {domainsLoading ? <Skeleton className="h-7 w-16" /> : stats.totalMonitoredPages}
+              </div>
+              <div className="text-xs text-muted-foreground mt-1">
+                {domainsLoading ? <Skeleton className="h-4 w-24" /> : `Across ${stats.totalDomains} domains`}
+              </div>
+            </div>
+          </div>
+          
+          {/* Navigation cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+            <div 
+              className="border rounded-lg p-5 hover:border-primary/50 transition-colors cursor-pointer"
+              onClick={() => router.push('/dashboard/domains')}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <Globe className="h-5 w-5" />
+                <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <h3 className="font-medium mb-1">Domains</h3>
+              <p className="text-sm text-muted-foreground">Manage your domains and verification</p>
+            </div>
+            
+            <div 
+              className="border rounded-lg p-5 hover:border-primary/50 transition-colors cursor-pointer"
+              onClick={() => router.push('/dashboard/counters')}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <BarChart3 className="h-5 w-5" />
+                <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <h3 className="font-medium mb-1">Counters</h3>
+              <p className="text-sm text-muted-foreground">Update and manage your analytics data</p>
+            </div>
+            
+            <div 
+              className="border rounded-lg p-5 hover:border-primary/50 transition-colors cursor-pointer"
+              onClick={() => router.push('/dashboard/analytics')}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <TrendingUp className="h-5 w-5" />
+                <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <h3 className="font-medium mb-1">Analytics</h3>
+              <p className="text-sm text-muted-foreground">View detailed analytics and reports</p>
+            </div>
           </div>
           
           {/* Recent activity and top pages */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
-                <CardDescription>Recently viewed pages across all domains</CardDescription>
-              </CardHeader>
-              <CardContent>
+          <div className="space-y-8">
+            <div>
+              <h2 className="text-lg font-medium mb-4">Top Pages</h2>
+              
+              {domainsLoading ? (
                 <div className="space-y-4">
-                  {domainsLoading ? (
-                    Array(4).fill(0).map((_, i) => (
-                      <div key={i} className="flex items-center justify-between">
-                        <div className="flex flex-col gap-0">
-                          <Skeleton className="h-5 w-32 mb-1" />
-                          <Skeleton className="h-4 w-24" />
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Skeleton className="h-5 w-20" />
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    stats.recentActivity.map((item, i) => (
-                      <div key={i} className="flex items-center justify-between">
-                        <div className="flex flex-col gap-0">
-                          <div className="">{item.domain}</div>
-                          <div className="text-sm text-muted-foreground">{item.path}</div>
-                        </div>
-                        <div className="font-medium">{item.views} views</div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Top Pages</CardTitle>
-                <CardDescription>Most viewed pages across all domains</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {domainsLoading ? (
-                    Array(4).fill(0).map((_, i) => (
-                      <div key={i} className="flex items-center justify-between">
-                        <div className="flex flex-col gap-0">
+                  {Array(4).fill(0).map((_, i) => (
+                    <div key={i} className="border rounded-lg p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex flex-col gap-1">
                           <Skeleton className="h-5 w-32 mb-1" />
                           <Skeleton className="h-4 w-24" />
                         </div>
                         <Skeleton className="h-5 w-20" />
                       </div>
-                    ))
-                  ) : (
-                    stats.topPages.map((item, i) => (
-                      <div key={i} className="flex items-center justify-between">
-                        <div className="flex flex-col gap-0">
-                          <div className="">{item.domain}</div>
-                          <div className="text-sm text-muted-foreground">{item.path}</div>
-                        </div>
-                        <div className="font-medium">{item.views.toLocaleString()} views</div>
-                      </div>
-                    ))
-                  )}
+                    </div>
+                  ))}
                 </div>
-              </CardContent>
-            </Card>
+              ) : stats.topPages.length > 0 ? (
+                <div className="space-y-2">
+                  {stats.topPages.map((item, i) => (
+                    <div key={i} className="border rounded-lg p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex flex-col">
+                          <div className="font-medium">{item.domain}</div>
+                          <div className="text-sm text-muted-foreground truncate max-w-[250px] sm:max-w-[350px]">
+                            {item.path}
+                          </div>
+                        </div>
+                        <div className="text-sm font-medium">{item.views.toLocaleString()} views</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="border border-dashed rounded-lg p-8 text-center">
+                  <p className="text-muted-foreground">No page data found.</p>
+                </div>
+              )}
+            </div>
           </div>
-          
-          {/* Quick actions */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-              <CardDescription>Common tasks you might want to perform</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-3">
-                <Button onClick={() => router.push('/dashboard/domains')}>
-                  Manage Domains
-                </Button>
-                <Button onClick={() => router.push('/dashboard/counters')} variant="outline">
-                  Update Counters
-                </Button>
-                <Button onClick={() => router.push('/dashboard/analytics')} variant="outline">
-                  View Analytics
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </div>
     </div>
