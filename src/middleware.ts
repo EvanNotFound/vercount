@@ -23,10 +23,7 @@ async function isIPBlocked(ip: string): Promise<boolean> {
 async function blockIP(ip: string, durationHours = 24): Promise<void> {
   const blockUntil = Date.now() + (durationHours * 60 * 60 * 1000);
   await kv.set(`blocked:${ip}`, blockUntil.toString(), { ex: durationHours * 60 * 60 });
-  logger.warn({
-    message: `IP blocked for ${durationHours} hours`,
-    ip,
-  });
+  logger.warn(`IP blocked for ${durationHours} hours`, { ip });
 }
 
 export const config = {
@@ -39,8 +36,7 @@ export default async function middleware(request: NextRequest) {
 
   // Check if IP is already blocked
   // if (await isIPBlocked(ip)) {
-  //   logger.warn({
-  //     message: "Request from blocked IP",
+  //   logger.warn("Request from blocked IP", {
   //     ip,
   //     ua,
   //   });
@@ -54,8 +50,7 @@ export default async function middleware(request: NextRequest) {
   const { success, limit, reset, remaining } = await ratelimit.limit(ip);
 
   if (!success) {
-    logger.warn({
-      message: "Rate limit exceeded",
+    logger.warn("Rate limit exceeded", {
       ip,
       limit,
       reset,
@@ -69,8 +64,7 @@ export default async function middleware(request: NextRequest) {
   }
 
   // Log only if rate limit check passes
-  logger.info({
-    message: "Request received",
+  logger.info("Request received", {
     ip,
     ua,
     timestamp: Date.now(), // Use numeric timestamp for better performance
@@ -82,8 +76,7 @@ export default async function middleware(request: NextRequest) {
     // Block the IP for 24 hours after detecting suspicious UA
     // await blockIP(ip, 24);
     
-    logger.warn({
-      message: "Suspicious user agent detected",
+    logger.warn("Suspicious user agent detected", {
       ip,
       ua,
     });
@@ -96,8 +89,7 @@ export default async function middleware(request: NextRequest) {
 
   // Log warning if approaching rate limit
   if (remaining < 20) {
-    logger.warn({
-      message: "Approaching rate limit",
+    logger.warn("Approaching rate limit", {
       ip,
       remaining,
       ua,
