@@ -7,6 +7,7 @@ import { successResponse, ApiErrors } from "@/lib/api-response";
 import kv from "@/lib/kv";
 import { calculateTotalUV, updateTotalUV } from "@/utils/counter";
 import { EXPIRATION_TIME } from "@/utils/counter";
+import { safeDecodeURIComponent } from "@/utils/url";
 
 // POST handler - Update counter values for a domain
 export async function POST(req: NextRequest) {
@@ -167,6 +168,7 @@ export async function GET(req: NextRequest) {
       const views = await kv.get(pageKey);
       return {
         path: page.path,
+        decodedPath: safeDecodeURIComponent(page.path),
         views: Number(views || 0),
       };
     });

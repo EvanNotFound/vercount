@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import logger from "@/lib/logger";
 import { successResponse, ApiErrors, errorResponse } from "@/lib/api-response";
 import kv from "@/lib/kv";
+import { safeDecodeURIComponent } from "@/utils/url";
 
 // DELETE handler - Delete a monitored page
 export async function DELETE(req: NextRequest) {
@@ -57,10 +58,15 @@ export async function DELETE(req: NextRequest) {
       pageId,
       domainId: monitoredPage.domain.id,
       path: monitoredPage.path,
+      decodedPath: safeDecodeURIComponent(monitoredPage.path),
     });
     
     return successResponse(
-      { deleted: true },
+      { 
+        deleted: true,
+        path: monitoredPage.path,
+        decodedPath: safeDecodeURIComponent(monitoredPage.path),
+      },
       "Monitored page deleted successfully"
     );
   } catch (error) {

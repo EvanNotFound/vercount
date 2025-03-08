@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { HomeIcon, ArrowLeft, Trash2 } from "lucide-react";
 import DashboardHeader from "@/components/dashboard/dashboard-header";
+import { safeDecodeURIComponent } from "@/utils/url";
 
 // Types
 interface Domain {
@@ -41,6 +42,16 @@ interface PageViewData {
   views: number;
 }
 
+// Utility function to decode URL-encoded paths
+const decodeUrlPath = (path: string): string => {
+  try {
+    return decodeURIComponent(path);
+  } catch (error) {
+    console.error("Error decoding path:", path, error);
+    return path; // Return original path if decoding fails
+  }
+};
+
 export default function CountersPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -57,6 +68,7 @@ export default function CountersPage() {
   const [updatingPageView, setUpdatingPageView] = useState<string | null>(null);
   const [newPagePath, setNewPagePath] = useState<string>("");
   const [addingPage, setAddingPage] = useState(false);
+  const [syncingPaths, setSyncingPaths] = useState(false);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -204,6 +216,9 @@ export default function CountersPage() {
   // Add a new function to fetch domain counters
   const fetchDomainCounters = async (domainName: string) => {
     try {
+      // First, sync the monitored pages with KV
+      await syncPathsFromKV(domainName);
+      
       const response = await fetch(`/api/domains/counters?domain=${domainName}`);
       
       if (!response.ok) {
@@ -222,7 +237,7 @@ export default function CountersPage() {
         // Initialize page view updates
         const initialPageViews: Record<string, number> = {};
         if (Array.isArray(counters.pageViews)) {
-          counters.pageViews.forEach((pv: { path: string; views: number }) => {
+          counters.pageViews.forEach((pv: { path: string; decodedPath?: string; views: number }) => {
             initialPageViews[pv.path] = pv.views || 0;
           });
         }
@@ -266,6 +281,57 @@ export default function CountersPage() {
         setSiteUv(0);
         setPageViewUpdates({});
       }
+    }
+  };
+
+  // New function to sync paths from KV
+  const syncPathsFromKV = async (domainName: string) => {
+    try {
+      const response = await fetch(`/api/domains/pages`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ domainName }),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to sync paths from KV");
+      }
+      
+      const resData = await response.json();
+      const data = resData.data;
+      
+      if (resData.status === "success" && data.newPagesCount > 0) {
+        toast.success(`Synced ${data.newPagesCount} new pages from KV`);
+        // Refresh domain data to get the updated monitored pages
+        await fetchDomains();
+      }
+      
+      return data;
+    } catch (error) {
+      console.error("Error syncing paths from KV:", error);
+      toast.error("Failed to sync paths from KV");
+    }
+  };
+
+  // Add a new function to fetch all paths from KV
+  const fetchPathsFromKV = async (domainName: string) => {
+    try {
+      const response = await fetch(`/api/domains/pages?domain=${domainName}`);
+      
+      if (!response.ok) {
+        throw new Error("Failed to fetch paths from KV");
+      }
+      
+      const resData = await response.json();
+      const data = resData.data;
+      
+      return data.paths || [];
+    } catch (error) {
+      console.error("Error fetching paths from KV:", error);
+      toast.error("Failed to fetch paths from KV");
+      return [];
     }
   };
 
@@ -325,7 +391,6 @@ export default function CountersPage() {
         });
         
         const resData = await response.json();
-        const data = resData.data;
         
         if (resData.status === "success") {
           toast.success(`Page ${path} deleted successfully`);
@@ -334,7 +399,7 @@ export default function CountersPage() {
           // Fetch updated counter data for the selected domain
           fetchDomainCounters(selectedDomain.name);
         } else {
-          toast.error(data.message || "Failed to delete page");
+          toast.error(resData.message || "Failed to delete page");
         }
       } else {
         // Just update the counters to remove the page from Redis
@@ -346,6 +411,23 @@ export default function CountersPage() {
       toast.error("Failed to delete monitored page");
     } finally {
       setUpdatingPageView(null);
+    }
+  };
+
+  // Add a function to manually sync paths from KV
+  const handleSyncPathsFromKV = async () => {
+    if (!selectedDomain) return;
+    
+    try {
+      setSyncingPaths(true);
+      await syncPathsFromKV(selectedDomain.name);
+      // Fetch updated counter data for the selected domain
+      fetchDomainCounters(selectedDomain.name);
+    } catch (error) {
+      console.error("Error syncing paths from KV:", error);
+      toast.error("Failed to sync paths from KV");
+    } finally {
+      setSyncingPaths(false);
     }
   };
 
@@ -420,39 +502,55 @@ export default function CountersPage() {
           {/* Counters form */}
           {selectedDomain ? (
             <div className="space-y-6">
-              <Card>
+              <Card className="mb-6">
                 <CardHeader>
-                  <CardTitle>Site Counters for {selectedDomain.name}</CardTitle>
-                  <CardDescription>Update site-wide counters</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div className="flex items-center justify-between">
                     <div>
-                      <Label htmlFor="site-pv">Site Page Views</Label>
-                      <Input
-                        id="site-pv"
-                        type="number"
-                        value={sitePv}
-                        onChange={(e) => setSitePv(parseInt(e.target.value) || 0)}
-                        min="0"
-                        disabled={updatingCounters}
-                      />
+                      <CardTitle>Update Counters for {selectedDomain.name}</CardTitle>
+                      <CardDescription>Modify the counter values for this domain</CardDescription>
                     </div>
-                    <div>
-                      <Label htmlFor="site-uv">Site Unique Visitors</Label>
-                      <Input
-                        id="site-uv"
-                        type="number"
-                        value={siteUv}
-                        onChange={(e) => setSiteUv(parseInt(e.target.value) || 0)}
-                        min="0"
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        onClick={handleSyncPathsFromKV}
+                        disabled={syncingPaths}
+                      >
+                        {syncingPaths ? "Syncing..." : "Sync Paths from KV"}
+                      </Button>
+                      <Button 
+                        onClick={handleUpdateCounters}
                         disabled={updatingCounters}
-                      />
+                      >
+                        {updatingCounters ? "Updating..." : "Update Counters"}
+                      </Button>
                     </div>
                   </div>
-                  <Button onClick={handleUpdateCounters} disabled={updatingCounters}>
-                    {updatingCounters ? "Updating..." : "Update Site Counters"}
-                  </Button>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="sitePv">Site Page Views</Label>
+                        <Input
+                          id="sitePv"
+                          type="number"
+                          min="0"
+                          value={sitePv}
+                          onChange={(e) => setSitePv(Number(e.target.value))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="siteUv">Site Unique Visitors</Label>
+                        <Input
+                          id="siteUv"
+                          type="number"
+                          min="0"
+                          value={siteUv}
+                          onChange={(e) => setSiteUv(Number(e.target.value))}
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
               
@@ -462,78 +560,79 @@ export default function CountersPage() {
                   <CardDescription>Add a new page to monitor for this domain</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-end gap-4">
-                    <div className="flex-1">
-                      <Label htmlFor="new-page-path">Page Path</Label>
-                      <Input
-                        id="new-page-path"
-                        placeholder="/about, /blog/post-1, etc."
-                        value={newPagePath}
-                        onChange={(e) => setNewPagePath(e.target.value)}
-                      />
+                  <div className="space-y-4">
+                    {/* Add new page form */}
+                    <div className="flex items-end gap-2">
+                      <div className="flex-1">
+                        <Label htmlFor="new-page-path">Add New Page</Label>
+                        <Input
+                          id="new-page-path"
+                          placeholder="/path/to/page"
+                          value={newPagePath}
+                          onChange={(e) => setNewPagePath(e.target.value)}
+                          disabled={addingPage}
+                        />
+                      </div>
+                      <Button onClick={handleAddMonitoredPage} disabled={addingPage || !newPagePath}>
+                        {addingPage ? "Adding..." : "Add Page"}
+                      </Button>
                     </div>
-                    <Button 
-                      onClick={handleAddMonitoredPage} 
-                      disabled={!newPagePath || addingPage}
-                    >
-                      {addingPage ? "Adding..." : "Add Page"}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader>
-                  <CardTitle>Page Views</CardTitle>
-                  <CardDescription>Update view counts for individual pages</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {Object.keys(pageViewUpdates).length === 0 ? (
-                    <div className="text-center py-4 text-muted-foreground">
-                      No monitored pages yet. Add a page above to start tracking.
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {Object.entries(pageViewUpdates).map(([path, views]) => (
-                        <div key={path} className="flex items-end gap-4">
-                          <div className="flex-1">
-                            <Label htmlFor={`page-${path}`}>{path}</Label>
-                            <Input
-                              id={`page-${path}`}
-                              type="number"
-                              min="0"
-                              value={views}
-                              onChange={(e) => handlePageViewChange(path, parseInt(e.target.value) || 0)}
-                            />
-                          </div>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleUpdatePageView(path)}
-                              disabled={updatingPageView === path}
-                            >
-                              {updatingPageView === path ? "Updating..." : "Update"}
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => handleDeleteMonitoredPage(path)}
-                              disabled={updatingPageView === path}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
+                    
+                    {/* Page views list */}
+                    <div className="border rounded-md">
+                      <div className="bg-muted px-4 py-2 border-b">
+                        <div className="grid grid-cols-12 gap-2 font-medium">
+                          <div className="col-span-7">Path</div>
+                          <div className="col-span-3">Views</div>
+                          <div className="col-span-2 text-right">Actions</div>
                         </div>
-                      ))}
-                      
-                      <div className="pt-4 border-t">
-                        <Button onClick={handleUpdateCounters} disabled={updatingCounters}>
-                          {updatingCounters ? "Updating All..." : "Update All Counters"}
-                        </Button>
+                      </div>
+                      <div className="divide-y">
+                        {Object.keys(pageViewUpdates).length === 0 ? (
+                          <div className="px-4 py-3 text-center text-muted-foreground">
+                            No monitored pages. Add a page or sync from KV.
+                          </div>
+                        ) : (
+                          Object.entries(pageViewUpdates).map(([path, views]) => (
+                            <div key={path} className="px-4 py-2">
+                              <div className="grid grid-cols-12 gap-2 items-center">
+                                <div 
+                                  className="col-span-7 truncate" 
+                                  title={`Original: ${path}
+Decoded: ${safeDecodeURIComponent(path)}`}
+                                >
+                                  {safeDecodeURIComponent(path)}
+                                </div>
+                                <div className="col-span-3">
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    value={views}
+                                    onChange={(e) => handlePageViewChange(path, Number(e.target.value))}
+                                    disabled={updatingPageView === path}
+                                  />
+                                </div>
+                                <div className="col-span-2 flex justify-end">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleDeleteMonitoredPage(path)}
+                                    disabled={updatingPageView === path}
+                                  >
+                                    {updatingPageView === path ? (
+                                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                    ) : (
+                                      <Trash2 className="h-4 w-4" />
+                                    )}
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        )}
                       </div>
                     </div>
-                  )}
+                  </div>
                 </CardContent>
               </Card>
             </div>

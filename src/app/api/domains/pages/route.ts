@@ -5,8 +5,74 @@ import { domainService } from "@/lib/domain-service";
 import { prisma } from "@/lib/prisma";
 import logger from "@/lib/logger";
 import { successResponse, ApiErrors } from "@/lib/api-response";
+import kv from "@/lib/kv";
+import { safeDecodeURIComponent } from "@/utils/url";
 
-// POST handler - Update page view counter
+// GET handler - Get all paths from KV for a domain
+export async function GET(req: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    
+    if (!session || !session.user) {
+      return ApiErrors.unauthorized();
+    }
+    
+    const userId = session.user.id;
+    if (!userId) {
+      return ApiErrors.badRequest("User ID not found in session");
+    }
+    
+    const url = new URL(req.url);
+    const domainName = url.searchParams.get("domain");
+    
+    if (!domainName) {
+      return ApiErrors.badRequest("Domain name is required");
+    }
+    
+    // Check if the domain belongs to the user
+    const domain = await prisma.domain.findFirst({
+      where: {
+        name: domainName,
+        userId,
+      },
+    });
+    
+    if (!domain) {
+      return ApiErrors.notFound("Domain not found or does not belong to you");
+    }
+    
+    // Fetch all keys from Redis that match the pattern for page views
+    const hostSanitized = domain.name;
+    const pattern = `pv:local:page:${hostSanitized}:*`;
+    
+    const keys = await kv.keys(pattern);
+    
+    // Extract paths from keys
+    const paths = keys.map(key => {
+      // Format is pv:local:page:domain.com:/path
+      const parts = key.split(':');
+      return parts.slice(4).join(':'); // Join in case path contains colons
+    });
+    
+    logger.info("Paths fetched from KV", {
+      domainId: domain.id,
+      pathCount: paths.length,
+    });
+    
+    return successResponse({ 
+      paths,
+      decodedPaths: paths.map(path => ({
+        original: path,
+        decoded: safeDecodeURIComponent(path)
+      }))
+    });
+  } catch (error) {
+    logger.error("Error in GET /api/domains/pages", { error });
+    return ApiErrors.internalError();
+  }
+}
+
+// POST handler - Sync monitored pages with KV
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -26,40 +92,64 @@ export async function POST(req: NextRequest) {
       return ApiErrors.badRequest("Domain name is required");
     }
     
-    if (!data.path) {
-      return ApiErrors.badRequest("Page path is required");
-    }
-    
-    if (data.pageViews === undefined) {
-      return ApiErrors.badRequest("Page views count is required");
-    }
-    
-    // Check if the domain exists and belongs to the user
+    // Check if the domain belongs to the user
     const domain = await prisma.domain.findFirst({
       where: {
         name: data.domainName,
-        userId: userId,
+        userId,
+      },
+      include: {
+        monitoredPages: true,
       },
     });
     
     if (!domain) {
-      return ApiErrors.badRequest("Domain not found or does not belong to you");
+      return ApiErrors.notFound("Domain not found or does not belong to you");
     }
     
-    // Update or create the page view counter
-    const result = await domainService.updatePageViewCounter(
-      domain.id,
-      data.path,
-      data.pageViews
+    // Fetch all keys from Redis that match the pattern for page views
+    const hostSanitized = domain.name;
+    const pattern = `pv:local:page:${hostSanitized}:*`;
+    
+    const keys = await kv.keys(pattern);
+    
+    // Extract paths from keys
+    const kvPaths = keys.map(key => {
+      // Format is pv:local:page:domain.com:/path
+      const parts = key.split(':');
+      return parts.slice(4).join(':'); // Join in case path contains colons
+    });
+    
+    // Get existing monitored page paths
+    const existingPaths = domain.monitoredPages.map(page => page.path);
+    
+    // Find paths in KV that are not in the database
+    const pathsToAdd = kvPaths.filter(path => !existingPaths.includes(path));
+    
+    // Create new monitored pages for paths that exist in KV but not in the database
+    const newMonitoredPages = await Promise.all(
+      pathsToAdd.map(async (path) => {
+        return prisma.monitoredPage.create({
+          data: {
+            path,
+            domainId: domain.id,
+          },
+        });
+      })
     );
     
-    if (!result.success) {
-      return ApiErrors.badRequest(result.message);
-    }
+    logger.info("Monitored pages synced with KV", {
+      domainId: domain.id,
+      newPagesCount: newMonitoredPages.length,
+    });
     
     return successResponse(
-      { updated: true, domainId: domain.id, path: data.path },
-      "Page view counter updated successfully"
+      { 
+        synced: true, 
+        newPagesCount: newMonitoredPages.length,
+        newPages: newMonitoredPages,
+      },
+      "Monitored pages synced successfully"
     );
   } catch (error) {
     logger.error("Error in POST /api/domains/pages", { error });
