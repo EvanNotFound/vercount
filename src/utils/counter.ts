@@ -68,6 +68,31 @@ export function sanitizeUrlPath(host: string, path: string): SanitizedUrl {
 }
 
 /**
+ * Calculate the total UV count by combining the set cardinality with any manual adjustment
+ * @param hostSanitized The sanitized hostname
+ * @returns An object containing the set count, adjustment value, and total UV count
+ */
+export async function calculateTotalUV(hostSanitized: string): Promise<{ setCount: number; adjustment: number; total: number }> {
+  const siteKey = `uv:local:site:${hostSanitized}`;
+  const siteUVAdjustKey = `uv:adjust:site:${hostSanitized}`;
+  
+  // Execute Redis operations in parallel
+  const [siteUVSetCount, siteUVAdjust] = await Promise.all([
+    kv.scard(siteKey),
+    kv.get(siteUVAdjustKey)
+  ]);
+  
+  // Combine the set cardinality with the manual adjustment
+  const totalUV = Number(siteUVSetCount || 0) + Number(siteUVAdjust || 0);
+  
+  return {
+    setCount: Number(siteUVSetCount || 0),
+    adjustment: Number(siteUVAdjust || 0),
+    total: totalUV
+  };
+}
+
+/**
  * Get site unique visitor count from historical data
  * @param host The hostname
  * @param path The path
@@ -80,18 +105,18 @@ export async function fetchSiteUVHistory(host: string, path: string): Promise<nu
     const hostSanitized = sanitized.host;
     const pathSanitized = sanitized.path;
     
-    const siteKey = `uv:busuanzi:site:${hostSanitized}`;
-    const siteUV = await kv.get(siteKey);
+    // Calculate total UV using the utility function
+    const { setCount, adjustment, total } = await calculateTotalUV(hostSanitized);
     
-    if (!siteUV) {
+    if (!setCount) {
       logger.debug(`Site UV not found for host: https://${hostSanitized}${pathSanitized}`);
       const siteUVData = await fetchBusuanziSiteUV(hostSanitized, host);
-      return Number(siteUVData || 0);
+      return Number(siteUVData || 0) + adjustment;
     } else {
       logger.debug(
-        `Site UV found for host: https://${hostSanitized}${pathSanitized}, site_uv: ${siteUV}`
+        `Site UV found for host: https://${hostSanitized}${pathSanitized}, site_uv: ${total}`
       );
-      return Number(siteUV);
+      return total;
     }
   } catch (error) {
     logger.error(`Error getting site UV data: ${error}`);
@@ -112,7 +137,7 @@ export async function fetchSitePVHistory(host: string, path: string): Promise<nu
     const hostSanitized = sanitized.host;
     const pathSanitized = sanitized.path;
     
-    const siteKey = `pv:busuanzi:site:${hostSanitized}`;
+    const siteKey = `pv:local:site:${hostSanitized}`;
     const sitePV = await kv.get(siteKey);
     
     if (!sitePV) {
@@ -145,7 +170,7 @@ export async function fetchPagePVHistory(host: string, path: string): Promise<nu
     const hostSanitized = sanitized.host;
     const pathSanitized = sanitized.path;
     
-    const pageKey = `pv:busuanzi:page:${hostSanitized}:${pathSanitized}`;
+    const pageKey = `pv:local:page:${hostSanitized}:${pathSanitized}`;
     const pagePV = await kv.get(pageKey);
     logger.debug(`Page PV: ${pagePV}, page_key: ${pageKey}`);
 
@@ -230,7 +255,7 @@ export async function incrementSitePV(host: string): Promise<number> {
 }
 
 /**
- * Record unique visitor and return updated count
+ * Record a unique visitor for a site
  * @param host The hostname
  * @param ip The visitor's IP address
  * @returns The updated unique visitor count
@@ -244,21 +269,55 @@ export async function recordSiteUV(host: string, ip: string): Promise<number> {
     logger.debug(`Updating site UV for host: https://${hostSanitized}`);
     const siteKey = `uv:local:site:${hostSanitized}`;
     const busuanziSiteKey = `uv:busuanzi:site:${hostSanitized}`;
+    const siteUVAdjustKey = `uv:adjust:site:${hostSanitized}`;
 
-    const siteUVKey = await kv.sadd(siteKey, ip);
-    const siteUV = await kv.scard(siteKey);
+    // Add IP to the set
+    await kv.sadd(siteKey, ip);
+    
+    // Calculate total UV using the utility function
+    const { setCount, adjustment, total } = await calculateTotalUV(hostSanitized);
+    
     logger.debug(
-      `Site UV updated for host: https://${hostSanitized}, site_uv: ${siteUV}, site_uv_key: ${siteUVKey}`,
+      `Site UV updated for host: https://${hostSanitized}, site_uv_set: ${setCount}, total_site_uv: ${total}`
     );
 
+    // Set expiration for all keys in parallel
     await Promise.all([
       kv.expire(siteKey, EXPIRATION_TIME),
       kv.expire(busuanziSiteKey, EXPIRATION_TIME),
+      kv.expire(siteUVAdjustKey, EXPIRATION_TIME),
     ]);
 
-    return siteUV;
+    return total;
   } catch (error) {
     logger.error(`Error updating site UV: ${error}`);
     return 0;
   }
+}
+
+/**
+ * Update the UV adjustment value for a domain and recalculate the total UV
+ * @param hostSanitized The sanitized hostname
+ * @param newUvValue The new total UV value to set
+ * @returns An object containing the updated set count, adjustment value, and total UV count
+ */
+export async function updateTotalUV(hostSanitized: string, newUvValue: number): Promise<{ setCount: number; adjustment: number; total: number }> {
+  const siteKey = `uv:local:site:${hostSanitized}`;
+  const siteUVAdjustKey = `uv:adjust:site:${hostSanitized}`;
+  
+  // Get the current set cardinality
+  const setCount = await kv.scard(siteKey);
+  
+  // Calculate the adjustment needed to reach the desired total
+  const requiredAdjustment = Math.max(0, newUvValue - Number(setCount || 0));
+  
+  // Store the adjustment in Redis
+  await kv.set(siteUVAdjustKey, requiredAdjustment);
+  await kv.expire(siteUVAdjustKey, EXPIRATION_TIME); // 3 months
+  
+  return {
+    setCount: Number(setCount || 0),
+    adjustment: requiredAdjustment,
+    total: Number(setCount || 0) + requiredAdjustment
+  };
 }

@@ -3,6 +3,7 @@ import kv from "@/lib/kv";
 import logger from "@/lib/logger";
 import dns from "dns";
 import { promisify } from "util";
+import { updateTotalUV } from "@/utils/counter";
 
 // Promisify DNS methods
 const resolveTxt = promisify(dns.resolveTxt);
@@ -152,15 +153,23 @@ export const domainService = {
       const normalizedDomain = normalizeDomain(domainName);
       
       // Get site PV from Redis
-      const sitePvKey = `site:${normalizedDomain}:pv`;
+      const sitePvKey = `pv:local:site:${normalizedDomain}`;
       const sitePv = await kv.get<number>(sitePvKey) || 0;
       
       // Get site UV from Redis
-      const siteUvKey = `site:${normalizedDomain}:uv`;
-      const siteUv = await kv.get<number>(siteUvKey) || 0;
+      const siteUvKey = `uv:local:site:${normalizedDomain}`;
+      // Get the cardinality of the UV set
+      const siteUvSetCount = await kv.scard(siteUvKey) || 0;
+      
+      // Get any manual UV adjustment
+      const siteUvAdjustKey = `uv:adjust:site:${normalizedDomain}`;
+      const siteUvAdjust = await kv.get<number>(siteUvAdjustKey) || 0;
+      
+      // Combine the set cardinality with the manual adjustment
+      const siteUv = Number(siteUvSetCount) + Number(siteUvAdjust);
       
       // Get page views
-      const pageKeys = await kv.keys(`page:${normalizedDomain}:*:pv`);
+      const pageKeys = await kv.keys(`pv:local:page:${normalizedDomain}:*`);
       const pageViews = await Promise.all(
         pageKeys.map(async (key) => {
           const parts = key.split(':');
@@ -207,14 +216,14 @@ export const domainService = {
       
       // Update site PV in Redis if provided
       if (sitePv !== undefined) {
-        const sitePvKey = `site:${normalizedDomain}:pv`;
+        const sitePvKey = `pv:local:site:${normalizedDomain}`;
         await kv.set(sitePvKey, sitePv);
       }
       
       // Update site UV in Redis if provided
       if (siteUv !== undefined) {
-        const siteUvKey = `site:${normalizedDomain}:uv`;
-        await kv.set(siteUvKey, siteUv);
+        // Use the updateTotalUV function to properly update the UV adjustment
+        await updateTotalUV(normalizedDomain, siteUv);
       }
       
       // Get updated counter data
@@ -265,7 +274,7 @@ export const domainService = {
       
       // If page views were provided, update the Redis counter
       if (pageViews !== undefined) {
-        const pageViewKey = `page:${domain.name}:${normalizedPath}:pv`;
+        const pageViewKey = `pv:local:page:${domain.name}:${normalizedPath}`;
         await kv.set(pageViewKey, pageViews);
       }
       
@@ -294,7 +303,7 @@ export const domainService = {
       }
       
       // Update the page view in Redis
-      const pageViewKey = `page:${normalizedDomain}:${normalizedPath}:pv`;
+      const pageViewKey = `pv:local:page:${normalizedDomain}:${normalizedPath}`;
       await kv.set(pageViewKey, pageViews);
       
       // Ensure the page is in our monitored pages list
@@ -333,7 +342,7 @@ export const domainService = {
       });
       
       // Also remove the page view counter from Redis
-      const pageViewKey = `page:${domain.name}:${normalizedPath}:pv`;
+      const pageViewKey = `pv:local:page:${domain.name}:${normalizedPath}`;
       await kv.del(pageViewKey);
       
       return { success: true, message: "Monitored page removed" };

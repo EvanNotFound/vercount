@@ -1,31 +1,57 @@
-type LogLevel = "info" | "error" | "warn" | "debug";
+const isProd = process.env.NODE_ENV === "production";
+const isDebug = process.env.DEBUG === "true"; // Enable debug logs via environment variable
 
-function formatMessage(level: LogLevel, ...messages: unknown[]): string {
-  const timestamp = new Date().toISOString();
-  // Convert all messages to a string and join them
-  const formattedMessages = messages
-    .map((m) => (typeof m === "string" ? m : JSON.stringify(m, null, 2)))
-    .join(" ");
-  return `${timestamp} ${level}: ${formattedMessages}`;
-}
+// ANSI color codes
+const Colors = {
+  Reset: "\x1b[0m",
+  FgCyan: "\x1b[36m",
+  FgGreen: "\x1b[32m",
+  FgYellow: "\x1b[33m",
+  FgRed: "\x1b[31m",
+};
+
+// Function to color the log level
+const colorizeLogLevel = (level: string, color: string) =>
+  `${color}${level}${Colors.Reset}`;
 
 const logger = {
-  info(...messages: unknown[]): void {
-    console.log(formatMessage("info", ...messages));
-  },
-  error(...messages: unknown[]): void {
-    console.error(formatMessage("error", ...messages));
-  },
-  warn(...messages: unknown[]): void {
-    console.warn(formatMessage("warn", ...messages));
-  },
-  debug(...messages: unknown[]): void {
-    // Check if the environment is not production before logging debug messages
-    if (process.env.NODE_ENV !== "production") {
-      console.debug(formatMessage("debug", ...messages));
+  debug: (message: string, data?: any) => {
+    if (isDebug) {
+      const logLevel = colorizeLogLevel("DEBUG", Colors.FgCyan);
+      const formattedMessage = `[${new Date().toISOString()}] ${logLevel}: ${message}`;
+      console.debug(formattedMessage, data || "");
     }
   },
-  // Add other logging levels if needed
+
+  info: (message: string, data?: any) => {
+    const logLevel = colorizeLogLevel("INFO", Colors.FgGreen);
+    const formattedMessage = `[${new Date().toISOString()}] ${logLevel}: ${message}`;
+    if (isProd) {
+      console.log(message, data ? data : "");
+    } else {
+      console.log(formattedMessage, data || "");
+    }
+  },
+
+  warn: (message: string, data?: any) => {
+    const logLevel = colorizeLogLevel("WARN", Colors.FgYellow);
+    const formattedMessage = `[${new Date().toISOString()}] ${logLevel}: ${message}`;
+    if (isProd) {
+      console.warn(message, data ? data : "");
+    } else {
+      console.warn(formattedMessage, data || "");
+    }
+  },
+
+  error: (message: string, err?: any) => {
+    const logLevel = colorizeLogLevel("ERROR", Colors.FgRed);
+    const formattedMessage = `[${new Date().toISOString()}] ${logLevel}: ${message}`;
+    if (isProd) {
+      console.error(message, err ? err : "");
+    } else {
+      console.error(formattedMessage, err || "");
+    }
+  },
 };
 
 export default logger;

@@ -4,6 +4,9 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import logger from "@/lib/logger";
 import { successResponse, ApiErrors } from "@/lib/api-response";
+import kv from "@/lib/kv";
+import { calculateTotalUV, updateTotalUV } from "@/utils/counter";
+import { EXPIRATION_TIME } from "@/utils/counter";
 
 // POST handler - Update counter values for a domain
 export async function POST(req: NextRequest) {
@@ -20,6 +23,7 @@ export async function POST(req: NextRequest) {
     }
     
     const data = await req.json();
+    console.log("Data:", data);
     
     if (!data.domainName) {
       return ApiErrors.badRequest("Domain name is required");
@@ -31,6 +35,9 @@ export async function POST(req: NextRequest) {
         name: data.domainName,
         userId,
       },
+      include: {
+        monitoredPages: true,
+      },
     });
     
     if (!domain) {
@@ -40,8 +47,48 @@ export async function POST(req: NextRequest) {
     // Update the counter values
     const { sitePv, siteUv, pageViews } = data;
     
-    // For simplicity, we'll just log the values and return success
-    // In a real implementation, you would update the counters in your database
+    // Save the counter values to Redis
+    const hostSanitized = domain.name;
+    
+    // Update site PV in Redis
+    await kv.set(`pv:local:site:${hostSanitized}`, sitePv || 0);
+    await kv.expire(`pv:local:site:${hostSanitized}`, EXPIRATION_TIME); // 3 months
+    
+    // Update site UV if provided
+    if (siteUv !== undefined) {
+      await updateTotalUV(hostSanitized, siteUv);
+    } else {
+      // Just ensure the UV set has proper expiration
+      await kv.expire(`uv:local:site:${hostSanitized}`, EXPIRATION_TIME); // 3 months
+    }
+    
+    // Update page views in Redis
+    if (pageViews && Array.isArray(pageViews)) {
+      const pageViewPromises = pageViews.map(async (pv: { path: string; views: number }) => {
+        // Ensure the path is monitored
+        let monitoredPage = domain.monitoredPages.find(mp => mp.path === pv.path);
+        
+        if (!monitoredPage) {
+          // Create a new monitored page if it doesn't exist
+          monitoredPage = await prisma.monitoredPage.create({
+            data: {
+              path: pv.path,
+              domainId: domain.id,
+            },
+          });
+        }
+        
+        // Save page view count to Redis
+        const pageKey = `pv:local:page:${hostSanitized}:${pv.path}`;
+        await kv.set(pageKey, pv.views || 0);
+        await kv.expire(pageKey, EXPIRATION_TIME); // 3 months
+        
+        return { path: pv.path, views: pv.views };
+      });
+      
+      await Promise.all(pageViewPromises);
+    }
+    
     logger.info("Domain counters updated", {
       domainId: domain.id,
       sitePv: sitePv || 0,
@@ -94,18 +141,42 @@ export async function GET(req: NextRequest) {
         name: domainName,
         userId,
       },
+      include: {
+        monitoredPages: true,
+      },
     });
     
     if (!domain) {
       return ApiErrors.notFound("Domain not found or does not belong to you");
     }
     
-    // For simplicity, we'll just return some default values
-    // In a real implementation, you would fetch the counters from your database
+    // Fetch counter values from Redis
+    const hostSanitized = domain.name;
+    
+    // Get site PV from Redis and calculate UV using the utility function
+    const [sitePv, uvData] = await Promise.all([
+      kv.get(`pv:local:site:${hostSanitized}`),
+      calculateTotalUV(hostSanitized)
+    ]);
+    
+    const siteUv = uvData.total;
+    
+    // Get page views for each monitored page
+    const pageViewPromises = domain.monitoredPages.map(async (page) => {
+      const pageKey = `pv:local:page:${hostSanitized}:${page.path}`;
+      const views = await kv.get(pageKey);
+      return {
+        path: page.path,
+        views: Number(views || 0),
+      };
+    });
+    
+    const pageViews = await Promise.all(pageViewPromises);
+    
     const counters = {
-      sitePv: 0,
-      siteUv: 0,
-      pageViews: [],
+      sitePv: Number(sitePv || 0),
+      siteUv: Number(siteUv || 0),
+      pageViews,
     };
     
     return successResponse({ counters });

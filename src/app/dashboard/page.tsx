@@ -105,10 +105,10 @@ export default function Dashboard() {
         throw new Error("Failed to fetch domains");
       }
       
-      const data = await response.json();
+      const resData = await response.json();
       
-      if (data.success) {
-        setDomains(data.domains);
+      if (resData.status === "success") {
+        setDomains(resData.data.domains);
       }
     } catch (error) {
       console.error("Error fetching domains:", error);
