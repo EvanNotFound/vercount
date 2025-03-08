@@ -44,7 +44,7 @@ export const columns: ColumnDef<PageViewData>[] = [
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="w-full justify-start font-semibold"
+          className="w-full justify-start font-semibold px-3 hover:bg-transparent"
         >
           Path
           <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -59,7 +59,7 @@ export const columns: ColumnDef<PageViewData>[] = [
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="font-medium max-w-[300px] truncate hover:text-blue-600 transition-colors">
+              <div className="max-w-[400px] truncate hover:text-zinc-300 transition-colors px-3">
                 {decodedPath}
               </div>
             </TooltipTrigger>
@@ -73,12 +73,15 @@ export const columns: ColumnDef<PageViewData>[] = [
   },
   {
     accessorKey: "views",
+    meta: {
+        align: "right",
+      },
     header: ({ column }) => {
       return (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="w-full justify-start font-semibold"
+          className="w-fit  justify-start font-semibold px-3 hover:bg-transparent"
         >
           Views
           <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -106,7 +109,8 @@ export const columns: ColumnDef<PageViewData>[] = [
         }
         
         return (
-          <Input
+            <div className="w-full flex justify-end">
+            <Input
             type="number"
             value={hasFocus ? localValue : views.toString()}
             onChange={(e) => {
@@ -126,10 +130,11 @@ export const columns: ColumnDef<PageViewData>[] = [
                 ;(e.target as HTMLInputElement).blur()
               }
             }}
-            className="w-24 text-center no-spinners"
+            className="w-24 text-right no-spinners"
             step="1"
             min="0"
-          />
+          /></div>
+
         )
       }
       
