@@ -371,7 +371,7 @@ export default function DomainsPage() {
                           className="border-t p-4 cursor-pointer hover:bg-primary/[0.03] transition-colors bg-black" 
                           onClick={() => router.push(`/dashboard/analytics?domain=${domain.name}`)}
                         >
-                          <div className="flex items-center justify-between">
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                             <div className="flex gap-6">
                               <div>
                                 <p className="text-2xl font-semibold">{domain.counters?.sitePv || 0}</p>
@@ -386,7 +386,7 @@ export default function DomainsPage() {
                             <Button 
                               variant="ghost" 
                               size="sm"
-                              className="gap-1 text-primary/80 hover:text-primary hover:bg-primary/[0.05]"
+                              className="gap-1 text-primary/80 hover:text-primary hover:bg-primary/[0.05] w-full sm:w-auto"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 router.push(`/dashboard/analytics?domain=${domain.name}`);
