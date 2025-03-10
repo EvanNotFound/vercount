@@ -369,11 +369,11 @@ export const domainService = {
 
 /**
  * Normalize domain name for consistent storage
- * Removes protocol, www, and trailing slashes
+ * Removes protocol and trailing slashes, preserves www
  */
 function normalizeDomain(domain: string): string {
-  // Remove protocol
-  let normalizedDomain = domain.replace(/^(https?:\/\/)?(www\.)?/i, '');
+  // Remove protocol only, preserve www
+  let normalizedDomain = domain.replace(/^(https?:\/\/)/i, '');
   
   // Remove trailing slash
   normalizedDomain = normalizedDomain.replace(/\/+$/, '');
