@@ -10,6 +10,24 @@ import { EXPIRATION_TIME } from "@/utils/counter";
 const resolveTxt = promisify(dns.resolveTxt);
 
 /**
+ * Check if a domain is a subdomain of another domain
+ */
+function isSubdomainOf(subdomain: string, parentDomain: string): boolean {
+  // Normalize both domains for comparison
+  const normalizedSubdomain = normalizeDomain(subdomain);
+  const normalizedParentDomain = normalizeDomain(parentDomain);
+  
+  // A domain is a subdomain if it ends with the parent domain and has an additional segment
+  const isSubdomain = normalizedSubdomain !== normalizedParentDomain && 
+         normalizedSubdomain.endsWith(normalizedParentDomain) && 
+         normalizedSubdomain.charAt(normalizedSubdomain.length - normalizedParentDomain.length - 1) === '.';
+  
+  logger.debug(`Checking if ${normalizedSubdomain} is a subdomain of ${normalizedParentDomain}: ${isSubdomain}`);
+  
+  return isSubdomain;
+}
+
+/**
  * Service for managing domains and their counter data
  */
 export const domainService = {
@@ -35,16 +53,42 @@ export const domainService = {
         }
       }
       
-      // Create new domain
+      // Check if this is a subdomain of an already verified domain owned by the same user
+      const userDomains = await prisma.domain.findMany({
+        where: { 
+          userId,
+          verified: true
+        },
+      });
+      
+      logger.info(`Checking if ${normalizedDomain} is a subdomain of any verified domains for user ${userId}`);
+      
+      // Check if any of the user's verified domains is a parent domain of the new domain
+      const parentDomain = userDomains.find(domain => isSubdomainOf(normalizedDomain, domain.name));
+      
+      if (parentDomain) {
+        logger.info(`${normalizedDomain} is a subdomain of verified domain ${parentDomain.name}, auto-verifying`);
+      }
+      
+      // Create new domain, automatically verified if it's a subdomain of a verified domain
       const domain = await prisma.domain.create({
         data: {
           name: normalizedDomain,
           userId,
+          verified: parentDomain ? true : false,
         },
       });
 
       // No need to recreate monitored pages in PostgreSQL anymore
       // since we're using Redis exclusively for page views
+      
+      if (parentDomain) {
+        return { 
+          success: true, 
+          domain,
+          message: `Domain added and automatically verified as a subdomain of ${parentDomain.name}`
+        };
+      }
       
       return { success: true, domain };
     } catch (error) {
