@@ -29,6 +29,7 @@ async function blockIP(ip: string, durationHours = 24): Promise<void> {
 
 export const config = {
   matcher: ["/log", "/api/v1/log", "/api/v2/log"],
+  runtime: "nodejs",
 };
 
 export default async function middleware(request: NextRequest) {
