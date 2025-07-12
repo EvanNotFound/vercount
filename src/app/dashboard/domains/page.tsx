@@ -276,7 +276,7 @@ export default function DomainsPage() {
                   ))}
                 </div>
               ) : domains.length === 0 ? (
-                <div className="border border-dashed rounded-lg p-8 text-center bg-secondary/[0.02]">
+                <div className="border border-dashed rounded-lg p-8 text-center bg-secondary/2">
                   <Globe className="w-10 h-10 text-muted-foreground mx-auto mb-4" />
                   <p className="text-muted-foreground">No domains added yet.</p>
                   <p className="text-sm text-muted-foreground mt-1">Add your first domain to start tracking analytics.</p>
@@ -368,7 +368,7 @@ export default function DomainsPage() {
                         </div>
                       ) : (
                         <div 
-                          className="border-t p-4 cursor-pointer hover:bg-primary/[0.03] transition-colors bg-black" 
+                          className="border-t p-4 cursor-pointer hover:bg-primary/3 transition-colors bg-black" 
                           onClick={() => router.push(`/dashboard/analytics?domain=${domain.name}`)}
                         >
                           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -386,7 +386,7 @@ export default function DomainsPage() {
                             <Button 
                               variant="ghost" 
                               size="sm"
-                              className="gap-1 text-primary/80 hover:text-primary hover:bg-primary/[0.05] w-full sm:w-auto"
+                              className="gap-1 text-primary/80 hover:text-primary hover:bg-primary/5 w-full sm:w-auto"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 router.push(`/dashboard/analytics?domain=${domain.name}`);

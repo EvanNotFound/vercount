@@ -40,7 +40,7 @@ export default function SidebarUserInfo() {
   
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="w-full focus:outline-none">
+      <DropdownMenuTrigger className="w-full focus:outline-hidden">
         <div className="p-3 flex items-center gap-3 hover:bg-secondary/40 transition-colors">
           <Avatar className="h-8 w-8 border">
             <AvatarImage src={session?.user?.image || ""} alt="User" />

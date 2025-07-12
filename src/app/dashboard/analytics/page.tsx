@@ -340,7 +340,7 @@ export default function CountersPage() {
                 ))}
               </div>
             ) : domains.length === 0 ? (
-              <div className="border border-dashed rounded-lg p-8 text-center bg-secondary/[0.02]">
+              <div className="border border-dashed rounded-lg p-8 text-center bg-secondary/2">
                 <p className="text-muted-foreground mb-4">No verified domains found.</p>
                 <Button onClick={() => router.push('/dashboard/domains')}>
                   Add a Domain
@@ -351,7 +351,7 @@ export default function CountersPage() {
                 {domains.map((domain) => (
                   <Button
                     key={domain.id}
-                    variant={selectedDomain?.id === domain.id ? "default" : "outline"}
+                    variant={selectedDomain?.id === domain.id ? "default" : "outline-solid"}
                     onClick={() => selectDomain(domain)}
                     className={`h-auto py-2 px-4 ${selectedDomain?.id === domain.id ? "" : "hover:bg-secondary/20"}`}
                     disabled={!domain.verified}
@@ -454,7 +454,7 @@ export default function CountersPage() {
                 ) : (
                   <div>
                     {Object.keys(counterData.pageViews).length === 0 ? (
-                      <div className="border border-dashed rounded-lg p-8 text-center bg-secondary/[0.02]">
+                      <div className="border border-dashed rounded-lg p-8 text-center bg-secondary/2">
                         <p className="text-muted-foreground mb-4">No monitored pages found for this domain.</p>
                         <Button variant="outline" onClick={syncPathsFromKV} size="sm">
                           <RefreshCw className="h-4 w-4 mr-2" />
@@ -479,7 +479,7 @@ export default function CountersPage() {
               </div>
             </div>
           ) : (
-            <div className="border border-dashed rounded-lg p-12 text-center bg-secondary/[0.02]">
+            <div className="border border-dashed rounded-lg p-12 text-center bg-secondary/2">
               {loading.domains ? (
                 <div className="flex flex-col items-center">
                   <Skeleton className="h-6 w-64 mb-4" />

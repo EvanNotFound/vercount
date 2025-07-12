@@ -44,7 +44,7 @@ export default function Sponsorship() {
                 </div>
               </div>
               
-              <Button size="lg" className="rounded-full bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 w-full py-6 text-white" asChild>
+              <Button size="lg" className="rounded-full bg-linear-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 w-full py-6 text-white" asChild>
                 <Link href="https://evannotfound.com/sponsor" target="_blank" rel="noopener noreferrer">
                   <Heart className="mr-2 h-5 w-5" /> 支持我
                 </Link>
@@ -52,7 +52,7 @@ export default function Sponsorship() {
             </div>
 
             {/* Warning Section */}
-            <div className="space-y-6 bg-gradient-to-b from-amber-950/30 to-amber-950/10 border border-amber-500/30 p-8 rounded-2xl backdrop-blur-sm w-full">
+            <div className="space-y-6 bg-linear-to-b from-amber-950/30 to-amber-950/10 border border-amber-500/30 p-8 rounded-2xl backdrop-blur-xs w-full">
               <div className="flex items-center justify-center space-x-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-500/20">
                   <AlertTriangle className="h-5 w-5 text-amber-500" />

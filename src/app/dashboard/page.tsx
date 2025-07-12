@@ -216,7 +216,7 @@ export default function Dashboard() {
           {/* Navigation cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
             <div 
-              className="border rounded-lg p-5 bg-primary/[0.03] hover:bg-primary/[0.06] hover:border-primary/30 transition-colors cursor-pointer"
+              className="border rounded-lg p-5 bg-primary/3 hover:bg-primary/6 hover:border-primary/30 transition-colors cursor-pointer"
               onClick={() => router.push('/dashboard/domains')}
             >
               <div className="flex items-center justify-between mb-4">
@@ -228,7 +228,7 @@ export default function Dashboard() {
             </div>
             
             <div 
-              className="border rounded-lg p-5 bg-primary/[0.03] hover:bg-primary/[0.06] hover:border-primary/30 transition-colors cursor-pointer"
+              className="border rounded-lg p-5 bg-primary/3 hover:bg-primary/6 hover:border-primary/30 transition-colors cursor-pointer"
               onClick={() => router.push('/dashboard/analytics')}
             >
               <div className="flex items-center justify-between mb-4">
@@ -240,7 +240,7 @@ export default function Dashboard() {
             </div>
             
             <div 
-              className="border rounded-lg p-5 bg-primary/[0.03] hover:bg-primary/[0.06] hover:border-primary/30 transition-colors cursor-pointer"
+              className="border rounded-lg p-5 bg-primary/3 hover:bg-primary/6 hover:border-primary/30 transition-colors cursor-pointer"
               onClick={() => router.push('https://github.com/evannotfound/vercount')}
             >
               <div className="flex items-center justify-between mb-4">
@@ -288,7 +288,7 @@ export default function Dashboard() {
                   ))}
                 </div>
               ) : (
-                <div className="border border-dashed rounded-lg p-8 text-center bg-secondary/[0.02]">
+                <div className="border border-dashed rounded-lg p-8 text-center bg-secondary/2">
                   <p className="text-muted-foreground">No page data found.</p>
                 </div>
               )}

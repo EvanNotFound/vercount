@@ -10,7 +10,7 @@ export default async function Header() {
 	const isAuthenticated = !!session;
 
 	return (
-		<header className="fixed top-0 z-40 w-full border-b border-white/10 bg-black/80 backdrop-blur supports-[backdrop-filter]:bg-black/50">
+		<header className="fixed top-0 z-40 w-full border-b border-white/10 bg-black/80 backdrop-blur-sm supports-backdrop-filter:bg-black/50">
 			<div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 				<div className="flex h-16 items-center justify-between py-4">
 					<div className="flex items-center gap-8">

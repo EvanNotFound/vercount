@@ -8,7 +8,7 @@ export default function PageView() {
 	return (
 		<div className="grid grid-cols-1 md:grid-cols-3 gap-2 w-full mt-8 md:mt-12">
 			<BlurFadeStagger initialDelay={0.4} delayStep={0.04}>
-				<div className="flex flex-col items-center p-4 md:pl-10 md:p-6 bg-white/5 rounded-lg md:rounded-l-[100px] md:rounded-r-lg border border-white/10 backdrop-blur-sm">
+				<div className="flex flex-col items-center p-4 md:pl-10 md:p-6 bg-white/5 rounded-lg md:rounded-l-[100px] md:rounded-r-lg border border-white/10 backdrop-blur-xs">
 					<h3 className="text-xs md:text-sm font-medium text-zinc-400">
 						Page View
 					</h3>
@@ -16,7 +16,7 @@ export default function PageView() {
 						{pagePv}
 					</p>
 				</div>
-				<div className="flex flex-col items-center p-4 md:p-6 bg-white/5 rounded-lg border border-white/10 backdrop-blur-sm">
+				<div className="flex flex-col items-center p-4 md:p-6 bg-white/5 rounded-lg border border-white/10 backdrop-blur-xs">
 					<h3 className="text-xs md:text-sm font-medium text-zinc-400">
 						Site Total Visits
 					</h3>
@@ -24,7 +24,7 @@ export default function PageView() {
 						{sitePv}
 					</p>
 				</div>
-				<div className="flex flex-col items-center p-4 md:pr-10 md:p-6 bg-white/5 rounded-lg md:rounded-r-[100px] md:rounded-l-lg border border-white/10 backdrop-blur-sm">
+				<div className="flex flex-col items-center p-4 md:pr-10 md:p-6 bg-white/5 rounded-lg md:rounded-r-[100px] md:rounded-l-lg border border-white/10 backdrop-blur-xs">
 					<h3 className="text-xs md:text-sm font-medium text-zinc-400">
 						Site Total Visitors
 					</h3>
