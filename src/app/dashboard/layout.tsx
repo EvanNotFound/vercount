@@ -23,15 +23,15 @@ export default async function DashboardLayout({
 
 	return (
 		<SidebarProvider defaultOpen={true}>
-      <div className="flex h-screen overflow-hidden w-full">
-        <DashboardSidebar />
-        <div className="flex flex-col flex-1 overflow-auto w-full">
-          <div className="flex-1 flex flex-col">
-            <SidebarTrigger className="fixed right-4 top-4 z-50 md:hidden p-3 bg-zinc-900 rounded-md" />
-            {children}
-          </div>
-        </div>
-      </div>
+			<div className="flex h-screen overflow-hidden w-full">
+				<DashboardSidebar />
+				<div className="flex flex-col flex-1 overflow-auto w-full">
+					<div className="flex-1 flex flex-col">
+						<SidebarTrigger className="fixed right-4 top-4 z-50 md:hidden p-3 bg-zinc-900 rounded-md" />
+						{children}
+					</div>
+				</div>
+			</div>
 		</SidebarProvider>
 	);
 }
