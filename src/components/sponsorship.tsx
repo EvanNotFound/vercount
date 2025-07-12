@@ -67,10 +67,7 @@ export default function Sponsorship() {
               <p className="text-sm text-zinc-400">
                 这种行为违反服务条款，可能导致 IP 被永久封禁。此服务由个人资金支持，恶意刷访问量会增加运营成本（Vercel 边缘访问费用），可能导致服务终止。
               </p>
-              
-              <p className="text-sm text-zinc-400">
-                如果需要手动更改数据，请联系: <Link href="https://evannotfound.com/contact" className="text-amber-400 hover:text-amber-300 underline transition-colors underline-offset-4 decoration-amber-400/60" target="_blank" rel="noopener noreferrer">evannotfound.com/contact</Link>
-              </p>
+            
               
               <div className="p-5 bg-white/5 rounded-xl">
                 <p className="font-medium text-zinc-300 text-sm mb-3">安全措施</p>
