@@ -146,8 +146,7 @@
   }
 }
 
-/* Import Shiki styles */
-@import '../styles/shiki.css';
+
 
 @layer components {
   /* Hide number input spinners */

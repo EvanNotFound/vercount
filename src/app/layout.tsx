@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Sora } from "next/font/google";
 import "./globals.css";
+import "@/styles/shiki.css";
 import { Toaster } from "@/components/ui/sonner";
 import { Providers } from "@/app/providers";
 import { GeistMono } from 'geist/font/mono';

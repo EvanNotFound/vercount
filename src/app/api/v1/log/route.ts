@@ -11,6 +11,8 @@ import { notifyBusuanziService } from "@/utils/busuanzi";
 import logger from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
 
+import { ipAddress } from "@vercel/functions";
+
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const targetUrl = url.searchParams.get('url');
@@ -82,7 +84,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: NextRequest) {
-  const header = headers();
+  const header = await headers();
   const data = await req.json();
 
   if (!data.url) {
@@ -133,7 +135,7 @@ export async function POST(req: NextRequest) {
   }
 
   const clientHost =
-    req.ip ||
+    ipAddress(req) ||
     header.get("X-Real-IP") ||
     header.get("X-Forwarded-For")?.split(",")[0];
 
@@ -142,7 +144,7 @@ export async function POST(req: NextRequest) {
     clientHost,
     realIp: header.get("X-Real-IP"),
     xForwardedFor: header.get("X-Forwarded-For"),
-    reqIp: req.ip,
+    reqIp: ipAddress(req),
   });
 
   if (!clientHost) {
