@@ -351,7 +351,7 @@ export default function CountersPage() {
                 {domains.map((domain) => (
                   <Button
                     key={domain.id}
-                    variant={selectedDomain?.id === domain.id ? "default" : "outline-solid"}
+                    variant={selectedDomain?.id === domain.id ? "default" : "outline"}
                     onClick={() => selectDomain(domain)}
                     className={`h-auto py-2 px-4 ${selectedDomain?.id === domain.id ? "" : "hover:bg-secondary/20"}`}
                     disabled={!domain.verified}

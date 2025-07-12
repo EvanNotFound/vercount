@@ -19,7 +19,6 @@ interface BlurFadeStaggerProps {
   inViewMargin?: string;
   initialDelay?: number;
   delayStep?: number;
-  className?: string;
 }
 
 const BlurFadeStagger: React.FC<BlurFadeStaggerProps> = ({
@@ -30,7 +29,6 @@ const BlurFadeStagger: React.FC<BlurFadeStaggerProps> = ({
   inViewMargin = "-50px",
   initialDelay = blurFadeInitialDelay,
   delayStep = blurFadeDelay,
-  className,
 }) => {
   const childrenArray = Children.toArray(children);
   let delayCounter = 0; // Initialize delay counter
@@ -41,7 +39,8 @@ const BlurFadeStagger: React.FC<BlurFadeStaggerProps> = ({
         // Check if the child is a valid React element
         if (isValidElement(child)) {
           // Check if the child has a 'continueFrom' prop
-          const continueFrom = child.props.continueFrom;
+          const reactChild = child as React.ReactElement<{continueFrom?: number}>;
+          const continueFrom = reactChild.props.continueFrom;
 
           if (typeof continueFrom === "number") {
             // Set the delayCounter to the specified value
@@ -57,9 +56,9 @@ const BlurFadeStagger: React.FC<BlurFadeStaggerProps> = ({
           delayCounter++;
 
           // Clone the child without the 'continueFrom' prop to prevent prop leakage
-          const childWithoutContinueFrom = cloneElement(child, {
+          const childWithoutContinueFrom = cloneElement(reactChild, {
             // Omit 'continueFrom' if it exists
-            ...(child.props.continueFrom !== undefined && {
+            ...(reactChild.props.continueFrom !== undefined && {
               continueFrom: undefined,
             }),
           });
@@ -73,7 +72,6 @@ const BlurFadeStagger: React.FC<BlurFadeStaggerProps> = ({
               blur={blur}
               duration={duration}
               inViewMargin={inViewMargin}
-              className={className}
             >
               {childWithoutContinueFrom}
             </BlurFade>
