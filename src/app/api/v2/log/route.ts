@@ -12,8 +12,19 @@ import logger from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { ipAddress } from "@vercel/functions";
 import { successResponse, ApiErrors, errorResponse } from "@/lib/api-response";
+import { checkRateLimit } from "@/lib/rate-limit";
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
+  // Check rate limit first
+  const rateLimitResult = await checkRateLimit(req);
+  if (!rateLimitResult.success) {
+    return errorResponse(
+      rateLimitResult.error || "Rate limit exceeded",
+      429,
+      { limit: rateLimitResult.limit, remaining: rateLimitResult.remaining }
+    );
+  }
+
   const url = new URL(req.url);
   const targetUrl = url.searchParams.get('url');
   
@@ -81,6 +92,16 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: NextRequest) {
+  // Check rate limit first
+  const rateLimitResult = await checkRateLimit(req);
+  if (!rateLimitResult.success) {
+    return errorResponse(
+      rateLimitResult.error || "Rate limit exceeded",
+      429,
+      { limit: rateLimitResult.limit, remaining: rateLimitResult.remaining }
+    );
+  }
+
   const header = await headers();
   const data = await req.json();
 

@@ -10,10 +10,18 @@ import {
 import { notifyBusuanziService } from "@/utils/busuanzi";
 import logger from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
-
 import { ipAddress } from "@vercel/functions";
+import { checkRateLimit } from "@/lib/rate-limit";
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
+  // Check rate limit first
+  const rateLimitResult = await checkRateLimit(req);
+  if (!rateLimitResult.success) {
+    return Response.json({ 
+      error: rateLimitResult.error || "Rate limit exceeded"
+    }, { status: 429 });
+  }
+
   const url = new URL(req.url);
   const targetUrl = url.searchParams.get('url');
   
@@ -84,6 +92,14 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: NextRequest) {
+  // Check rate limit first
+  const rateLimitResult = await checkRateLimit(req);
+  if (!rateLimitResult.success) {
+    return Response.json({ 
+      error: rateLimitResult.error || "Rate limit exceeded"
+    }, { status: 429 });
+  }
+
   const header = await headers();
   const data = await req.json();
 

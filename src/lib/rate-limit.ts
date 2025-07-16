@@ -1,17 +1,15 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { ipAddress } from "@vercel/functions";
 import { Ratelimit } from "@upstash/ratelimit";
 import kv from "@/lib/kv";
 import logger from "@/lib/logger";
 
-// Stricter rate limiting: 50 requests per minute instead of 100
+// Rate limiting configuration: 80 requests per minute sliding window
 const ratelimit = new Ratelimit({
   redis: kv,
   limiter: Ratelimit.slidingWindow(80, "1 m"),
 });
 
-// Precompile the User-Agent regex
-const uaRegex = /mozilla\/|chrome\/|safari\//;
 // Expanded regex to detect various bot and script user agents
 const suspiciousUARegex = /python-requests|python\/|requests\/|curl\/|wget\/|go-http-client\/|httpie\/|postman\/|axios\/|node-fetch\/|empty|unknown|bot|crawl|spider/i;
 
@@ -27,28 +25,31 @@ async function blockIP(ip: string, durationHours = 24): Promise<void> {
   logger.warn(`IP blocked for ${durationHours} hours`, { ip });
 }
 
-export const config = {
-  matcher: ["/log", "/api/v1/log", "/api/v2/log"],
-  runtime: "nodejs",
-};
+export interface RateLimitResult {
+  success: boolean;
+  limit: number;
+  reset: number;
+  remaining: number;
+  error?: string;
+}
 
-export default async function middleware(request: NextRequest) {
+export async function checkRateLimit(request: NextRequest): Promise<RateLimitResult> {
   const ip = ipAddress(request) ?? "127.0.0.1";
   const ua = request.headers.get("user-agent")?.toLowerCase() || "unknown";
 
-  // Check if IP is already blocked
+  // Check if IP is already blocked (commented out for now as in original middleware)
   // if (await isIPBlocked(ip)) {
-  //   logger.warn("Request from blocked IP", {
-  //     ip,
-  //     ua,
-  //   });
-  //   return NextResponse.json({ 
-  //     status: "error",
-  //     message: "Unauthorized access",
-  //    }, { status: 403 });
+  //   logger.warn("Request from blocked IP", { ip, ua });
+  //   return {
+  //     success: false,
+  //     limit: 0,
+  //     reset: 0,
+  //     remaining: 0,
+  //     error: "IP blocked"
+  //   };
   // }
 
-  // Perform rate limiting first
+  // Perform rate limiting
   const { success, limit, reset, remaining } = await ratelimit.limit(ip);
 
   if (!success) {
@@ -59,35 +60,29 @@ export default async function middleware(request: NextRequest) {
       remaining,
       ua,
     });
-    return NextResponse.json({ 
-      status: "error",
-      message: "Rate limit exceeded",
-    }, { status: 429 });
+    return {
+      success: false,
+      limit,
+      reset,
+      remaining,
+      error: "Rate limit exceeded"
+    };
   }
 
-  // Log only if rate limit check passes
+  // Log request details
   logger.info("Request received", {
     ip,
     ua,
-    timestamp: Date.now(), // Use numeric timestamp for better performance
+    timestamp: Date.now(),
     path: request.nextUrl.pathname,
   });
 
-  // Block suspicious user agents
+  // Check for suspicious user agents (warning only, not blocking as in original)
   if (suspiciousUARegex.test(ua)) {
-    // Block the IP for 24 hours after detecting suspicious UA
+    logger.warn("Suspicious user agent detected", { ip, ua });
+    // Could implement IP blocking here if needed:
     // await blockIP(ip, 24);
-    
-    logger.warn("Suspicious user agent detected", {
-      ip,
-      ua,
-    });
-    // return NextResponse.json({ 
-    //   status: "error",
-    //   message: "Unauthorized access",
-    // }, { status: 403 });
   }
-
 
   // Log warning if approaching rate limit
   if (remaining < 20) {
@@ -98,5 +93,12 @@ export default async function middleware(request: NextRequest) {
     });
   }
 
-  return NextResponse.next();
+  return {
+    success: true,
+    limit,
+    reset,
+    remaining
+  };
 }
+
+export { blockIP, isIPBlocked };
