@@ -122,9 +122,15 @@ Vercount 旨在解决这些问题，让网站计数器更快、更稳定、更�
 
 您可以访问我的[个人网站捐赠页面](https://evannotfound.com/sponsor)进行捐赠。
 
-或者支持我其他的项目，比如我个人运营的 [GPT Plus Share](https://gpt.oknice.ca)，可以共享使用多个 ChatGPT Plus 账户，与官方界面相同，起步价仅需每月 17 人民币！
+或者支持我其他的项目，立即加入我的 [GPT Plus Share](https://gptplus.ca) GPT Plus 共享站，ChatGPT Plus 随心用。
 
-[![GPT Billboard](https://github.com/EvanNotFound/hexo-theme-redefine/assets/68590232/55346629-cd54-45a4-9b31-3f979750b0c0)](https://gpt.oknice.ca)
+- ✅ 支持 OpenAI 最新所有模型，包括 `GPT-4o`, `o3` 系列模型，支持高级图片生成
+- ✅ 后台大量官方正版账号号池，随心使用
+- ✅ 每月仅需低至 23.99 人民币，支持一天免费试用
+- ✅ 无需梯子，国内免翻访问！
+- ✅ 由 Evan 本人运营，售后保证，已稳定运行超过一年
+
+[![gpt-billboard](https://github.com/user-attachments/assets/f049fb37-0587-4af9-b59d-b1910d310549)](https://www.gptplus.ca/home)
 
 ## Disclaimer
 
