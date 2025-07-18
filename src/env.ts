@@ -11,7 +11,8 @@ export const env = createEnv({
 
     DATABASE_URL: z.url(),
 
-    NODE_ENV: z.enum(["development", "production"]).default("development"),
+    KV_REST_API_URL: z.url(),
+    KV_REST_API_TOKEN: z.string(),
   },
   client: {
   },

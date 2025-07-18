@@ -30,8 +30,8 @@ pnpm start
 pnpm lint
 
 # Database operations
-pnpx drizzle-kit generate     # Generate migrations
-pnpx drizzle-kit push         # Push schema changes to database
+pnpm db:generate     # Generate migrations
+pnpm db:migrate      # Apply migrations to database
 pnpx drizzle-kit studio       # Open Drizzle Studio
 ```
 
