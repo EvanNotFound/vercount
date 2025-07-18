@@ -1,7 +1,6 @@
 import { Metadata } from "next";
-import { getServerSession } from "next-auth";
+import { getServerSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { authOptions } from "@/lib/auth";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
 
@@ -15,7 +14,7 @@ export default async function DashboardLayout({
 }: {
 	children: React.ReactNode;
 }) {
-	const session = await getServerSession(authOptions);
+	const session = await getServerSession();
 
 	if (!session) {
 		redirect("/auth/signin");

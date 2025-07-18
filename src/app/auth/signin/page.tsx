@@ -2,12 +2,11 @@ import { Separator } from "@/components/ui/separator";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import SignInForm from "./signin-form";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getServerSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
 export default async function SignIn() {
-	const session = await getServerSession(authOptions);
+	const session = await getServerSession();
 
 	if (session) {
 		redirect("/dashboard");

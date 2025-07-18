@@ -1,18 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { HomeIcon, Globe, ArrowRight } from "lucide-react";
 import DashboardHeader from "@/components/dashboard/dashboard-header";
-import { Separator } from "@/components/ui/separator";
 import { safeDecodeURIComponent } from "@/utils/url";
+import { VerificationType } from "@/types/domain";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,6 +30,7 @@ interface Domain {
   name: string;
   verified: boolean;
   verificationCode: string;
+  verificationType: VerificationType;
   createdAt: string;
   updatedAt: string;
   counters?: {
@@ -45,7 +46,7 @@ interface PageViewData {
 }
 
 export default function DomainsPage() {
-  const { data: session, status } = useSession();
+  const { data: session, isPending } = useSession();
   const router = useRouter();
   const [domains, setDomains] = useState<Domain[]>([]);
   const [newDomain, setNewDomain] = useState("");
@@ -53,20 +54,12 @@ export default function DomainsPage() {
   const [addingDomain, setAddingDomain] = useState(false);
   const [showUnlinkDialog, setShowUnlinkDialog] = useState(false);
   const [domainToUnlink, setDomainToUnlink] = useState<string | null>(null);
+  const [domainVerificationTabs, setDomainVerificationTabs] = useState<Record<string, VerificationType>>({});
 
   // Redirect if not authenticated
   useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/auth/signin");
-    }
-  }, [status, router]);
-
-  // Fetch domains
-  useEffect(() => {
-    if (status === "authenticated") {
-      fetchDomains();
-    }
-  }, [status]);
+    fetchDomains();
+  }, []);
 
   // Fetch domains from API
   const fetchDomains = async () => {
@@ -109,7 +102,9 @@ export default function DomainsPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ domain: newDomain }),
+        body: JSON.stringify({ 
+          domain: newDomain
+        }),
       });
       
       const data = await response.json();
@@ -140,7 +135,28 @@ export default function DomainsPage() {
       return;
     }
 
-    // For unverified domains, try to verify via DNS
+    // Get the selected verification method for this domain
+    const selectedMethod = domainVerificationTabs[domainId] || domain.verificationType;
+    
+    // Update domain's verification method if it's different from the stored one
+    if (selectedMethod !== domain.verificationType) {
+      try {
+        await fetch("/api/domains/verification-method", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            domainId: domain.id,
+            verificationType: selectedMethod,
+          }),
+        });
+      } catch (error) {
+        console.error("Failed to update verification method:", error);
+      }
+    }
+
+    // For unverified domains, try to verify using selected method
     const verifyPromise = () => 
       fetch("/api/domains/verify", {
         method: "POST",
@@ -163,8 +179,10 @@ export default function DomainsPage() {
         return data;
       });
     
+    const loadingMessage = selectedMethod === VerificationType.DNS ? "Checking DNS records..." : "Checking verification file...";
+    
     toast.promise(verifyPromise, {
-      loading: "Checking DNS records...",
+      loading: loadingMessage,
       success: (data) => {
         fetchDomains(); // Refresh the domains list
         return data.message || "Domain verified successfully!";
@@ -209,6 +227,13 @@ export default function DomainsPage() {
       setShowUnlinkDialog(false);
       setDomainToUnlink(null);
     }
+  };
+
+  const handleVerificationMethodChange = (domainId: string, newMethod: VerificationType) => {
+    setDomainVerificationTabs(prev => ({
+      ...prev,
+      [domainId]: newMethod
+    }));
   };
 
   return (
@@ -334,33 +359,75 @@ export default function DomainsPage() {
                       {!domain.verified ? (
                         <div className="border-t p-4 bg-black">
                           <h4 className="text-sm font-medium mb-3">Verification required</h4>
-                          <p className="text-xs text-muted-foreground mb-4">
-                            Add this TXT record to your DNS configuration to verify ownership:
-                          </p>
                           
-                          <div className="bg-secondary/20 rounded-md p-3 mb-4 overflow-x-auto">
-                            <table className="w-full text-xs">
-                              <thead className="text-left">
-                                <tr>
-                                  <th className="pb-2 text-muted-foreground">Type</th>
-                                  <th className="pb-2 text-muted-foreground">Name</th>
-                                  <th className="pb-2 text-muted-foreground">Value</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                <tr>
-                                  <td className="py-1 font-mono">TXT</td>
-                                  <td className="py-1 font-mono">_vercount.{domain.name}</td>
-                                  <td className="py-1 font-mono">vercount-domain-verify={domain.name},{domain.verificationCode}</td>
-                                </tr>
-                              </tbody>
-                            </table>
-                          </div>
+                          <Tabs 
+                            value={domainVerificationTabs[domain.id] || domain.verificationType} 
+                            onValueChange={(value) => handleVerificationMethodChange(domain.id, value as VerificationType)}
+                            className="w-full"
+                          >
+                            <TabsList className="grid w-full grid-cols-2">
+                              <TabsTrigger value={VerificationType.DNS}>DNS Record</TabsTrigger>
+                              <TabsTrigger value={VerificationType.FILE}>File Upload</TabsTrigger>
+                            </TabsList>
+                            
+                            <TabsContent value={VerificationType.DNS} className="space-y-4">
+                              <p className="text-xs text-muted-foreground">
+                                Add this TXT record to your DNS configuration to verify ownership:
+                              </p>
+                              
+                              <div className="bg-secondary/20 rounded-md p-3 overflow-x-auto">
+                                <table className="w-full text-xs">
+                                  <thead className="text-left">
+                                    <tr>
+                                      <th className="pb-2 text-muted-foreground">Type</th>
+                                      <th className="pb-2 text-muted-foreground">Name</th>
+                                      <th className="pb-2 text-muted-foreground">Value</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    <tr>
+                                      <td className="py-1 font-mono">TXT</td>
+                                      <td className="py-1 font-mono">_vercount.{domain.name}</td>
+                                      <td className="py-1 font-mono">vercount-domain-verify={domain.name},{domain.verificationCode}</td>
+                                    </tr>
+                                  </tbody>
+                                </table>
+                              </div>
+                            </TabsContent>
+                            
+                            <TabsContent value={VerificationType.FILE} className="space-y-4">
+                              <p className="text-xs text-muted-foreground">
+                                Upload a verification file to your website to verify ownership:
+                              </p>
+                              
+                              <div className="bg-secondary/20 rounded-md p-3 overflow-x-auto">
+                                <div className="space-y-2">
+                                  <div>
+                                    <span className="text-xs text-muted-foreground">File Location:</span>
+                                    <div className="font-mono text-xs mt-1">
+                                      https://{domain.name}/.well-known/vercount-verify-{domain.verificationCode}.txt
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <span className="text-xs text-muted-foreground">File Content:</span>
+                                    <div className="font-mono text-xs mt-1 p-2 bg-secondary/30 rounded">
+                                      vercount-domain-verify={domain.name},{domain.verificationCode}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <p className="text-xs text-muted-foreground">
+                                Create a folder named <code className="bg-secondary/30 px-1 rounded">.well-known</code> in your website root, 
+                                then upload the verification file with the exact name and content shown above.
+                              </p>
+                            </TabsContent>
+                          </Tabs>
                           
                           <Button 
                             variant="outline" 
                             size="sm" 
-                            className="w-full"
+                            className="w-full mt-4"
                             onClick={(e) => handleVerifyDomain(e, domain.id)}
                           >
                             Check verification

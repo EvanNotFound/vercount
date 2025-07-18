@@ -9,15 +9,15 @@ Vercount is a website counter service that serves as a replacement for Busuanzi 
 **Key Architecture:**
 - **Frontend**: Next.js 15 with React 19, TypeScript, and Tailwind CSS
 - **Backend**: Next.js API routes with middleware for rate limiting and security
-- **Database**: PostgreSQL via Prisma ORM for user/domain management
+- **Database**: PostgreSQL via Drizzle ORM for user/domain management
 - **Cache/Counter Storage**: Redis (Upstash) for high-performance counter storage
-- **Authentication**: NextAuth.js with GitHub OAuth
+- **Authentication**: Better Auth with GitHub OAuth
 - **Deployment**: Vercel with serverless functions
 
 ## Development Commands
 
 ```bash
-# Development (includes client.js minification and Prisma generation)
+# Development (includes client.js minification and database generation)
 pnpm dev
 
 # Build for production
@@ -30,9 +30,9 @@ pnpm start
 pnpm lint
 
 # Database operations
-pnpx prisma generate     # Generate Prisma client
-pnpx prisma db push      # Push schema changes to database
-pnpx prisma studio       # Open Prisma Studio
+pnpx drizzle-kit generate     # Generate migrations
+pnpx drizzle-kit push         # Push schema changes to database
+pnpx drizzle-kit studio       # Open Drizzle Studio
 ```
 
 ## Key Components and Architecture
@@ -41,7 +41,7 @@ pnpx prisma studio       # Open Prisma Studio
 - **`/api/v1/log`**: Legacy API endpoint for counter updates
 - **`/api/v2/log`**: New API endpoint with enhanced response format
 - **`/api/domains/*`**: Domain verification and management endpoints
-- **`/api/auth/[...nextauth]`**: Authentication endpoints
+- **`/api/auth/[...all]`**: Authentication endpoints
 
 ### Client Integration
 - **`/src/lib/client.js`**: Main client JavaScript that gets minified and served at `/js`
@@ -56,7 +56,7 @@ pnpx prisma studio       # Open Prisma Studio
 
 ### Data Storage
 - **Redis (KV)**: Used for counter storage via `/src/lib/kv.ts`
-- **PostgreSQL**: User accounts, domains, and verification data via Prisma
+- **PostgreSQL**: User accounts, domains, and verification data via Drizzle
 - **Counter logic**: `/src/utils/counter.ts` handles increment operations
 
 ### Domain Management
@@ -78,13 +78,13 @@ KV_REST_API_TOKEN="..."
 # OAuth
 GITHUB_ID="..."
 GITHUB_SECRET="..."
-NEXTAUTH_SECRET="..."
-NEXTAUTH_URL="..."
+BETTER_AUTH_SECRET="..."
+BETTER_AUTH_URL="..."
 ```
 
 ### Important Config Files
 - **`next.config.js`**: URL rewrites (/js → /js/client.min.js, /log → /api/v1/log) and CORS headers
-- **`prisma/schema.prisma`**: Database schema with User, Domain, Account, Session models
+- **`drizzle/schema.ts`**: Database schema with User, Domain, Account, Session models
 - **`src/lib/rate-limit.ts`**: Rate limiting utility used by API endpoints
 
 ## Data Flow

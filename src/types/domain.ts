@@ -1,8 +1,14 @@
+export enum VerificationType {
+  DNS = 'DNS',
+  FILE = 'FILE'
+}
+
 export interface Domain {
   id: string;
   name: string;
   verified: boolean;
   verificationCode: string;
+  verificationType: VerificationType;
   createdAt: string;
   updatedAt: string;
   userId: string;

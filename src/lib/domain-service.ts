@@ -1,10 +1,14 @@
-import { prisma } from "@/lib/prisma";
+
 import kv from "@/lib/kv";
 import logger from "@/lib/logger";
 import dns from "dns";
 import { promisify } from "util";
 import { updateTotalUV } from "@/utils/counter";
 import { EXPIRATION_TIME } from "@/utils/counter";
+import { db } from "@/db";
+import { domains } from "@/db/schema";
+import { eq, and } from "drizzle-orm";
+import cuid2 from "@paralleldrive/cuid2"
 
 // Promisify DNS methods
 const resolveTxt = promisify(dns.resolveTxt);
@@ -34,14 +38,19 @@ export const domainService = {
   /**
    * Add a new domain for a user
    */
-  async addDomain(userId: string, domainName: string) {
+  async addDomain(userId: string, domainName: string, verificationType?: 'DNS' | 'FILE') {
     try {
       // Normalize domain name (remove protocol, www, etc.)
       const normalizedDomain = normalizeDomain(domainName);
       
+      // Default to DNS if not provided
+      if (!verificationType) {
+        verificationType = 'DNS';
+      }
+      
       // Check if domain already exists for any user
-      const existingDomain = await prisma.domain.findUnique({
-        where: { name: normalizedDomain },
+      const existingDomain = await db.query.domains.findFirst({
+        where: eq(domains.name, normalizedDomain),
       });
       
       if (existingDomain) {
@@ -54,11 +63,8 @@ export const domainService = {
       }
       
       // Check if this is a subdomain of an already verified domain owned by the same user
-      const userDomains = await prisma.domain.findMany({
-        where: { 
-          userId,
-          verified: true
-        },
+      const userDomains = await db.query.domains.findMany({
+        where: and(eq(domains.userId, userId), eq(domains.verified, true)),
       });
       
       logger.info(`Checking if ${normalizedDomain} is a subdomain of any verified domains for user ${userId}`);
@@ -70,14 +76,14 @@ export const domainService = {
         logger.info(`${normalizedDomain} is a subdomain of verified domain ${parentDomain.name}, auto-verifying`);
       }
       
-      // Create new domain, automatically verified if it's a subdomain of a verified domain
-      const domain = await prisma.domain.create({
-        data: {
-          name: normalizedDomain,
-          userId,
-          verified: parentDomain ? true : false,
-        },
-      });
+      const domain = await db.insert(domains).values({
+        id: cuid2.createId(),
+        name: normalizedDomain,
+        userId,
+        verified: parentDomain ? true : false,
+        verificationType,
+        verificationCode: cuid2.createId(),
+      }).returning();
 
       // No need to recreate monitored pages in PostgreSQL anymore
       // since we're using Redis exclusively for page views
@@ -102,13 +108,14 @@ export const domainService = {
    */
   async getDomains(userId: string) {
     try {
-      const domains = await prisma.domain.findMany({
-        where: { userId },
+      console.log("userId", userId);
+      const userDomains = await db.query.domains.findMany({
+        where: eq(domains.userId, userId),
       });
       
       // Enrich domains with counter data from Redis
       const enrichedDomains = await Promise.all(
-        domains.map(async (domain) => {
+        userDomains.map(async (domain) => {
           const counterData = await this.getCountersForDomain(domain.name);
           return {
             ...domain,
@@ -129,8 +136,8 @@ export const domainService = {
    */
   async verifyDomain(domainId: string, verificationCode: string) {
     try {
-      const domain = await prisma.domain.findUnique({
-        where: { id: domainId },
+      const domain = await db.query.domains.findFirst({
+        where: eq(domains.id, domainId),
       });
       
       if (!domain) {
@@ -141,57 +148,122 @@ export const domainService = {
         return { success: true, message: "Domain already verified" };
       }
       
-      // Always verify via DNS TXT record
-      try {
-        logger.info(`Attempting to verify domain: ${domain.name} with DNS lookup for _vercount.${domain.name}`);
-        
-        // Check for TXT record in DNS
-        let txtRecords: string[][] = [];
-        try {
-          txtRecords = await resolveTxt(`_vercount.${domain.name}`);
-          logger.info(`DNS TXT records found for _vercount.${domain.name}:`, { txtRecords });
-        } catch (dnsError) {
-          logger.error(`DNS lookup failed for _vercount.${domain.name}`, { error: dnsError });
-          return { 
-            success: false, 
-            message: "DNS verification failed: Could not find TXT record. Please ensure you've added the _vercount TXT record to your DNS settings." 
-          };
-        }
-        
-        const expectedValue = `vercount-domain-verify=${domain.name},${domain.verificationCode}`;
-        logger.info(`Expected TXT record value: ${expectedValue}`);
-        
-        // Check if any of the TXT records match our expected format
-        const verified = txtRecords.some(record => {
-          const joined = record.join('');
-          logger.info(`Comparing TXT record: "${joined}" with expected: "${expectedValue}"`);
-          return joined === expectedValue;
-        });
-        
-        if (!verified) {
-          return { 
-            success: false, 
-            message: "Domain verification failed: TXT record found but value doesn't match. Please ensure you've added the correct TXT record value." 
-          };
-        }
-        
-        // If DNS verification succeeded, update domain to verified
-        await prisma.domain.update({
-          where: { id: domainId },
-          data: { verified: true },
-        });
-        
-        return { success: true, message: "Domain verified successfully via DNS!" };
-      } catch (error) {
-        logger.error("Error verifying domain via DNS", { error, domainId, domain: domain.name });
-        return { 
-          success: false, 
-          message: "Failed to verify domain via DNS. Please check your DNS configuration and ensure the TXT record is properly set." 
-        };
+      // Choose verification method based on domain.verificationType
+      if (domain.verificationType === 'FILE') {
+        return await this.verifyDomainViaFile(domain);
+      } else {
+        return await this.verifyDomainViaDNS(domain);
       }
     } catch (error) {
       logger.error("Error verifying domain", { error, domainId });
       return { success: false, message: "Failed to verify domain" };
+    }
+  },
+
+  /**
+   * Verify domain via DNS TXT record
+   */
+  async verifyDomainViaDNS(domain: any) {
+    try {
+      logger.info(`Attempting to verify domain: ${domain.name} with DNS lookup for _vercount.${domain.name}`);
+      
+      // Check for TXT record in DNS
+      let txtRecords: string[][] = [];
+      try {
+        txtRecords = await resolveTxt(`_vercount.${domain.name}`);
+        logger.info(`DNS TXT records found for _vercount.${domain.name}:`, { txtRecords });
+      } catch (dnsError) {
+        logger.error(`DNS lookup failed for _vercount.${domain.name}`, { error: dnsError });
+        return { 
+          success: false, 
+          message: "DNS verification failed: Could not find TXT record. Please ensure you've added the _vercount TXT record to your DNS settings." 
+        };
+      }
+      
+      const expectedValue = `vercount-domain-verify=${domain.name},${domain.verificationCode}`;
+      logger.info(`Expected TXT record value: ${expectedValue}`);
+      
+      // Check if any of the TXT records match our expected format
+      const verified = txtRecords.some(record => {
+        const joined = record.join('');
+        logger.info(`Comparing TXT record: "${joined}" with expected: "${expectedValue}"`);
+        return joined === expectedValue;
+      });
+      
+      if (!verified) {
+        return { 
+          success: false, 
+          message: "Domain verification failed: TXT record found but value doesn't match. Please ensure you've added the correct TXT record value." 
+        };
+      }
+      
+      // If DNS verification succeeded, update domain to verified
+      await db.update(domains).set({ verified: true }).where(eq(domains.id, domain.id));
+      
+      return { success: true, message: "Domain verified successfully via DNS!" };
+    } catch (error) {
+      logger.error("Error verifying domain via DNS", { error, domainId: domain.id, domain: domain.name });
+      return { 
+        success: false, 
+        message: "Failed to verify domain via DNS. Please check your DNS configuration and ensure the TXT record is properly set." 
+      };
+    }
+  },
+
+  /**
+   * Verify domain via file upload
+   */
+  async verifyDomainViaFile(domain: any) {
+    try {
+      logger.info(`Attempting to verify domain: ${domain.name} via file verification`);
+      
+      const verificationUrl = `https://${domain.name}/.well-known/vercount-verify-${domain.verificationCode}.txt`;
+      logger.info(`Checking verification file at: ${verificationUrl}`);
+      
+      const expectedContent = `vercount-domain-verify=${domain.name},${domain.verificationCode}`;
+      
+      // Fetch the verification file
+      const response = await fetch(verificationUrl, {
+        method: 'GET',
+        headers: {
+          'User-Agent': 'Vercount Domain Verification Bot/1.0',
+        },
+      });
+      
+      if (!response.ok) {
+        logger.error(`File verification failed: HTTP ${response.status}`, { 
+          url: verificationUrl, 
+          status: response.status,
+          statusText: response.statusText
+        });
+        return { 
+          success: false, 
+          message: `File verification failed: Could not fetch verification file (HTTP ${response.status}). Please ensure the file exists at ${verificationUrl}` 
+        };
+      }
+      
+      const fileContent = await response.text();
+      const normalizedContent = fileContent.trim();
+      
+      logger.info(`File content: "${normalizedContent}", Expected: "${expectedContent}"`);
+      
+      if (normalizedContent !== expectedContent) {
+        return { 
+          success: false, 
+          message: "File verification failed: File content doesn't match expected value. Please ensure the file contains the correct verification string." 
+        };
+      }
+      
+      // If file verification succeeded, update domain to verified
+      await db.update(domains).set({ verified: true }).where(eq(domains.id, domain.id));
+      
+      return { success: true, message: "Domain verified successfully via file upload!" };
+    } catch (error) {
+      logger.error("Error verifying domain via file", { error, domainId: domain.id, domain: domain.name });
+      return { 
+        success: false, 
+        message: "Failed to verify domain via file. Please check that the verification file exists and is accessible." 
+      };
     }
   },
   
@@ -279,8 +351,8 @@ export const domainService = {
       const normalizedDomain = normalizeDomain(domainName);
       
       // Check if the domain exists and is verified
-      const domain = await prisma.domain.findUnique({
-        where: { name: normalizedDomain },
+      const domain = await db.query.domains.findFirst({
+        where: eq(domains.name, normalizedDomain),
       });
       
       if (!domain || !domain.verified) {
@@ -322,8 +394,8 @@ export const domainService = {
       const normalizedPath = normalizePath(path);
       
       // Get the domain
-      const domain = await prisma.domain.findUnique({
-        where: { id: domainId },
+      const domain = await db.query.domains.findFirst({
+        where: eq(domains.id, domainId),
       });
       
       if (!domain) {
@@ -360,8 +432,8 @@ export const domainService = {
       const normalizedPath = normalizePath(path);
       
       // Check if the domain exists and is verified
-      const domain = await prisma.domain.findUnique({
-        where: { name: normalizedDomain },
+      const domain = await db.query.domains.findFirst({
+        where: eq(domains.name, normalizedDomain),
       });
       
       if (!domain || !domain.verified) {
@@ -391,8 +463,8 @@ export const domainService = {
       const normalizedPath = normalizePath(path);
       
       // Get the domain
-      const domain = await prisma.domain.findUnique({
-        where: { id: domainId },
+      const domain = await db.query.domains.findFirst({
+        where: eq(domains.id, domainId),
       });
       
       if (!domain) {
@@ -445,4 +517,11 @@ function normalizePath(path: string): string {
   
   // Convert to lowercase
   return normalizedPath.toLowerCase();
+}
+
+/**
+ * Check if a domain is a GitHub Pages domain
+ */
+function isGitHubPagesDomain(domain: string): boolean {
+  return domain.endsWith('.github.io') || domain.endsWith('.github.com');
 } 

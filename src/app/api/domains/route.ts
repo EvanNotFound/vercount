@@ -1,16 +1,13 @@
 import { NextRequest } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getServerSession } from "@/lib/auth";
 import { domainService } from "@/lib/domain-service";
 import logger from "@/lib/logger";
 import { successResponse, ApiErrors, errorResponse } from "@/lib/api-response";
-import { prisma } from "@/lib/prisma";
-import kv from "@/lib/kv";
 
 // GET handler - Get all domains for the authenticated user
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession();
     
     if (!session || !session.user) {
       return ApiErrors.unauthorized();
@@ -37,7 +34,7 @@ export async function GET(req: NextRequest) {
 // POST handler - Add a new domain
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession();
     
     if (!session || !session.user) {
       return ApiErrors.unauthorized();
@@ -54,7 +51,10 @@ export async function POST(req: NextRequest) {
       return ApiErrors.badRequest("Domain name is required");
     }
     
-    const result = await domainService.addDomain(userId, data.domain);
+    // Optional verificationType parameter
+    const verificationType = data.verificationType as 'DNS' | 'FILE' | undefined;
+    
+    const result = await domainService.addDomain(userId, data.domain, verificationType);
     
     if (!result.success) {
       return ApiErrors.badRequest(result.message);

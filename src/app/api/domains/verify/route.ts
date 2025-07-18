@@ -1,6 +1,5 @@
 import { NextRequest } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getServerSession } from "@/lib/auth";
 import { domainService } from "@/lib/domain-service";
 import logger from "@/lib/logger";
 import { successResponse, ApiErrors, errorResponse } from "@/lib/api-response";
@@ -8,7 +7,7 @@ import { successResponse, ApiErrors, errorResponse } from "@/lib/api-response";
 // POST handler - Verify a domain
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession();
     
     if (!session || !session.user) {
       return ApiErrors.unauthorized();

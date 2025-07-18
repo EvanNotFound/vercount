@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth-client";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +23,7 @@ interface CounterData {
 }
 
 export default function CountersPage() {
-  const { data: session, status } = useSession();
+  const { data: session, isPending } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
   const domainParam = searchParams.get('domain');
@@ -47,17 +47,8 @@ export default function CountersPage() {
 
   // Redirect if not authenticated
   useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/auth/signin");
-    }
-  }, [status, router]);
-
-  // Fetch domains on initial load
-  useEffect(() => {
-    if (status === "authenticated") {
-      fetchDomains();
-    }
-  }, [status]);
+    fetchDomains();
+  }, []);
 
   // Select domain from URL parameter
   useEffect(() => {

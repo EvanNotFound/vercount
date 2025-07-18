@@ -7,17 +7,17 @@ import {
   } from "@/components/ui/dropdown-menu";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { signOut, useSession } from "next-auth/react";
+import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
 import { User, Settings, LogOut } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function SidebarUserInfo() {
-  const { data: session, status } = useSession();
-  const isLoading = status === "loading";
+  const { data: session, isPending } = authClient.useSession();
+  const isLoading = isPending;
 
   const handleSignOut = () => {
-    toast.promise(signOut(), {
+    toast.promise(authClient.signOut(), {
       loading: "Signing out...",
       success: "Signed out successfully",
       error: "Failed to sign out",

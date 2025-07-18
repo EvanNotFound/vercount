@@ -1,16 +1,16 @@
 import { NextRequest } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { getServerSession } from "@/lib/auth";
 import logger from "@/lib/logger";
-import { successResponse, ApiErrors, errorResponse } from "@/lib/api-response";
-import kv from "@/lib/kv";
+import { successResponse, ApiErrors } from "@/lib/api-response";
 import { safeDecodeURIComponent } from "@/utils/url";
+import { db } from "@/db";
+import { domains } from "@/db/schema";
+import { and, eq } from "drizzle-orm";
 
 // DELETE handler - Delete a monitored page
 export async function DELETE(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession();
     
     if (!session || !session.user) {
       return ApiErrors.unauthorized();
@@ -30,11 +30,8 @@ export async function DELETE(req: NextRequest) {
     }
     
     // Check if the domain belongs to the user
-    const domain = await prisma.domain.findFirst({
-      where: {
-        name: domainName,
-        userId,
-      },
+    const domain = await db.query.domains.findFirst({
+      where: and(eq(domains.name, domainName), eq(domains.userId, userId)),
     });
     
     if (!domain) {

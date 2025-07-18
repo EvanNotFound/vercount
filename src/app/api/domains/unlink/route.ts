@@ -1,14 +1,15 @@
 import { NextRequest } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getServerSession } from "@/lib/auth";
 import logger from "@/lib/logger";
 import { successResponse, ApiErrors, errorResponse } from "@/lib/api-response";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/db";
+import { domains } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 // POST handler - Unlink a domain (remove from PostgreSQL but keep data in KV)
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession();
     
     if (!session || !session.user) {
       return ApiErrors.unauthorized();
@@ -27,8 +28,8 @@ export async function POST(req: NextRequest) {
     }
     
     // Find the domain and ensure it belongs to the user
-    const domain = await prisma.domain.findUnique({
-      where: { id: domainId },
+    const domain = await db.query.domains.findFirst({
+      where: eq(domains.id, domainId),
     });
     
     if (!domain) {
@@ -41,9 +42,7 @@ export async function POST(req: NextRequest) {
     
     // Delete the domain from PostgreSQL (this will cascade delete monitored pages)
     // But we're NOT deleting any data from KV
-    await prisma.domain.delete({
-      where: { id: domainId },
-    });
+    await db.delete(domains).where(eq(domains.id, domainId));
     
     logger.info("Domain unlinked", {
       domainId,
