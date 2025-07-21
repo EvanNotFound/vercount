@@ -150,6 +150,7 @@ async function fetchBusuanziPagePV(hostSanitized: string, pathSanitized: string,
  * Sends a non-blocking request to Busuanzi to sync analytics data
  * @param host The hostname
  * @param path The path
+ * @deprecated This function is no longer used
  */
 function notifyBusuanziService(hostOriginal: string, pathOriginal: string) {
 	// Note: host and path may not be sanitized here, as this function might be called directly

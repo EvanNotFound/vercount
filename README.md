@@ -13,16 +13,15 @@
 
 Vercount 是一个基于 NextJS 和 Redis 的高效网站计数器，具有以下特点：
 
-- **极速响应**：服务器响应时间在 10ms 以内。
-- **高可用性**：支持中国加速版本或 Vercel 全球 CDN，确保 99.99% 的可用性。
+- **极速响应**：服务器响应时间在 100ms 以内。
+- **高可用性**：Vercel 全球 CDN，确保 99.99% 的可用性。
 - **精准统计**：使用 POST 请求，克服传统 Referrer 方法在移动端和某些浏览器上的不足。
 - **安全防护**：采用 JSON 回调方式，杜绝 CSRF 攻击风险，了解更多请查看：[JSONP](https://en.wikipedia.org/wiki/JSONP)。
-- **自动数据同步**：无需手动操作，`site_pv`、`site_uv` 和 `page_pv` 数据会自动同步。
+- **自动数据初始化**：无需手动操作，`site_pv`、`site_uv` 和 `page_pv` 数据会自动从不蒜子迁移，无需担心数据丢失。
 - **无缝兼容**：支持不蒜子的 `span` 标签，轻松切换。
-- **持久数据存储**：使用 Redis 定期备份，确保数据不丢失。
 - **Serverless 架构**：通过 Vercel Serverless Functions 提供后端支持，保证 99.99% 的可用性。
 - **自托管**：支持自托管，可以部署到任何支持 NextJS 的平台。
-- **编辑访客数据**：支持自定义网站的访客数据，前往 [vercount.one](https://vercount.one) 登录即可
+- **编辑访客数据**：支持自定义网站的访客数据，前往 [vercount.one](https://vercount.one) 登录并验证域名后即可使用。
 
 ## 为什么要做这个项目？
 
@@ -42,13 +41,7 @@ Vercount 旨在解决这些问题，让网站计数器更快、更稳定、更�
 
 **如果你需要在 React 项目中使用 Vercount，可以使用 [vercount-react](https://github.com/EvanNotFound/vercount-react)。**
 
-将以下 script（中国访问优化）添加到你的网站中：
-
-```html
-<script defer src="https://cn.vercount.one/js"></script>
-```
-
-或者使用这个 script（海外访问优化）：
+将以下代码添加到你的网站中：
 
 ```html
 <script defer src="https://events.vercount.one/js"></script>
@@ -64,12 +57,12 @@ Vercount 旨在解决这些问题，让网站计数器更快、更稳定、更�
 
 ## 从不蒜子切换到 Vercount
 
-只需替换不蒜子的 script 标签，其他保持不变，Vercount 兼容 Busuanzi 的 span 标签。数据会在首次访问时自动同步，后续访问也会保持同步（前提是不蒜子正常运行）。
+只需替换不蒜子的 script 标签，其他保持不变，Vercount 兼容 Busuanzi 的 span 标签。数据会在首次访问时自动同步。
 
 替换为：
 
 ```html
-<script defer src="https://cn.vercount.one/js"></script>
+<script defer src="https://events.vercount.one/js"></script>
 ```
 
 **Vercount 支持不蒜子的 span 标签，你可以继续使用原有的标签**，或者推荐切换到 Vercount 的专属 ID 标签，以便后续功能扩展：
@@ -87,17 +80,7 @@ Vercount 旨在解决这些问题，让网站计数器更快、更稳定、更�
 
 ## ⚠️ 重要声明
 
-**严禁使用脚本或程序尝试修改访问计数！** 这种行为违反了服务条款，可能导致您的 IP 被永久封禁。
-
-请注意，此服务完全由我个人资金支持，Vercel 对每个边缘请求都会收费。通过脚本恶意刷访问量只会增加运营成本，最终可能导致我不得不暂停或终止这项公共服务。
-
-如果您有特殊需求需要修改计数，请通过 [evannotfound.com/contact](https://evannotfound.com/contact) 联系我。我将根据具体情况评估您的请求。
-
-我已实施多层安全措施来检测和阻止自动脚本访问，包括但不限于：
-- 用户代理检测
-- IP 封禁
-- 浏览器指纹识别
-- 访问频率限制
+**严禁使用脚本或程序尝试修改访问计数！** 如需修改计数，请通过 [vercount.one](https://vercount.one) 后台管理页面进行修改。
 
 ## 💗 支持我
 
@@ -113,16 +96,14 @@ Vercount 旨在解决这些问题，让网站计数器更快、更稳定、更�
 - 总计：约 ¥154 CNY
 
 每年支出：
-- 数据库服务器费用：$40 USD
+- Redis 数据库服务器费用：$40 USD
 - 域名费用：$15 USD
 - 总计：约 ¥390 CNY
 
 随着项目规模扩大，我希望能得到您的支持。
 </details>
 
-您可以访问我的[个人网站捐赠页面](https://evannotfound.com/sponsor)进行捐赠。
-
-或者支持我其他的项目，立即加入我的 [GPT Plus Share](https://gptplus.ca) GPT Plus 共享站，ChatGPT Plus 随心用。
+您可以支持我其他的项目，加入我的 [GPT Plus Share](https://gptplus.ca) GPT Plus 共享站，ChatGPT Plus 随心用。
 
 - ✅ 支持 OpenAI 最新所有模型，包括 `GPT-4o`, `o3` 系列模型，支持高级图片生成
 - ✅ 后台大量官方正版账号号池，随心使用
