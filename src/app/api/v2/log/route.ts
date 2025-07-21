@@ -141,12 +141,7 @@ export async function POST(req: NextRequest) {
     }, "Invalid URL format", 200);
   }
 
-  // Check for browser token
-  const browserToken = data.token || header.get("X-Browser-Token");
-  if (!browserToken) {
-    logger.warn(`POST request with missing browser token`, { status: 400 });
-    return ApiErrors.badRequest("Missing token");
-  }
+  // Browser token validation removed - rate limiting provides sufficient protection
 
   const clientHost =
     ipAddress(req) ||

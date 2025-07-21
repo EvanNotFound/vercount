@@ -142,12 +142,7 @@ export async function POST(req: NextRequest) {
     }, { status: 200 }); // Return 200 with zeros to not break client
   }
 
-  // Check for browser token
-  const browserToken = data.token || header.get("X-Browser-Token");
-  if (!browserToken) {
-    logger.warn(`POST request with missing browser token`, { status: 400 });
-    return Response.json({ error: "Missing token" }, { status: 400 });
-  }
+  // Browser token validation removed - rate limiting provides sufficient protection
 
   const clientHost =
     ipAddress(req) ||

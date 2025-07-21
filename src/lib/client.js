@@ -1,267 +1,182 @@
-var visitorCounterCaller, visitorCounterDisplay;
 (function () {
-  var documentReady,
-    readyCallbacks = [],
-    isDocumentReady = false;
+  'use strict';
+  
+  const readyCallbacks = [];
+  let isDocumentReady = false;
+  let cachedElements = null;
 
-  documentReady = function (callback) {
-    if (
-      isDocumentReady ||
-      document.readyState === "interactive" ||
-      document.readyState === "complete"
-    ) {
-      callback.call(document);
+  const documentReady = (callback) => {
+    if (isDocumentReady || document.readyState !== 'loading') {
+      callback();
     } else {
       readyCallbacks.push(callback);
-      document.addEventListener("DOMContentLoaded", onDocumentReady);
+      document.addEventListener('DOMContentLoaded', () => {
+        isDocumentReady = true;
+        readyCallbacks.forEach(cb => cb());
+      }, { once: true });
     }
   };
 
-  function onDocumentReady() {
-    isDocumentReady = true;
-    document.removeEventListener("DOMContentLoaded", onDocumentReady);
-    readyCallbacks.forEach((callback) => callback.call(document));
-    readyCallbacks = [];
-  }
+  const API_URL = 'https://events.vercount.one/api/v2/log';
+  const CACHE_KEY = 'visitorCountData';
+  const REQUEST_TIMEOUT = 5000; // 5 seconds
 
-  const getBaseUrl = () => {
-    return "https://events.vercount.one";
-  };
 
-  // Get the API endpoint with version
-  const getApiEndpoint = (version = 2) => {
-    const baseUrl = getBaseUrl();
-    return `${baseUrl}/api/v${version}/log`;
-  };
-
-  // Generate a simple browser fingerprint to help identify legitimate requests
-  const generateBrowserToken = () => {
-    const screenInfo = `${window.screen.width}x${window.screen.height}x${window.screen.colorDepth}`;
-    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
-    const languages = navigator.languages ? navigator.languages.join(',') : navigator.language || '';
-    const canvas = document.createElement('canvas');
-    const gl = canvas.getContext('webgl');
-    const glInfo = gl ? gl.getParameter(gl.RENDERER) : '';
-    
-    // Combine various browser properties to create a simple fingerprint
-    const components = [
-      screenInfo,
-      timeZone,
-      languages,
-      navigator.userAgent,
-      glInfo,
-      new Date().getTimezoneOffset()
-    ].join('|');
-    
-    // Create a simple hash of the components
-    let hash = 0;
-    for (let i = 0; i < components.length; i++) {
-      hash = ((hash << 5) - hash) + components.charCodeAt(i);
-      hash = hash & hash; // Convert to 32bit integer
-    }
-    
-    return Math.abs(hash).toString(36);
-  };
-
-  // Helper function to extract counter data from the new API response format
+  // Extract counter data from API response
   const extractCounterData = (response) => {
-    // If response has the new format with status and data
-    if (response && response.status) {
-      if (response.status === "success" && response.data) {
-        return response.data;
-      } else if (response.status === "error" && response.data) {
-        console.warn(`API error: ${response.message}`, response);
-        return response.data; // Return the data even in case of error
-      } else if (response.status === "error") {
-        console.warn(`API error: ${response.message}`, response);
-        return { site_uv: 0, site_pv: 0, page_pv: 0 }; // Default values
-      }
+    if (response?.status === 'success' && response.data) {
+      return response.data;
     }
-    
-    // Fallback for old format or unexpected response structure
+    if (response?.status === 'error') {
+      console.warn('API error:', response.message);
+      return response.data || { site_uv: 0, site_pv: 0, page_pv: 0 };
+    }
     return response || { site_uv: 0, site_pv: 0, page_pv: 0 };
   };
 
-  visitorCounterCaller = {
-    fetch: async function (callback) {
-      const apiUrl = getApiEndpoint(2); // Use v2 endpoint
-      const fallbackApiUrl = getApiEndpoint(1); // Fallback to v1 if needed
+  // Fetch counter data from API with timeout
+  const fetchCounterData = async () => {
+    // Skip tracking for non-HTTP URLs
+    const currentUrl = window.location.href;
+    if (!currentUrl.startsWith('http')) {
+      return null;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+    
+    try {
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ url: currentUrl }),
+        signal: controller.signal
+      });
       
-      try {
-        visitorCounterDisplay.hideAll();
-        
-        // Generate browser token
-        const browserToken = generateBrowserToken();
-        
-        // Validate URL before sending
-        const currentUrl = window.location.href;
-        let validUrl = currentUrl;
-        
-        // Check if it's a file:// URL or other non-http(s) protocol
-        if (!currentUrl.startsWith('http')) {
-          console.warn("Invalid URL protocol detected. Only HTTP and HTTPS are supported.");
-          // Use a fallback URL for local files to avoid polluting the KV store
-          validUrl = "https://local.file/invalid-protocol";
-        }
-        
-        // Try to fetch with the v2 endpoint first
-        try {
-          const response = await fetch(apiUrl, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "X-Browser-Token": browserToken
-            },
-            body: JSON.stringify({ 
-              url: validUrl,
-              token: browserToken
-            }),
-          });
-          
-          // Check if the response is ok
-          if (!response.ok) {
-            throw new Error(`API responded with status: ${response.status}`);
-          }
-          
-          const responseData = await response.json();
-          const counterData = extractCounterData(responseData);
-          
-          documentReady(() => {
-            callback(counterData);
-            localStorage.setItem("visitorCountData", JSON.stringify(counterData));
-            visitorCounterDisplay.showAll();
-          });
-        } catch (v2Error) {
-          // If v2 endpoint fails, try the v1 endpoint
-          console.warn("Error with v2 API, falling back to v1:", v2Error);
-          
-          try {
-            const fallbackResponse = await fetch(fallbackApiUrl, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "X-Browser-Token": browserToken
-              },
-              body: JSON.stringify({ 
-                url: validUrl,
-                token: browserToken
-              }),
-            });
-            
-            const fallbackResponseData = await fallbackResponse.json();
-            // No need to extract data for v1 format as it's already in the right format
-            
-            documentReady(() => {
-              callback(fallbackResponseData);
-              localStorage.setItem("visitorCountData", JSON.stringify(fallbackResponseData));
-              visitorCounterDisplay.showAll();
-            });
-          } catch (corsError) {
-            // If we get a CORS error, try again without the custom header
-            console.warn("CORS error with token header, retrying without custom header:", corsError);
-            const lastFallbackResponse = await fetch(fallbackApiUrl, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json"
-              },
-              body: JSON.stringify({ 
-                url: validUrl,
-                token: browserToken // Still include token in body
-              }),
-            });
-            const lastFallbackData = await lastFallbackResponse.json();
-            
-            documentReady(() => {
-              callback(lastFallbackData);
-              localStorage.setItem("visitorCountData", JSON.stringify(lastFallbackData));
-              visitorCounterDisplay.showAll();
-            });
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching visitor count:", error);
-        
-        // Try to use cached data if available
-        const cachedData = localStorage.getItem("visitorCountData");
-        if (cachedData) {
-          try {
-            const parsedData = JSON.parse(cachedData);
-            documentReady(() => {
-              callback(parsedData);
-              visitorCounterDisplay.showAll();
-            });
-            console.log("Using cached visitor count data");
-          } catch (cacheError) {
-            console.error("Error parsing cached data:", cacheError);
-            visitorCounterDisplay.hideAll();
-          }
-        } else {
-          visitorCounterDisplay.hideAll();
-        }
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
       }
-    },
+      
+      const responseData = await response.json();
+      return extractCounterData(responseData);
+      
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') {
+        console.warn('Request timeout');
+      } else {
+        console.warn('API error:', error.message);
+      }
+      return null;
+    }
   };
 
-  visitorCounterDisplay = {
-    counterIds: ["site_pv", "page_pv", "site_uv"],
-    updateText: function (data) {
-      this.counterIds.forEach((id) => {
-        // Update busuanzi elements
-        const busuanziElement = document.getElementById("busuanzi_value_" + id);
-        if (busuanziElement) {
-          busuanziElement.textContent = data[id] || "0";
-        }
-
-        // Update vercount elements
-        const vercountElement = document.getElementById("vercount_value_" + id);
-        if (vercountElement) {
-          vercountElement.textContent = data[id] || "0";
-        }
-      });
-    },
-    hideAll: function () {
-      this.counterIds.forEach((id) => {
-        // Hide busuanzi elements
-        const busuanziContainer = document.getElementById(
-          "busuanzi_container_" + id,
-        );
-        if (busuanziContainer) {
-          busuanziContainer.style.display = "none";
-        }
-
-        // Hide vercount elements
-        const vercountContainer = document.getElementById(
-          "vercount_container_" + id,
-        );
-        if (vercountContainer) {
-          vercountContainer.style.display = "none";
-        }
-      });
-    },
-    showAll: function () {
-      this.counterIds.forEach((id) => {
-        // Show busuanzi elements
-        const busuanziContainer = document.getElementById(
-          "busuanzi_container_" + id,
-        );
-        if (busuanziContainer) {
-          busuanziContainer.style.display = "inline";
-        }
-
-        // Show vercount elements
-        const vercountContainer = document.getElementById(
-          "vercount_container_" + id,
-        );
-        if (vercountContainer) {
-          vercountContainer.style.display = "inline";
-        }
-      });
-    },
+  // Get cached data from localStorage
+  const getCachedData = () => {
+    try {
+      const cached = localStorage.getItem(CACHE_KEY);
+      return cached ? JSON.parse(cached) : null;
+    } catch (e) {
+      return null;
+    }
   };
 
-  documentReady(() => {
-    visitorCounterCaller.fetch(
-      visitorCounterDisplay.updateText.bind(visitorCounterDisplay)
-    );
-  });
+  // Save data to localStorage
+  const setCachedData = (data) => {
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+    } catch (e) {
+      // localStorage might be disabled or full
+    }
+  };
+
+  // Cache DOM elements for better performance
+  const getCachedElements = () => {
+    if (cachedElements) return cachedElements;
+    
+    const COUNTER_IDS = ['site_pv', 'page_pv', 'site_uv'];
+    cachedElements = {};
+    
+    COUNTER_IDS.forEach(id => {
+      cachedElements[`busuanzi_value_${id}`] = document.getElementById(`busuanzi_value_${id}`);
+      cachedElements[`busuanzi_container_${id}`] = document.getElementById(`busuanzi_container_${id}`);
+      cachedElements[`vercount_value_${id}`] = document.getElementById(`vercount_value_${id}`);
+      cachedElements[`vercount_container_${id}`] = document.getElementById(`vercount_container_${id}`);
+    });
+    
+    return cachedElements;
+  };
+
+  // Update counter text values
+  const updateCounters = (data) => {
+    const elements = getCachedElements();
+    const COUNTER_IDS = ['site_pv', 'page_pv', 'site_uv'];
+    
+    COUNTER_IDS.forEach(id => {
+      const value = String(data[id] || '0');
+      const busuanziEl = elements[`busuanzi_value_${id}`];
+      const vercountEl = elements[`vercount_value_${id}`];
+      
+      if (busuanziEl) busuanziEl.textContent = value;
+      if (vercountEl) vercountEl.textContent = value;
+    });
+  };
+
+  // Show all counter containers
+  const showCounters = () => {
+    const elements = getCachedElements();
+    const COUNTER_IDS = ['site_pv', 'page_pv', 'site_uv'];
+    
+    COUNTER_IDS.forEach(id => {
+      const busuanziContainer = elements[`busuanzi_container_${id}`];
+      const vercountContainer = elements[`vercount_container_${id}`];
+      
+      if (busuanziContainer) busuanziContainer.style.display = 'inline';
+      if (vercountContainer) vercountContainer.style.display = 'inline';
+    });
+  };
+
+  // Hide all counter containers
+  const hideCounters = () => {
+    const elements = getCachedElements();
+    const COUNTER_IDS = ['site_pv', 'page_pv', 'site_uv'];
+    
+    COUNTER_IDS.forEach(id => {
+      const busuanziContainer = elements[`busuanzi_container_${id}`];
+      const vercountContainer = elements[`vercount_container_${id}`];
+      
+      if (busuanziContainer) busuanziContainer.style.display = 'none';
+      if (vercountContainer) vercountContainer.style.display = 'none';
+    });
+  };
+
+  // Main initialization function
+  const initCounter = async () => {
+    hideCounters();
+    
+    // Try to fetch new data
+    const data = await fetchCounterData();
+    
+    if (data) {
+      // Use fresh data
+      updateCounters(data);
+      setCachedData(data);
+      showCounters();
+    } else {
+      // Use cached data as fallback
+      const cachedData = getCachedData();
+      if (cachedData) {
+        updateCounters(cachedData);
+        showCounters();
+      }
+      // If no cache either, containers remain hidden
+    }
+  };
+
+  // Start when DOM is ready
+  documentReady(initCounter);
 })();
