@@ -51,11 +51,11 @@ async function fetchBusuanziSiteUV(hostSanitized: string, hostOriginal: string) 
 	const data = await fetchBusuanziData(BUSUANZI_URL, headers);
 	if (data) {
 		const siteUv = data.site_uv || 0;
-		await kv.set(`uv:busuanzi:site:${hostSanitized}`, siteUv, { ex: EXPIRATION_TIME });
+		await kv.set(`uv:baseline:${hostSanitized}`, siteUv, { ex: EXPIRATION_TIME });
 		logger.debug(`UV data retrieved and stored for ${hostSanitized}`);
 		return siteUv;
 	} else {
-		await kv.set(`uv:busuanzi:site:${hostSanitized}`, 0, {
+		await kv.set(`uv:baseline:${hostSanitized}`, 0, {
 			ex: EXPIRATION_TIME,
 		});
 		logger.error(
@@ -79,11 +79,11 @@ async function fetchBusuanziSitePV(hostSanitized: string, hostOriginal: string) 
 	const data = await fetchBusuanziData(BUSUANZI_URL, headers);
 	if (data) {
 		const sitePv = data.site_pv || 0;
-		await kv.set(`pv:busuanzi:site:${hostSanitized}`, sitePv, { ex: EXPIRATION_TIME });
+		await kv.set(`pv:site:${hostSanitized}`, sitePv, { ex: EXPIRATION_TIME });
 		logger.debug(`Site PV data retrieved and stored for ${hostSanitized}`);
 		return sitePv;
 	} else {
-		await kv.set(`pv:busuanzi:site:${hostSanitized}`, 0, {
+		await kv.set(`pv:site:${hostSanitized}`, 0, {
 			ex: EXPIRATION_TIME,
 		});
 		logger.error(
@@ -121,7 +121,7 @@ async function fetchBusuanziPagePV(hostSanitized: string, pathSanitized: string,
 			dataNoSlashResult.page_pv || 0,
 			dataSlashResult.page_pv || 0
 		);
-		await kv.set(`pv:busuanzi:page:${hostSanitized}:${pathSanitized}`, pagePv, {
+		await kv.set(`pv:page:${hostSanitized}:${pathSanitized}`, pagePv, {
 			ex: EXPIRATION_TIME,
 		});
 		logger.debug(
@@ -130,7 +130,7 @@ async function fetchBusuanziPagePV(hostSanitized: string, pathSanitized: string,
 		return pagePv;
 	} else if (dataNoSlashResult || dataSlashResult) {
 		const pagePv = (dataNoSlashResult || dataSlashResult).page_pv || 0;
-		await kv.set(`pv:busuanzi:page:${hostSanitized}:${pathSanitized}`, pagePv, {
+		await kv.set(`pv:page:${hostSanitized}:${pathSanitized}`, pagePv, {
 			ex: EXPIRATION_TIME,
 		});
 		logger.debug(
@@ -138,7 +138,7 @@ async function fetchBusuanziPagePV(hostSanitized: string, pathSanitized: string,
 		);
 		return pagePv;
 	} else {
-		await kv.set(`pv:busuanzi:page:${hostSanitized}:${pathSanitized}`, 0, { ex: EXPIRATION_TIME });
+		await kv.set(`pv:page:${hostSanitized}:${pathSanitized}`, 0, { ex: EXPIRATION_TIME });
 		logger.error(
 			`Max retries exceeded for ${hostSanitized}${pathSanitized}. Defaulting Page PV values to 0.`
 		);
