@@ -47,15 +47,15 @@ export async function POST(req: NextRequest) {
 		const hostSanitized = domain.name;
 
 		// Update site PV in Redis
-		await kv.set(`pv:local:site:${hostSanitized}`, sitePv || 0);
-		await kv.expire(`pv:local:site:${hostSanitized}`, EXPIRATION_TIME); // 3 months
+		await kv.set(`pv:site:${hostSanitized}`, sitePv || 0);
+		await kv.expire(`pv:site:${hostSanitized}`, EXPIRATION_TIME); // 3 months
 
 		// Update site UV if provided
 		if (siteUv !== undefined) {
 			await updateTotalUV(hostSanitized, siteUv);
 		} else {
 			// Just ensure the UV set has proper expiration
-			await kv.expire(`uv:local:site:${hostSanitized}`, EXPIRATION_TIME); // 3 months
+			await kv.expire(`uv:site:${hostSanitized}`, EXPIRATION_TIME); // 3 months
 		}
 
 		// Update page views in Redis
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
 			const pageViewPromises = pageViews.map(
 				async (pv: { path: string; views: number }) => {
 					// Save page view count directly to Redis without creating monitored pages in PostgreSQL
-					const pageKey = `pv:local:page:${hostSanitized}:${pv.path}`;
+					const pageKey = `pv:page:${hostSanitized}:${pv.path}`;
 					await kv.set(pageKey, pv.views || 0);
 					await kv.expire(pageKey, EXPIRATION_TIME); // 3 months
 

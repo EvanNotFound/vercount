@@ -275,9 +275,9 @@ export const domainService = {
       const normalizedDomain = normalizeDomain(domainName);
       
       // Get site PV and UV data in parallel
-      const sitePvKey = `pv:local:site:${normalizedDomain}`;
-      const siteUvKey = `uv:local:site:${normalizedDomain}`;
-      const siteUvAdjustKey = `uv:adjust:site:${normalizedDomain}`;
+      const sitePvKey = `pv:site:${normalizedDomain}`;
+      const siteUvKey = `uv:site:${normalizedDomain}`;
+      const siteUvAdjustKey = `uv:baseline:${normalizedDomain}`;
       
       // Use pipeline for better performance
       const pipeline = kv.pipeline();
@@ -288,11 +288,11 @@ export const domainService = {
       // Execute the pipeline to get all values at once
       const [sitePv, siteUvSetCount, siteUvAdjust] = await pipeline.exec();
       
-      // Combine the set cardinality with the manual adjustment
+      // Combine the set cardinality with the baseline
       const siteUv = Number(siteUvSetCount || 0) + Number(siteUvAdjust || 0);
       
       // Get all page keys directly from Redis
-      const pageKeys = await kv.keys(`pv:local:page:${normalizedDomain}:*`);
+      const pageKeys = await kv.keys(`pv:page:${normalizedDomain}:*`);
       
       // If no page keys, return early with empty pageViews
       if (pageKeys.length === 0) {
@@ -315,7 +315,7 @@ export const domainService = {
       // Map the results to create pageViews data
       const pageViewsData = pageKeys.map((key, index) => {
         // Extract the path part from the key
-        const prefix = `pv:local:page:${normalizedDomain}:`;
+        const prefix = `pv:page:${normalizedDomain}:`;
         const path = key.substring(key.indexOf(prefix) + prefix.length);
         const views = Number(pageViewCounts[index] || 0);
         
@@ -361,7 +361,7 @@ export const domainService = {
       
       // Update site PV in Redis if provided
       if (sitePv !== undefined) {
-        const sitePvKey = `pv:local:site:${normalizedDomain}`;
+        const sitePvKey = `pv:site:${normalizedDomain}`;
         await kv.set(sitePvKey, sitePv);
       }
       
@@ -404,7 +404,7 @@ export const domainService = {
       
       // Store page view in Redis only
       if (pageViews !== undefined) {
-        const pageViewKey = `pv:local:page:${domain.name}:${normalizedPath}`;
+        const pageViewKey = `pv:page:${domain.name}:${normalizedPath}`;
         await kv.set(pageViewKey, pageViews);
         // Set expiration time
         await kv.expire(pageViewKey, EXPIRATION_TIME); // 3 months
@@ -441,7 +441,7 @@ export const domainService = {
       }
       
       // Update the page view in Redis
-      const pageViewKey = `pv:local:page:${normalizedDomain}:${normalizedPath}`;
+      const pageViewKey = `pv:page:${normalizedDomain}:${normalizedPath}`;
       await kv.set(pageViewKey, pageViews);
       // Set expiration time
       await kv.expire(pageViewKey, EXPIRATION_TIME); // 3 months

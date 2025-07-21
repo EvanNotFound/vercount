@@ -40,15 +40,15 @@ export async function GET(req: NextRequest) {
     
     // Fetch all keys from KV that match the pattern for page views
     const hostSanitized = domain.name;
-    const pattern = `pv:local:page:${hostSanitized}:*`;
+    const pattern = `pv:page:${hostSanitized}:*`;
     
     const keys = await kv.keys(pattern);
     
     // Extract paths from keys
     const paths = keys.map(key => {
-      // Format is pv:local:page:domain.com:/path
+      // Format is pv:page:domain.com:/path
       const parts = key.split(':');
-      return parts.slice(4).join(':'); // Join in case path contains colons
+      return parts.slice(3).join(':'); // Join in case path contains colons
     });
     
     logger.info("Paths fetched from KV", {
