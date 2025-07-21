@@ -7,7 +7,6 @@ import {
   incrementSitePV,
   recordSiteUV,
 } from "@/utils/counter";
-import { notifyBusuanziService } from "@/utils/busuanzi";
 import logger from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
 import { ipAddress } from "@vercel/functions";
@@ -174,44 +173,25 @@ export async function POST(req: NextRequest) {
     parsedUrl.pathname.replace(/\/index$/, ""),
   ];
 
-  // logger.info(`Processing request`, { host, path, clientHost });
-
-  const [siteUVBefore, sitePVBefore, pagePVBefore] = await Promise.all([
-    fetchSiteUVHistory(host, path),
-    fetchSitePVHistory(host, path),
-    fetchPagePVHistory(host, path),
-  ]);
-
-  // logger.info(`Initial data`, {
-  //   siteUVBefore,
-  //   sitePVBefore,
-  //   pagePVBefore,
-  // });
-
-  let [siteUVAfter, sitePVAfter, pagePVAfter] = await Promise.all([
+  // Update counts
+  const [siteUV, sitePV, pagePV] = await Promise.all([
     recordSiteUV(host, clientHost),
     incrementSitePV(host),
     incrementPagePV(host, path),
   ]);
 
-  siteUVAfter += siteUVBefore;
-  sitePVAfter += sitePVBefore;
-  pagePVAfter += pagePVBefore;
-
   logger.info(`Data updated`, {
     host,
     path,
-    siteUVAfter,
-    sitePVAfter,
-    pagePVAfter,
+    siteUV,
+    sitePV,
+    pagePV,
   });
 
-  notifyBusuanziService(host, path);
-
   const dataDict = {
-    site_uv: siteUVAfter,
-    site_pv: sitePVAfter,
-    page_pv: pagePVAfter,
+    site_uv: siteUV,
+    site_pv: sitePV,
+    page_pv: pagePV,
   };
   return Response.json(dataDict);
 }

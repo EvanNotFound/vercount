@@ -7,7 +7,6 @@ import {
   incrementSitePV,
   recordSiteUV,
 } from "@/utils/counter";
-import { notifyBusuanziService } from "@/utils/busuanzi";
 import logger from "@/lib/logger";
 import { NextRequest } from "next/server";
 import { ipAddress } from "@vercel/functions";
@@ -187,9 +186,6 @@ export async function POST(req: NextRequest) {
     sitePV,
     pagePV,
   });
-
-  // Fire and forget
-  notifyBusuanziService(host, path);
 
   return successResponse({
     site_uv: siteUV,

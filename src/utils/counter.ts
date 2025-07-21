@@ -68,35 +68,105 @@ export function sanitizeUrlPath(host: string, path: string): SanitizedUrl {
 }
 
 /**
- * Calculate the total UV count by combining the set cardinality with any manual adjustment
+ * Auto-migrate domain from Busuanzi to unified Vercount counters
  * @param hostSanitized The sanitized hostname
- * @returns An object containing the set count, adjustment value, and total UV count
+ * @param hostOriginal The original hostname for Busuanzi API
+ * @param pathOriginal The original path for page PV migration
  */
-export async function calculateTotalUV(hostSanitized: string): Promise<{ setCount: number; adjustment: number; total: number; busuanzi: number }> {
-  const siteKey = `uv:local:site:${hostSanitized}`;
-  const siteUVAdjustKey = `uv:adjust:site:${hostSanitized}`;
-  const busuanziSiteKey = `uv:busuanzi:site:${hostSanitized}`;
+export async function autoMigrateDomain(hostSanitized: string, hostOriginal: string, pathOriginal?: string): Promise<void> {
+  const sitePVKey = `pv:site:${hostSanitized}`;
+  const baselineKey = `uv:baseline:${hostSanitized}`;
   
-  // Execute Redis operations in parallel
-  const [siteUVSetCount, siteUVAdjust, busuanziSiteUV] = await Promise.all([
-    kv.scard(siteKey),
-    kv.get(siteUVAdjustKey),
-    kv.get(busuanziSiteKey),
+  // Check if domain already has unified keys (much faster than migration flag)
+  const [sitePVExists, baselineExists] = await Promise.all([
+    kv.exists(sitePVKey),
+    kv.exists(baselineKey)
   ]);
   
-  // Combine the set cardinality with the manual adjustment
-  const totalUV = Number(siteUVSetCount || 0) + Number(siteUVAdjust || 0);
+  if (sitePVExists || baselineExists) {
+    return; // Domain already migrated
+  }
+  
+  // Set migration lock to prevent concurrent migrations
+  const lockKey = `migration:lock:${hostSanitized}`;
+  const lockSet = await kv.set(lockKey, "1", { ex: 300, nx: true }); // 5 min lock
+  if (!lockSet) {
+    return; // Another process is migrating this domain
+  }
+  
+  try {
+    logger.debug(`Starting auto-migration for domain: ${hostSanitized}`);
+    
+    // Fetch Busuanzi data
+    const [busuanziSiteUV, busuanziSitePV, busuanziPagePV] = await Promise.all([
+      fetchBusuanziSiteUV(hostSanitized, hostOriginal),
+      fetchBusuanziSitePV(hostSanitized, hostOriginal),
+      pathOriginal ? fetchBusuanziPagePV(hostSanitized, pathOriginal, hostOriginal, pathOriginal) : Promise.resolve(0),
+    ]);
+    
+    // Initialize counters with Busuanzi baseline
+    const siteUVKey = `uv:site:${hostSanitized}`;
+    
+    const operations = [
+      kv.set(baselineKey, Number(busuanziSiteUV || 0), { ex: EXPIRATION_TIME }),
+      kv.set(sitePVKey, Number(busuanziSitePV || 0), { ex: EXPIRATION_TIME }),
+      kv.expire(siteUVKey, EXPIRATION_TIME), // Ensure UV set has expiration
+    ];
+    
+    // Initialize page PV if path provided
+    if (pathOriginal) {
+      const pathSanitized = sanitizeUrlPath(hostOriginal, pathOriginal).path;
+      const pagePVKey = `pv:page:${hostSanitized}:${pathSanitized}`;
+      operations.push(
+        kv.set(pagePVKey, Number(busuanziPagePV || 0), { ex: EXPIRATION_TIME })
+      );
+    }
+    
+    // No need to set migration flag since we check for key existence
+    
+    await Promise.all(operations);
+    
+    logger.info(`Auto-migration completed for ${hostSanitized}`, {
+      siteUV: busuanziSiteUV,
+      sitePV: busuanziSitePV,
+      pagePV: busuanziPagePV
+    });
+    
+  } catch (error) {
+    logger.error(`Auto-migration failed for ${hostSanitized}: ${error}`);
+  } finally {
+    // Release lock
+    await kv.del(lockKey);
+  }
+}
+
+/**
+ * Calculate the total UV count by combining the set cardinality with baseline
+ * @param hostSanitized The sanitized hostname
+ * @returns An object containing the set count, baseline value, and total UV count
+ */
+export async function calculateTotalUV(hostSanitized: string): Promise<{ setCount: number; baseline: number; total: number }> {
+  const siteKey = `uv:site:${hostSanitized}`;
+  const baselineKey = `uv:baseline:${hostSanitized}`;
+  
+  // Execute Redis operations in parallel
+  const [siteUVSetCount, baseline] = await Promise.all([
+    kv.scard(siteKey),
+    kv.get(baselineKey),
+  ]);
+  
+  // Combine the set cardinality with the baseline
+  const totalUV = Number(siteUVSetCount || 0) + Number(baseline || 0);
   
   return {
     setCount: Number(siteUVSetCount || 0),
-    adjustment: Number(siteUVAdjust || 0),
-    busuanzi: Number(busuanziSiteUV || 0),
+    baseline: Number(baseline || 0),
     total: totalUV
   };
 }
 
 /**
- * Get site unique visitor count from historical data
+ * Get site unique visitor count from unified counters
  * @param host The hostname
  * @param path The path
  * @returns The number of unique visitors
@@ -106,18 +176,15 @@ export async function fetchSiteUVHistory(host: string, path: string): Promise<nu
     // Sanitize the URL components
     const sanitized = sanitizeUrlPath(host, path);
     const hostSanitized = sanitized.host;
-    const pathSanitized = sanitized.path;
+    
+    // Auto-migrate if needed
+    await autoMigrateDomain(hostSanitized, host);
     
     // Calculate total UV using the utility function
-    const { setCount, adjustment, total, busuanzi } = await calculateTotalUV(hostSanitized);
+    const { total } = await calculateTotalUV(hostSanitized);
     
-    if (!setCount) {
-      logger.debug(`Site UV not found for host: https://${hostSanitized}${pathSanitized}`);
-      const siteUVData = await fetchBusuanziSiteUV(hostSanitized, host);
-      return Number(siteUVData || 0) + adjustment;
-    } 
     logger.debug(
-      `Site UV found for host: https://${hostSanitized}${pathSanitized}, site_uv: ${total}`
+      `Site UV for host: https://${hostSanitized}${sanitized.path}, site_uv: ${total}`
     );
     return total;
     
@@ -128,7 +195,7 @@ export async function fetchSiteUVHistory(host: string, path: string): Promise<nu
 }
 
 /**
- * Get site page view count from historical data
+ * Get site page view count from unified counters
  * @param host The hostname
  * @param path The path
  * @returns The number of site page views
@@ -138,27 +205,21 @@ export async function fetchSitePVHistory(host: string, path: string): Promise<nu
     // Sanitize the URL components
     const sanitized = sanitizeUrlPath(host, path);
     const hostSanitized = sanitized.host;
-    const pathSanitized = sanitized.path;
     
-    const siteKey = `pv:local:site:${hostSanitized}`;
-    const busuanziSiteKey = `pv:busuanzi:site:${hostSanitized}`;
-    const [sitePV, busuanziPV] = await Promise.all([
+    // Auto-migrate if needed
+    await autoMigrateDomain(hostSanitized, host);
+    
+    const siteKey = `pv:site:${hostSanitized}`;
+    const [sitePV] = await Promise.all([
       kv.get(siteKey),
-      kv.get(busuanziSiteKey),
       kv.expire(siteKey, EXPIRATION_TIME),
-      kv.expire(busuanziSiteKey, EXPIRATION_TIME),
     ]);
     
-    if (!sitePV) {
-      logger.debug(`Site PV not found for host: https://${hostSanitized}${pathSanitized}`);
-      const sitePVData = await fetchBusuanziSitePV(hostSanitized, host);
-      logger.debug(`Site PV data: ${sitePVData}, site_pv: ${sitePVData || 0}`);
-      return Number(sitePVData || 0);
-    } 
+    const result = Number(sitePV || 0);
     logger.debug(
-      `Site PV found for host: https://${hostSanitized}${pathSanitized}, site_pv: ${sitePV}`
+      `Site PV for host: https://${hostSanitized}${sanitized.path}, site_pv: ${result}`
     );
-    return Number(sitePV) + Number(busuanziPV || 0);
+    return result;
     
   } catch (error) {
     logger.error(`Error getting site PV data: ${error}`);
@@ -167,7 +228,7 @@ export async function fetchSitePVHistory(host: string, path: string): Promise<nu
 }
 
 /**
- * Get page view count for a specific page from historical data
+ * Get page view count for a specific page from unified counters
  * @param host The hostname
  * @param path The path
  * @returns The number of page views
@@ -179,24 +240,20 @@ export async function fetchPagePVHistory(host: string, path: string): Promise<nu
     const hostSanitized = sanitized.host;
     const pathSanitized = sanitized.path;
     
-    const pageKey = `pv:local:page:${hostSanitized}:${pathSanitized}`;
-    const busuanziPageKey = `pv:busuanzi:page:${hostSanitized}:${pathSanitized}`;
-    const [pagePV, busuanziPV] = await Promise.all([
+    // Auto-migrate if needed (include path for page PV migration)
+    await autoMigrateDomain(hostSanitized, host, path);
+    
+    const pageKey = `pv:page:${hostSanitized}:${pathSanitized}`;
+    const [pagePV] = await Promise.all([
       kv.get(pageKey),
-      kv.get(busuanziPageKey),
       kv.expire(pageKey, EXPIRATION_TIME),
-      kv.expire(busuanziPageKey, EXPIRATION_TIME),
     ]);
 
-    if (!pagePV) {
-      logger.debug(`Page PV not found for host: https://${hostSanitized}${pathSanitized}`);
-      const pagePVData = await fetchBusuanziPagePV(hostSanitized, pathSanitized, host, path);
-      return Number(pagePVData || 0);
-    }
+    const result = Number(pagePV || 0);
     logger.debug(
-      `Page PV found for host: https://${hostSanitized}${pathSanitized}, page_pv: ${pagePV}, busuanzi_pv: ${busuanziPV}`
+      `Page PV for host: https://${hostSanitized}${pathSanitized}, page_pv: ${result}`
     );
-    return Number(pagePV) + Number(busuanziPV || 0);
+    return result;
     
   } catch (error) {
     logger.error(`Error getting page PV data: ${error}`);
@@ -217,23 +274,22 @@ export async function incrementPagePV(host: string, path: string): Promise<numbe
     const hostSanitized = sanitized.host;
     const pathSanitized = sanitized.path;
     
+    // Auto-migrate if needed
+    await autoMigrateDomain(hostSanitized, host, path);
+    
     logger.debug(`Updating page PV for host: https://${hostSanitized}${pathSanitized}`);
-    const pageKey = `pv:local:page:${hostSanitized}:${pathSanitized}`;
-    const busuanziPageKey = `pv:busuanzi:page:${hostSanitized}:${pathSanitized}`;
+    const pageKey = `pv:page:${hostSanitized}:${pathSanitized}`;
 
-    const [pagePV, busuanziPV] = await Promise.all([
+    const [pagePV] = await Promise.all([
       kv.incr(pageKey),
-      kv.get(busuanziPageKey),
       kv.expire(pageKey, EXPIRATION_TIME),
-      kv.expire(busuanziPageKey, EXPIRATION_TIME),
     ]);
 
-    
     logger.debug(
-      `Page PV updated for host: https://${hostSanitized}${pathSanitized}, page_pv: ${pagePV}, busuanzi_pv: ${busuanziPV}`,
+      `Page PV updated for host: https://${hostSanitized}${pathSanitized}, page_pv: ${pagePV}`,
     );
 
-    return Number(pagePV) + Number(busuanziPV || 0);
+    return Number(pagePV);
   } catch (error) {
     logger.error(`Error updating page PV: ${error}`);
     return 0;
@@ -251,21 +307,20 @@ export async function incrementSitePV(host: string): Promise<number> {
     const sanitized = sanitizeUrlPath(host, "");
     const hostSanitized = sanitized.host;
     
+    // Auto-migrate if needed
+    await autoMigrateDomain(hostSanitized, host);
+    
     logger.debug(`Updating site PV for host: https://${hostSanitized}`);
-    const siteKey = `pv:local:site:${hostSanitized}`;
-    const busuanziSiteKey = `pv:busuanzi:site:${hostSanitized}`;
+    const siteKey = `pv:site:${hostSanitized}`;
 
-    const [sitePV, busuanziPV] = await Promise.all([
+    const [sitePV] = await Promise.all([
       kv.incr(siteKey),
-      kv.get(busuanziSiteKey),
       kv.expire(siteKey, EXPIRATION_TIME),
-      kv.expire(busuanziSiteKey, EXPIRATION_TIME),
     ]);
 
-    logger.debug(`Site PV updated for host: https://${hostSanitized}, site_pv: ${sitePV}, busuanzi_pv: ${busuanziPV}`);
+    logger.debug(`Site PV updated for host: https://${hostSanitized}, site_pv: ${sitePV}`);
 
-
-    return Number(sitePV) + Number(busuanziPV || 0);
+    return Number(sitePV);
   } catch (error) {
     logger.error(`Error updating site PV: ${error}`);
     return 0;
@@ -284,27 +339,26 @@ export async function recordSiteUV(host: string, ip: string): Promise<number> {
     const sanitized = sanitizeUrlPath(host, "");
     const hostSanitized = sanitized.host;
     
+    // Auto-migrate if needed
+    await autoMigrateDomain(hostSanitized, host);
+    
     logger.debug(`Updating site UV for host: https://${hostSanitized}`);
-    const siteKey = `uv:local:site:${hostSanitized}`;
-    const busuanziSiteKey = `uv:busuanzi:site:${hostSanitized}`;
-    const siteUVAdjustKey = `uv:adjust:site:${hostSanitized}`;
+    const siteKey = `uv:site:${hostSanitized}`;
+    const baselineKey = `uv:baseline:${hostSanitized}`;
 
-    // Add IP to the set
-    await kv.sadd(siteKey, ip);
-
-    const [resAdd, totalUVresult] = await Promise.all([
+    // Add IP to the set and calculate total
+    const [, totalUVresult] = await Promise.all([
       kv.sadd(siteKey, ip),
       calculateTotalUV(hostSanitized),
       kv.expire(siteKey, EXPIRATION_TIME),
-      kv.expire(busuanziSiteKey, EXPIRATION_TIME),
-      kv.expire(siteUVAdjustKey, EXPIRATION_TIME),
+      kv.expire(baselineKey, EXPIRATION_TIME),
     ]);
     
     // Calculate total UV using the utility function
-    const { setCount, adjustment, total } = totalUVresult;
+    const { setCount, baseline, total } = totalUVresult;
 
     logger.debug(
-      `Site UV updated for host: https://${hostSanitized}, site_uv_set: ${setCount}, site_uv_adjust: ${adjustment}, total_site_uv: ${total}`
+      `Site UV updated for host: https://${hostSanitized}, site_uv_set: ${setCount}, uv_baseline: ${baseline}, total_site_uv: ${total}`
     );
 
     return total;
@@ -315,28 +369,28 @@ export async function recordSiteUV(host: string, ip: string): Promise<number> {
 }
 
 /**
- * Update the UV adjustment value for a domain and recalculate the total UV
+ * Update the UV baseline value for a domain and recalculate the total UV
  * @param hostSanitized The sanitized hostname
  * @param newUvValue The new total UV value to set
- * @returns An object containing the updated set count, adjustment value, and total UV count
+ * @returns An object containing the updated set count, baseline value, and total UV count
  */
-export async function updateTotalUV(hostSanitized: string, newUvValue: number): Promise<{ setCount: number; adjustment: number; total: number }> {
-  const siteKey = `uv:local:site:${hostSanitized}`;
-  const siteUVAdjustKey = `uv:adjust:site:${hostSanitized}`;
+export async function updateTotalUV(hostSanitized: string, newUvValue: number): Promise<{ setCount: number; baseline: number; total: number }> {
+  const siteKey = `uv:site:${hostSanitized}`;
+  const baselineKey = `uv:baseline:${hostSanitized}`;
   
   // Get the current set cardinality
   const setCount = await kv.scard(siteKey);
   
-  // Calculate the adjustment needed to reach the desired total
-  const requiredAdjustment = Math.max(0, newUvValue - Number(setCount || 0));
+  // Calculate the baseline needed to reach the desired total
+  const requiredBaseline = Math.max(0, newUvValue - Number(setCount || 0));
   
-  // Store the adjustment in Redis
-  await kv.set(siteUVAdjustKey, requiredAdjustment);
-  await kv.expire(siteUVAdjustKey, EXPIRATION_TIME); // 3 months
+  // Store the baseline in Redis
+  await kv.set(baselineKey, requiredBaseline);
+  await kv.expire(baselineKey, EXPIRATION_TIME); // 3 months
   
   return {
     setCount: Number(setCount || 0),
-    adjustment: requiredAdjustment,
-    total: Number(setCount || 0) + requiredAdjustment
+    baseline: requiredBaseline,
+    total: Number(setCount || 0) + requiredBaseline
   };
 }
