@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { HomeIcon, ArrowLeft, RefreshCw } from "lucide-react";
+import { HomeIcon, ArrowLeft, RefreshCw, Download } from "lucide-react";
 import DashboardHeader from "@/components/dashboard/dashboard-header";
 import { safeDecodeURIComponent } from "@/utils/url";
 import { CounterTable } from "@/components/data-table/counter-table";
@@ -40,7 +40,8 @@ export default function CountersPage() {
     domains: true,
     counters: false,
     saving: false,
-    syncing: false
+    syncing: false,
+    syncingBusuanzi: false
   });
   const [monitoredPaths, setMonitoredPaths] = useState<string[]>([]);
   const [newPagePath, setNewPagePath] = useState<string>("");
@@ -278,6 +279,45 @@ export default function CountersPage() {
     }
   };
 
+  // Sync data from Busuanzi (force re-sync)
+  const syncFromBusuanzi = async () => {
+    if (!selectedDomain) return;
+    
+    try {
+      setLoading(prev => ({ ...prev, syncingBusuanzi: true }));
+      
+      const response = await fetch("/api/domains/sync-busuanzi", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          domainName: selectedDomain.name,
+        }),
+      });
+      
+      const resData = await response.json();
+      
+      if (resData.status === "success" && resData.data?.synced) {
+        toast.success("Data synced from Busuanzi successfully");
+        // Reload domain data to reflect the new values
+        await loadDomainData(selectedDomain.name);
+      } else if (resData.status === "success" && !resData.data?.synced) {
+        // Partial failure
+        toast.warning(resData.message || "Some data failed to sync from Busuanzi");
+        // Still reload to show any data that was synced
+        await loadDomainData(selectedDomain.name);
+      } else {
+        toast.error(resData.message || "Failed to sync from Busuanzi");
+      }
+    } catch (error) {
+      console.error("Error syncing from Busuanzi:", error);
+      toast.error("Failed to sync from Busuanzi. Please try again later.");
+    } finally {
+      setLoading(prev => ({ ...prev, syncingBusuanzi: false }));
+    }
+  };
+
   // Dummy function for the CounterTable component
   const handleUpdatePageViewDummy = async (path: string): Promise<void> => {
     // This function is not needed in our simplified approach
@@ -372,7 +412,23 @@ export default function CountersPage() {
 
               {/* Site-wide analytics */}
               <div>
-                <h3 className="text-sm font-medium text-muted-foreground mb-4">SITE OVERVIEW</h3>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-medium text-muted-foreground">SITE OVERVIEW</h3>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={syncFromBusuanzi}
+                    disabled={loading.syncingBusuanzi}
+                    title="Force re-sync data from Busuanzi service"
+                  >
+                    {loading.syncingBusuanzi ? (
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    ) : (
+                      <Download className="h-4 w-4 mr-2" />
+                    )}
+                    {loading.syncingBusuanzi ? "Syncing..." : "Sync from Busuanzi"}
+                  </Button>
+                </div>
                 
                 {loading.counters ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

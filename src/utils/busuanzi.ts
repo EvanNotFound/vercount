@@ -174,9 +174,92 @@ function notifyBusuanziService(hostOriginal: string, pathOriginal: string) {
 		});
 }
 
+/**
+ * Force sync site UV from Busuanzi service (overwrites existing data)
+ * @param hostSanitized The sanitized hostname
+ * @param hostOriginal The original hostname
+ * @returns Object with success status and the synced value or error message
+ */
+async function forceSyncBusuanziSiteUV(hostSanitized: string, hostOriginal: string): Promise<{ success: boolean; value?: number; error?: string }> {
+	const headers = {
+		Referer: `https://${hostOriginal}/`,
+		Cookie: "busuanziId=89D15D1F66D2494F91FB315545BF9C2A",
+	};
+
+	const data = await fetchBusuanziData(BUSUANZI_URL, headers);
+	if (data) {
+		const siteUv = data.site_uv || 0;
+		await kv.set(`uv:baseline:${hostSanitized}`, siteUv, { ex: EXPIRATION_TIME });
+		logger.info(`Force sync: UV data retrieved and stored for ${hostSanitized}: ${siteUv}`);
+		return { success: true, value: siteUv };
+	} else {
+		logger.error(`Force sync: Failed to retrieve UV data from Busuanzi for ${hostSanitized}`);
+		return { success: false, error: "Failed to retrieve data from Busuanzi service. The service may be temporarily unavailable." };
+	}
+}
+
+/**
+ * Force sync site PV from Busuanzi service (overwrites existing data)
+ * @param hostSanitized The sanitized hostname
+ * @param hostOriginal The original hostname
+ * @returns Object with success status and the synced value or error message
+ */
+async function forceSyncBusuanziSitePV(hostSanitized: string, hostOriginal: string): Promise<{ success: boolean; value?: number; error?: string }> {
+	const headers = {
+		Referer: `https://${hostOriginal}/`,
+		Cookie: "busuanziId=89D15D1F66D2494F91FB315545BF9C2A",
+	};
+
+	const data = await fetchBusuanziData(BUSUANZI_URL, headers);
+	if (data) {
+		const sitePv = data.site_pv || 0;
+		await kv.set(`pv:site:${hostSanitized}`, sitePv, { ex: EXPIRATION_TIME });
+		logger.info(`Force sync: Site PV data retrieved and stored for ${hostSanitized}: ${sitePv}`);
+		return { success: true, value: sitePv };
+	} else {
+		logger.error(`Force sync: Failed to retrieve Site PV data from Busuanzi for ${hostSanitized}`);
+		return { success: false, error: "Failed to retrieve data from Busuanzi service. The service may be temporarily unavailable." };
+	}
+}
+
+/**
+ * Force sync all data (site UV, site PV) from Busuanzi service
+ * @param hostSanitized The sanitized hostname
+ * @param hostOriginal The original hostname
+ * @returns Object with success status and synced values or error messages
+ */
+async function forceSyncAllFromBusuanzi(hostSanitized: string, hostOriginal: string): Promise<{
+	success: boolean;
+	siteUv?: { success: boolean; value?: number; error?: string };
+	sitePv?: { success: boolean; value?: number; error?: string };
+	error?: string;
+}> {
+	logger.info(`Force sync: Starting full sync from Busuanzi for ${hostSanitized}`);
+	
+	// Sync both UV and PV in parallel
+	const [uvResult, pvResult] = await Promise.all([
+		forceSyncBusuanziSiteUV(hostSanitized, hostOriginal),
+		forceSyncBusuanziSitePV(hostSanitized, hostOriginal),
+	]);
+
+	const overallSuccess = uvResult.success && pvResult.success;
+	
+	logger.info(`Force sync completed for ${hostSanitized}: UV=${uvResult.success}, PV=${pvResult.success}`);
+	
+	return {
+		success: overallSuccess,
+		siteUv: uvResult,
+		sitePv: pvResult,
+		error: overallSuccess ? undefined : "Some data failed to sync from Busuanzi",
+	};
+}
+
 export {
 	fetchBusuanziSiteUV,
 	fetchBusuanziSitePV,
 	fetchBusuanziPagePV,
 	notifyBusuanziService,
+	forceSyncBusuanziSiteUV,
+	forceSyncBusuanziSitePV,
+	forceSyncAllFromBusuanzi,
 };
