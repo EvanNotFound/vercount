@@ -42,3 +42,6 @@ next-env.d.ts
 *.log
 
 .idea/
+# Build artifacts
+src/lib/client.build.js
+src/**/*.backup

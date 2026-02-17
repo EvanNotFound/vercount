@@ -19,7 +19,7 @@ export const viewport = {
 };
 export const metadata: Metadata = {
 	title: "Vercount - 网站流量计数器",
-	metadataBase: new URL("https://vercount.one"),
+	metadataBase: new URL("https://my-site.com"),
 	description:
 		"Vercount is a straightforward, fast, and reliable website view counter. Vercount 是一个完美的不蒜子网站计数器替代方案，轻松统计页面浏览量和访客数量。",
 	keywords:
