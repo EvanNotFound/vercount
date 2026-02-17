@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "terser ./src/lib/client.js -o ./public/js/client.min.js --compress --timings --mangle --toplevel && next dev --turbopack",
-    "build": "terser ./src/lib/client.js -o ./public/js/client.min.js --compress --timings --mangle --toplevel && next build",
+    "dev": "node ./scripts/build-client.js && terser ./src/lib/client.build.js -o ./public/js/client.min.js --compress --timings --mangle --toplevel && next dev --turbopack",
+    "build": "node ./scripts/build-client.js && terser ./src/lib/client.build.js -o ./public/js/client.min.js --compress --timings --mangle --toplevel && next build",
     "start": "terser ./src/lib/client.js -o ./public/js/client.min.js --compress --timings --mangle --toplevel && next start",
     "lint": "next lint",
     "db:generate": "npx drizzle-kit generate",

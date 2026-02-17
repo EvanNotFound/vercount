@@ -15,9 +15,11 @@ export const env = createEnv({
     KV_REST_API_TOKEN: z.string(),
   },
   client: {
+    NEXT_PUBLIC_BASE_URL: z.string().url().optional(),
   },
 
   // only for client env variables
   experimental__runtimeEnv: {
+    NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
   }
 });
