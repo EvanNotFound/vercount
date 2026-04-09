@@ -1,22 +1,24 @@
-# vercount-react
+# @vercount/react
 
-`vercount-react` is the React hook package for Vercount.
+`@vercount/react` is the React hook package for Vercount.
 
 This package is maintained inside the main Vercount monorepo at `packages/react`.
 It uses the shared browser-side client logic from `packages/core`.
 
+> Renamed from `vercount-react` to `@vercount/react`.
+
 ## Install
 
 ```bash
-npm install vercount-react
-pnpm install vercount-react
-yarn add vercount-react
+npm install @vercount/react
+pnpm install @vercount/react
+yarn add @vercount/react
 ```
 
 ## Usage
 
 ```tsx
-import { useVercount } from "vercount-react";
+import { useVercount } from "@vercount/react";
 
 export default function Home() {
   const { sitePv, pagePv, siteUv } = useVercount();

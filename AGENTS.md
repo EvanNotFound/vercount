@@ -26,7 +26,7 @@
 - Counter state lives in Upstash Redis via `app/src/lib/kv.ts` and `app/src/utils/counter.ts`. Domain ownership/auth data lives in Postgres via Drizzle in `app/src/db/*`.
 - `app/src/utils/counter.ts` lazilypackages/edis counters from Busuanzi on first access. Be careful not to bypass that initialization path when changing counter logic.
 - Domain verification and analytics logic are centered in `app/src/lib/domain-service.ts` and the `/api/domains/*` routes.
-- The React hook package lives in `package/react` and is consumed by the app via the workspace package name `vercount-react`.
+- The React hook package lives in `packages/react` and is consumed by the app via the workspace package name `@vercount/react`.
 
 ## Behavioral Gotchas
 

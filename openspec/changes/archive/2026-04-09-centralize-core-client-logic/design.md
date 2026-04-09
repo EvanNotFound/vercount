@@ -8,7 +8,7 @@ Constraints:
 - The public counter API and returned fields must stay unchanged.
 - The shared core should remain browser-oriented and simple; this change is not trying to build a generic SDK abstraction layer.
 - The embedded script still needs a build output that works as plain JS in `app/public/js/client.min.js`.
-- `vercount-react` must remain independently buildable/publishable.
+- `@vercount/react` must remain independently buildable/publishable.
 
 ## Goals / Non-Goals
 
@@ -70,7 +70,7 @@ Both consumers should depend on the shared package through the monorepo workspac
 1. Create `/packages/core` with browser-side counter types and shared helpers.
 2. Move duplicated request/cookie/cache/response logic from the embed client and React hook into the shared core.
 3. Update the embedded client to use the shared core while keeping DOM update logic in place.
-4. Update `vercount-react` to use the shared core while keeping the hook API in place.
+4. Update `@vercount/react` to use the shared core while keeping the hook API in place.
 5. Update package metadata and docs to reflect the new dependency structure.
 6. Verify the app build/minified client output and React package build still work.
 

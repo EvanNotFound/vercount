@@ -1,22 +1,24 @@
-# vercount-react
+# @vercount/react
 
-`vercount-react` 是 Vercount 的 React Hook 包。
+`@vercount/react` 是 Vercount 的 React Hook 包。
 
 这个包现在维护在 Vercount 主仓库中的 `packages/react` 目录里。
-它使用 `package/core` 中共享的浏览器端计数逻辑。
+它使用 `packages/core` 中共享的浏览器端计数逻辑。
+
+> 已从 `vercount-react` 更名为 `@vercount/react`。
 
 ## 安装
 
 ```bash
-npm install vercount-react
-pnpm install vercount-react
-yarn add vercount-react
+npm install @vercount/react
+pnpm install @vercount/react
+yarn add @vercount/react
 ```
 
 ## 使用
 
 ```tsx
-import { useVercount } from "vercount-react";
+import { useVercount } from "@vercount/react";
 
 export default function Home() {
   const { sitePv, pagePv, siteUv } = useVercount();
@@ -33,5 +35,5 @@ export default function Home() {
 
 ## 源码位置
 
-- 主仓库：`https://github.com/EvanNotFound/vercount`packages/
-- 包目录：`https://github.com/EvanNotFound/vercount/tree/main/package/react`
+- 主仓库：`https://github.com/EvanNotFound/vercount`
+- 包目录：`https://github.com/EvanNotFound/vercount/tree/main/packages/react`

@@ -12,12 +12,12 @@
 
 ## 3. Bring in the React package
 
-- [x] 3.1 Add the existing `vercount-react` package under `/packages/react` with its package metadata and source.
-- [x] 3.2 Wire workspace dependency resolution so the app can import the local `vercount-react` package.
+- [x] 3.1 Add the existing React package under `/packages/react` with its package metadata and source.
+- [x] 3.2 Wire workspace dependency resolution so the app can import the local React package.
 - [x] 3.3 Verify the React package remains independently buildable/publishable in the monorepo layout.
 
 ## 4. Docs and workflow cleanup
 
-- [x] 4.1 Update repository docs and in-app references to describe `vercount-react` as maintained in this monorepo.
+- [x] 4.1 Update repository docs and in-app references to describe the React package as maintained in this monorepo.
 - [x] 4.2 Review deployment and environment assumptions affected by moving the app into `/app`.
 - [x] 4.3 Run lint/build verification for the migrated workspace layout and fix issues introduced by the move.

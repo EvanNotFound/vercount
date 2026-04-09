@@ -32,7 +32,9 @@ Vercount is designed to be faster, more stable, and secure. Easy deployment requ
 
 ## Quick Start
 
-**For React projects, use `vercount-react`. Its source is now maintained inside this monorepo under `packages/react`.**
+**For React projects, use `@vercount/react`. Its source is now maintained inside this monorepo under `packages/react`.**
+
+> `vercount-react` has been renamed to `@vercount/react`.
 
 - Monorepo: https://github.com/EvanNotFound/vercount
 - Package path: https://github.com/EvanNotFound/vercount/tree/main/packages/react

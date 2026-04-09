@@ -1,5 +1,5 @@
 {
-  "name": "vercount-react",
+  "name": "@vercount/react",
   "version": "0.1.4",
   "type": "module",
   "description": "React hook package for Vercount website traffic counters.",

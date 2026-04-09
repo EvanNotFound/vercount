@@ -96,9 +96,9 @@ Site Total Visitors <span id="vercount_value_site_uv">Loading</span>`}
               <div className="flex flex-col gap-8">
                 {/* Introduction */}
                 <div className="flex flex-col space-y-4 rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-xs">
-                  <h3 className="text-xl font-bold">vercount-react</h3>
+                  <h3 className="text-xl font-bold">@vercount/react</h3>
                   <p className="text-zinc-300">
-                    vercount-react is a React hook designed for Vercount,
+                    @vercount/react is a React hook designed for Vercount,
                     providing real-time website traffic statistics while being
                     reliable, fast, and secure.
                   </p>
@@ -116,17 +116,17 @@ Site Total Visitors <span id="vercount_value_site_uv">Loading</span>`}
                     <h3 className="text-xl font-bold">Install the package</h3>
                   </div>
                   <p className="text-zinc-400">
-                    选择你喜欢的包管理器安装 vercount-react
+                    选择你喜欢的包管理器安装 @vercount/react
                   </p>
                   <CodeBlockWithHighlight
                     code={`# With npm
-npm install vercount-react
+npm install @vercount/react
 
 # With pnpm
-pnpm install vercount-react
+pnpm install @vercount/react
 
 # With yarn
-yarn add vercount-react`}
+yarn add @vercount/react`}
                     language="bash"
                   />
                 </div>
@@ -140,10 +140,10 @@ yarn add vercount-react`}
                     <h3 className="text-xl font-bold">Use the hook</h3>
                   </div>
                   <p className="text-zinc-400">
-                    在 React 项目中使用 vercount-react 的 Hook
+                    在 React 项目中使用 @vercount/react 的 Hook
                   </p>
                   <CodeBlockWithHighlight
-                    code={`import { useVercount } from 'vercount-react'
+                    code={`import { useVercount } from '@vercount/react'
 
 export default function Home() {
   const { sitePv, pagePv, siteUv } = useVercount()
