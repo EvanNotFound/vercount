@@ -3,8 +3,11 @@ import { getServerSession } from "@/lib/auth";
 import logger from "@/lib/logger";
 import { successResponse, ApiErrors } from "@/lib/api-response";
 import kv from "@/lib/kv";
-import { updateTotalUV } from "@/utils/counter";
-import { EXPIRATION_TIME } from "@/utils/counter";
+import {
+  setPagePVCount,
+  updateTotalUV,
+  EXPIRATION_TIME,
+} from "@/utils/counter";
 import { domainService } from "@/lib/domain-service";
 import { db } from "@/db";
 import { domains } from "@/db/schema";
@@ -57,10 +60,7 @@ export async function POST(req: NextRequest) {
     if (pageViews && Array.isArray(pageViews)) {
       const pageViewPromises = pageViews.map(
         async (pv: { path: string; views: number }) => {
-          // Save page view count directly to Redis without creating monitored pages in PostgreSQL
-          const pageKey = `pv:page:${hostSanitized}:${pv.path}`;
-          await kv.set(pageKey, pv.views || 0);
-          await kv.expire(pageKey, EXPIRATION_TIME); // 3 months
+          await setPagePVCount(hostSanitized, pv.path, pv.views || 0);
 
           return { path: pv.path, views: pv.views };
         },

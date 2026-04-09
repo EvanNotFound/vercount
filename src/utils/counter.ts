@@ -2,13 +2,17 @@ import kv from "@/lib/kv";
 import logger from "@/lib/logger";
 import {
   fetchBusuanziPagePV,
+  fetchBusuanziPagePVValue,
   fetchBusuanziSitePV,
+  fetchBusuanziSitePVValue,
   fetchBusuanziSiteUVValue,
 } from "@/utils/busuanzi";
 
 // Constants
 export const EXPIRATION_TIME = 60 * 60 * 24 * 30 * 3; // 3 months in seconds
 const SITE_UV_COUNT_KEY_PREFIX = "uv:site:count:";
+const PAGE_INVENTORY_KEY_PREFIX = "pv:page:index:";
+const PAGE_SCAN_COUNT = 200;
 
 // Types
 export interface SanitizedUrl {
@@ -18,6 +22,77 @@ export interface SanitizedUrl {
 
 function getSiteUVCountKey(hostSanitized: string): string {
   return `${SITE_UV_COUNT_KEY_PREFIX}${hostSanitized}`;
+}
+
+function getPageInventoryKey(hostSanitized: string): string {
+  return `${PAGE_INVENTORY_KEY_PREFIX}${hostSanitized}`;
+}
+
+async function addStoredPageToInventory(
+  hostSanitized: string,
+  pathSanitized: string,
+): Promise<void> {
+  const inventoryKey = getPageInventoryKey(hostSanitized);
+
+  await Promise.all([
+    kv.sadd(inventoryKey, pathSanitized),
+    kv.expire(inventoryKey, EXPIRATION_TIME),
+  ]);
+}
+
+async function initializeSitePVCount(
+  hostSanitized: string,
+  hostOriginal: string,
+): Promise<number> {
+  const sitePVKey = `pv:site:${hostSanitized}`;
+  const existingValue = await kv.get(sitePVKey);
+
+  if (existingValue !== null) {
+    return Number(existingValue || 0);
+  }
+
+  const busuanziSitePV = await fetchBusuanziSitePV(hostSanitized, hostOriginal);
+  return Number(busuanziSitePV || 0);
+}
+
+async function initializePagePVCount(
+  hostSanitized: string,
+  pathSanitized: string,
+  hostOriginal: string,
+  pathOriginal: string,
+): Promise<number> {
+  const pagePVKey = `pv:page:${hostSanitized}:${pathSanitized}`;
+  const existingValue = await kv.get(pagePVKey);
+
+  if (existingValue !== null) {
+    return Number(existingValue || 0);
+  }
+
+  const busuanziPagePV = await fetchBusuanziPagePV(
+    hostSanitized,
+    pathSanitized,
+    hostOriginal,
+    pathOriginal,
+  );
+  await addStoredPageToInventory(hostSanitized, pathSanitized);
+  return Number(busuanziPagePV || 0);
+}
+
+async function scanStoredPageKeys(hostSanitized: string): Promise<string[]> {
+  let cursor = 0;
+  const pageKeys: string[] = [];
+
+  do {
+    const [nextCursor, scannedKeys] = await kv.scan(cursor, {
+      match: `pv:page:${hostSanitized}:*`,
+      count: PAGE_SCAN_COUNT,
+    });
+
+    pageKeys.push(...(scannedKeys as string[]));
+    cursor = Number(nextCursor || 0);
+  } while (cursor !== 0);
+
+  return pageKeys;
 }
 
 async function getLegacySiteUVTotal(
@@ -111,6 +186,76 @@ export function sanitizeUrlPath(host: string, path: string): SanitizedUrl {
 }
 
 /**
+ * Get known stored page paths for a host and lazily rebuild the inventory from
+ * existing page keys when the inventory is missing.
+ */
+export async function getStoredPagePaths(host: string): Promise<string[]> {
+  const sanitized = sanitizeUrlPath(host, "");
+  const hostSanitized = sanitized.host;
+  const inventoryKey = getPageInventoryKey(hostSanitized);
+
+  if (await kv.exists(inventoryKey)) {
+    const pagePaths = await kv.smembers<string[]>(inventoryKey);
+    return Array.from(new Set((pagePaths || []).map(String)));
+  }
+
+  const prefix = `pv:page:${hostSanitized}:`;
+  const pageKeys = await scanStoredPageKeys(hostSanitized);
+  const pagePaths = Array.from(
+    new Set(
+      pageKeys.map((key) => key.substring(prefix.length)).filter(Boolean),
+    ),
+  );
+
+  if (pagePaths.length > 0) {
+    await Promise.all([
+      kv.sadd(inventoryKey, ...(pagePaths as [string, ...string[]])),
+      kv.expire(inventoryKey, EXPIRATION_TIME),
+    ]);
+  }
+
+  return pagePaths;
+}
+
+/**
+ * Remove stale page paths from the per-domain inventory set.
+ */
+export async function pruneStoredPagePaths(
+  host: string,
+  paths: string[],
+): Promise<void> {
+  if (paths.length === 0) {
+    return;
+  }
+
+  const sanitized = sanitizeUrlPath(host, "");
+  await kv.srem(getPageInventoryKey(sanitized.host), ...paths);
+}
+
+/**
+ * Persist an exact page PV value and keep the page inventory in sync.
+ */
+export async function setPagePVCount(
+  host: string,
+  path: string,
+  pageViews: number,
+): Promise<number> {
+  const sanitized = sanitizeUrlPath(host, path);
+  const hostSanitized = sanitized.host;
+  const pathSanitized = sanitized.path;
+  const pageKey = `pv:page:${hostSanitized}:${pathSanitized}`;
+  const normalizedValue = Math.max(0, Number(pageViews || 0));
+
+  await Promise.all([
+    kv.set(pageKey, normalizedValue),
+    kv.expire(pageKey, EXPIRATION_TIME),
+    addStoredPageToInventory(hostSanitized, pathSanitized),
+  ]);
+
+  return normalizedValue;
+}
+
+/**
  * Get site unique visitor count from unified counters
  * @param host The hostname
  * @param path The path
@@ -145,7 +290,7 @@ export async function fetchSiteUVHistory(
 }
 
 /**
- * Get site page view count from unified counters
+ * Get site page view count without mutating Redis on reads
  * @param host The hostname
  * @param path The path
  * @returns The number of site page views
@@ -158,23 +303,13 @@ export async function fetchSitePVHistory(
     // Sanitize the URL components
     const sanitized = sanitizeUrlPath(host, path);
     const hostSanitized = sanitized.host;
-
-    // Initialize site PV from Busuanzi if needed
     const sitePVKey = `pv:site:${hostSanitized}`;
-    if (!(await kv.exists(sitePVKey))) {
-      const busuanziSitePV = await fetchBusuanziSitePV(hostSanitized, host);
-      await kv.set(sitePVKey, Number(busuanziSitePV || 0), {
-        ex: EXPIRATION_TIME,
-      });
-    }
+    const sitePV = await kv.get(sitePVKey);
+    const result =
+      sitePV === null
+        ? Number((await fetchBusuanziSitePVValue(hostSanitized, host)) || 0)
+        : Number(sitePV || 0);
 
-    const siteKey = `pv:site:${hostSanitized}`;
-    const [sitePV] = await Promise.all([
-      kv.get(siteKey),
-      kv.expire(siteKey, EXPIRATION_TIME),
-    ]);
-
-    const result = Number(sitePV || 0);
     logger.debug(
       `Site PV for host: https://${hostSanitized}${sanitized.path}, site_pv: ${result}`,
     );
@@ -186,7 +321,7 @@ export async function fetchSitePVHistory(
 }
 
 /**
- * Get page view count for a specific page from unified counters
+ * Get page view count for a specific page without mutating Redis on reads
  * @param host The hostname
  * @param path The path
  * @returns The number of page views
@@ -200,28 +335,20 @@ export async function fetchPagePVHistory(
     const sanitized = sanitizeUrlPath(host, path);
     const hostSanitized = sanitized.host;
     const pathSanitized = sanitized.path;
-
-    // Initialize page PV from Busuanzi if needed
     const pagePVKey = `pv:page:${hostSanitized}:${pathSanitized}`;
-    if (!(await kv.exists(pagePVKey))) {
-      const busuanziPagePV = await fetchBusuanziPagePV(
-        hostSanitized,
-        pathSanitized,
-        host,
-        path,
-      );
-      await kv.set(pagePVKey, Number(busuanziPagePV || 0), {
-        ex: EXPIRATION_TIME,
-      });
-    }
+    const pagePV = await kv.get(pagePVKey);
+    const result =
+      pagePV === null
+        ? Number(
+            (await fetchBusuanziPagePVValue(
+              hostSanitized,
+              pathSanitized,
+              host,
+              path,
+            )) || 0,
+          )
+        : Number(pagePV || 0);
 
-    const pageKey = `pv:page:${hostSanitized}:${pathSanitized}`;
-    const [pagePV] = await Promise.all([
-      kv.get(pageKey),
-      kv.expire(pageKey, EXPIRATION_TIME),
-    ]);
-
-    const result = Number(pagePV || 0);
     logger.debug(
       `Page PV for host: https://${hostSanitized}${pathSanitized}, page_pv: ${result}`,
     );
@@ -248,19 +375,7 @@ export async function incrementPagePV(
     const hostSanitized = sanitized.host;
     const pathSanitized = sanitized.path;
 
-    // Initialize page PV from Busuanzi if needed
-    const pagePVKey = `pv:page:${hostSanitized}:${pathSanitized}`;
-    if (!(await kv.exists(pagePVKey))) {
-      const busuanziPagePV = await fetchBusuanziPagePV(
-        hostSanitized,
-        pathSanitized,
-        host,
-        path,
-      );
-      await kv.set(pagePVKey, Number(busuanziPagePV || 0), {
-        ex: EXPIRATION_TIME,
-      });
-    }
+    await initializePagePVCount(hostSanitized, pathSanitized, host, path);
 
     logger.debug(
       `Updating page PV for host: https://${hostSanitized}${pathSanitized}`,
@@ -270,6 +385,7 @@ export async function incrementPagePV(
     const [pagePV] = await Promise.all([
       kv.incr(pageKey),
       kv.expire(pageKey, EXPIRATION_TIME),
+      addStoredPageToInventory(hostSanitized, pathSanitized),
     ]);
 
     logger.debug(
@@ -294,14 +410,7 @@ export async function incrementSitePV(host: string): Promise<number> {
     const sanitized = sanitizeUrlPath(host, "");
     const hostSanitized = sanitized.host;
 
-    // Initialize site PV from Busuanzi if needed
-    const sitePVKey = `pv:site:${hostSanitized}`;
-    if (!(await kv.exists(sitePVKey))) {
-      const busuanziSitePV = await fetchBusuanziSitePV(hostSanitized, host);
-      await kv.set(sitePVKey, Number(busuanziSitePV || 0), {
-        ex: EXPIRATION_TIME,
-      });
-    }
+    await initializeSitePVCount(hostSanitized, host);
 
     logger.debug(`Updating site PV for host: https://${hostSanitized}`);
     const siteKey = `pv:site:${hostSanitized}`;

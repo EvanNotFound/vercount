@@ -4,8 +4,10 @@ import dns from "dns";
 import { promisify } from "util";
 import {
   updateTotalUV,
-  EXPIRATION_TIME,
   fetchSiteUVHistory,
+  getStoredPagePaths,
+  pruneStoredPagePaths,
+  setPagePVCount,
 } from "@/utils/counter";
 import { db } from "@/db";
 import { domains } from "@/db/schema";
@@ -331,7 +333,7 @@ export const domainService = {
   },
 
   /**
-   * Get counters for a domain from Redis
+   * Get counters for a domain using inventory-backed page discovery
    */
   async getCountersForDomain(domainName: string) {
     try {
@@ -345,11 +347,10 @@ export const domainService = {
         fetchSiteUVHistory(normalizedDomain, ""),
       ]);
 
-      // Get all page keys directly from Redis
-      const pageKeys = await kv.keys(`pv:page:${normalizedDomain}:*`);
+      const pagePaths = await getStoredPagePaths(normalizedDomain);
 
-      // If no page keys, return early with empty pageViews
-      if (pageKeys.length === 0) {
+      // If no page records, return early with empty pageViews
+      if (pagePaths.length === 0) {
         return {
           sitePv: Number(sitePv || 0),
           siteUv: Number(siteUv || 0),
@@ -359,25 +360,34 @@ export const domainService = {
 
       // Use pipeline to batch fetch all page view counts in a single Redis operation
       const pagesPipeline = kv.pipeline();
-      pageKeys.forEach((key) => {
-        pagesPipeline.get(key);
+      pagePaths.forEach((path) => {
+        pagesPipeline.get(`pv:page:${normalizedDomain}:${path}`);
       });
 
       // Execute the pipeline to get all values at once
       const pageViewCounts = await pagesPipeline.exec();
 
-      // Map the results to create pageViews data
-      const pageViewsData = pageKeys.map((key, index) => {
-        // Extract the path part from the key
-        const prefix = `pv:page:${normalizedDomain}:`;
-        const path = key.substring(key.indexOf(prefix) + prefix.length);
-        const views = Number(pageViewCounts[index] || 0);
+      // Map the results to create pageViews data and ignore stale inventory members
+      const stalePaths: string[] = [];
+      const pageViewsData = pagePaths.flatMap((path, index) => {
+        const views = pageViewCounts[index];
 
-        return {
-          path,
-          views,
-        };
+        if (views === null) {
+          stalePaths.push(path);
+          return [];
+        }
+
+        return [
+          {
+            path,
+            views: Number(views || 0),
+          },
+        ];
       });
+
+      if (stalePaths.length > 0) {
+        await pruneStoredPagePaths(normalizedDomain, stalePaths);
+      }
 
       // Sort by view count (highest first)
       pageViewsData.sort((a, b) => b.views - a.views);
@@ -462,10 +472,7 @@ export const domainService = {
 
       // Store page view in Redis only
       if (pageViews !== undefined) {
-        const pageViewKey = `pv:page:${domain.name}:${normalizedPath}`;
-        await kv.set(pageViewKey, pageViews);
-        // Set expiration time
-        await kv.expire(pageViewKey, EXPIRATION_TIME); // 3 months
+        await setPagePVCount(domain.name, normalizedPath, pageViews);
       }
 
       return {
@@ -503,10 +510,7 @@ export const domainService = {
       }
 
       // Update the page view in Redis
-      const pageViewKey = `pv:page:${normalizedDomain}:${normalizedPath}`;
-      await kv.set(pageViewKey, pageViews);
-      // Set expiration time
-      await kv.expire(pageViewKey, EXPIRATION_TIME); // 3 months
+      await setPagePVCount(normalizedDomain, normalizedPath, pageViews);
 
       return { success: true, message: "Page view counter updated" };
     } catch (error) {

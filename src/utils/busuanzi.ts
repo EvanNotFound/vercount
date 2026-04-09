@@ -79,7 +79,7 @@ async function fetchBusuanziSiteUV(
  * @param host The hostname
  * @returns The site page view count
  */
-async function fetchBusuanziSitePV(
+async function fetchBusuanziSitePVValue(
   hostSanitized: string,
   hostOriginal: string,
 ) {
@@ -92,17 +92,24 @@ async function fetchBusuanziSitePV(
   const data = await fetchBusuanziData(BUSUANZI_URL, headers);
   if (data) {
     const sitePv = data.site_pv || 0;
-    await kv.set(`pv:site:${hostSanitized}`, sitePv, { ex: EXPIRATION_TIME });
-    logger.debug(`Site PV data retrieved and stored for ${hostSanitized}`);
+    logger.debug(`Site PV data retrieved for ${hostSanitized}`);
     return sitePv;
-  } else {
-    await kv.set(`pv:site:${hostSanitized}`, 0, {
-      ex: EXPIRATION_TIME,
-    });
-    logger.error(
-      `Max retries exceeded for ${hostSanitized}. Defaulting PV values to 0.`,
-    );
   }
+
+  logger.error(
+    `Max retries exceeded for ${hostSanitized}. Defaulting PV values to 0.`,
+  );
+  return 0;
+}
+
+async function fetchBusuanziSitePV(
+  hostSanitized: string,
+  hostOriginal: string,
+) {
+  const sitePv = await fetchBusuanziSitePVValue(hostSanitized, hostOriginal);
+  await kv.set(`pv:site:${hostSanitized}`, sitePv, { ex: EXPIRATION_TIME });
+  logger.debug(`Site PV data stored for ${hostSanitized}`);
+  return sitePv;
 }
 
 /**
@@ -111,7 +118,7 @@ async function fetchBusuanziSitePV(
  * @param path The path
  * @returns The page view count
  */
-async function fetchBusuanziPagePV(
+async function fetchBusuanziPagePVValue(
   hostSanitized: string,
   pathSanitized: string,
   hostOriginal: string,
@@ -139,31 +146,43 @@ async function fetchBusuanziPagePV(
       dataNoSlashResult.page_pv || 0,
       dataSlashResult.page_pv || 0,
     );
-    await kv.set(`pv:page:${hostSanitized}:${pathSanitized}`, pagePv, {
-      ex: EXPIRATION_TIME,
-    });
     logger.debug(
-      `Page PV data retrieved and stored for ${hostSanitized}${pathSanitized}, ${pagePv}`,
+      `Page PV data retrieved for ${hostSanitized}${pathSanitized}, ${pagePv}`,
     );
     return pagePv;
   } else if (dataNoSlashResult || dataSlashResult) {
     const pagePv = (dataNoSlashResult || dataSlashResult).page_pv || 0;
-    await kv.set(`pv:page:${hostSanitized}:${pathSanitized}`, pagePv, {
-      ex: EXPIRATION_TIME,
-    });
     logger.debug(
-      `Page PV data retrieved and stored for ${hostSanitized}${pathSanitized}, ${pagePv}`,
+      `Page PV data retrieved for ${hostSanitized}${pathSanitized}, ${pagePv}`,
     );
     return pagePv;
   } else {
-    await kv.set(`pv:page:${hostSanitized}:${pathSanitized}`, 0, {
-      ex: EXPIRATION_TIME,
-    });
     logger.error(
       `Max retries exceeded for ${hostSanitized}${pathSanitized}. Defaulting Page PV values to 0.`,
     );
     return 0;
   }
+}
+
+async function fetchBusuanziPagePV(
+  hostSanitized: string,
+  pathSanitized: string,
+  hostOriginal: string,
+  pathOriginal: string,
+) {
+  const pagePv = await fetchBusuanziPagePVValue(
+    hostSanitized,
+    pathSanitized,
+    hostOriginal,
+    pathOriginal,
+  );
+  await kv.set(`pv:page:${hostSanitized}:${pathSanitized}`, pagePv, {
+    ex: EXPIRATION_TIME,
+  });
+  logger.debug(
+    `Page PV data stored for ${hostSanitized}${pathSanitized}, ${pagePv}`,
+  );
+  return pagePv;
 }
 
 /**
@@ -199,7 +218,9 @@ function notifyBusuanziService(hostOriginal: string, pathOriginal: string) {
 export {
   fetchBusuanziSiteUVValue,
   fetchBusuanziSiteUV,
+  fetchBusuanziSitePVValue,
   fetchBusuanziSitePV,
+  fetchBusuanziPagePVValue,
   fetchBusuanziPagePV,
   notifyBusuanziService,
 };
