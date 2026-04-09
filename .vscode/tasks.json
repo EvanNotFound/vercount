@@ -1,13 +1,13 @@
 {
   "version": "2.0.0",
   "tasks": [
-    {
-      "label": "terser-compile",
-      "type": "shell",
-      "command": "pnpm --dir ./app exec terser ./src/lib/client.js -o ./public/js/client.min.js --compress --timings --mangle --toplevel --source-map",
-      "group": {
-        "kind": "build",
-        "isDefault": true
+        {
+            "label": "terser-compile",
+            "type": "shell",
+            "command": "pnpm --dir ./app exec node ./scripts/build-client.mjs",
+            "group": {
+                "kind": "build",
+                "isDefault": true
       },
       "presentation": {
         "reveal": "silent",

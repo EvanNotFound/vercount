@@ -2,7 +2,8 @@
 
 `vercount-react` is the React hook package for Vercount.
 
-This package is maintained inside the main Vercount monorepo at `package/react`.
+This package is maintained inside the main Vercount monorepo at `packages/react`.
+It uses the shared browser-side client logic from `packages/core`.
 
 ## Install
 
@@ -33,4 +34,4 @@ export default function Home() {
 ## Source
 
 - Monorepo: `https://github.com/EvanNotFound/vercount`
-- Package directory: `https://github.com/EvanNotFound/vercount/tree/main/package/react`
+- Package directory: `https://github.com/EvanNotFound/vercount/tree/main/packages/react`

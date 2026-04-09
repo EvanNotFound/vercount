@@ -45,8 +45,9 @@ next-env.d.ts
 
 # workspace packages
 /app/node_modules
-/package/*/node_modules
-/package/react/dist
+/packages/*/node_modules
+/packages/core/dist
+/packages/react/dist
 
 *.log
 

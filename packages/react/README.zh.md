@@ -2,7 +2,8 @@
 
 `vercount-react` 是 Vercount 的 React Hook 包。
 
-这个包现在维护在 Vercount 主仓库中的 `package/react` 目录里。
+这个包现在维护在 Vercount 主仓库中的 `packages/react` 目录里。
+它使用 `package/core` 中共享的浏览器端计数逻辑。
 
 ## 安装
 
@@ -32,5 +33,5 @@ export default function Home() {
 
 ## 源码位置
 
-- 主仓库：`https://github.com/EvanNotFound/vercount`
+- 主仓库：`https://github.com/EvanNotFound/vercount`packages/
 - 包目录：`https://github.com/EvanNotFound/vercount/tree/main/package/react`

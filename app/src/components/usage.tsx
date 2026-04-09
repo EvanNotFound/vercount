@@ -179,10 +179,10 @@ export default function Home() {
                   <p className="text-zinc-300 mt-2">
                     Visit{" "}
                     <a
-                      href="https://github.com/EvanNotFound/vercount/tree/main/package/react"
+                      href="https://github.com/EvanNotFound/vercount/tree/main/packages/react"
                       className="text-blue-400 hover:underline"
                     >
-                      package/react
+                      packages/react
                     </a>{" "}
                     for the source and package docs.
                   </p>

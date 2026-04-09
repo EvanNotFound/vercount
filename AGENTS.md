@@ -2,10 +2,12 @@
 
 ## Commands
 
-- Use `pnpm`; this is now a workspace repo with the Next.js app in `app/` and packages under `package/*`.
+- Use `pnpm`; this is now a workspace repo with the Next.js app in `app/` and packages under `packages/*`.
 - Root commands (`pnpm dev`, `pnpm build`, `pnpm start`, `pnpm lint`, `pnpm db:generate`, `pnpm db:migrate`) delegate to the web app in `app/`.
-- The web app still runs Terser first to regenerate `app/public/js/client.min.js` from `app/src/lib/client.js`. Edit `app/src/lib/client.js`, not the minified output.
+- The web app bundles `app/src/lib/client.js` into `app/public/js/client.min.js` during app scripts. Edit `app/src/lib/client.js`, not the built output.
+- Shared browser-side request/cache/cookie logic livespackages/kage/core`.
 - `pnpm react:build` runs the React package build in `package/react`.
+- `pnpm core:build` runs the shared core package build in `package/core`.
 - There is no test script and no checked-in `.github/workflows/*` CI config in the repo as checked in.
 - Database commands run from `app/`; `app/drizzle.config.ts` reads `env.DATABASE_URL`, so these commands require env setup.
 
@@ -22,7 +24,7 @@
 - Counter APIs are `app/src/app/api/v1/log/route.ts` and `app/src/app/api/v2/log/route.ts`.
 - `v1` is the legacy plain-JSON API; `v2` uses the standardized envelope from `app/src/lib/api-response.ts`.
 - Counter state lives in Upstash Redis via `app/src/lib/kv.ts` and `app/src/utils/counter.ts`. Domain ownership/auth data lives in Postgres via Drizzle in `app/src/db/*`.
-- `app/src/utils/counter.ts` lazily seeds Redis counters from Busuanzi on first access. Be careful not to bypass that initialization path when changing counter logic.
+- `app/src/utils/counter.ts` lazilypackages/edis counters from Busuanzi on first access. Be careful not to bypass that initialization path when changing counter logic.
 - Domain verification and analytics logic are centered in `app/src/lib/domain-service.ts` and the `/api/domains/*` routes.
 - The React hook package lives in `package/react` and is consumed by the app via the workspace package name `vercount-react`.
 

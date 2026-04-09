@@ -9,8 +9,10 @@
     "lint": "pnpm --dir app lint",
     "db:generate": "pnpm --dir app db:generate",
     "db:migrate": "pnpm --dir app db:migrate",
-    "react:build": "pnpm --dir package/react build",
-    "react:lint": "pnpm --dir package/react lint"
+    "core:build": "pnpm --dir packages/core build",
+    "core:lint": "pnpm --dir packages/core lint",
+    "react:build": "pnpm --dir packages/react build",
+    "react:lint": "pnpm --dir packages/react lint"
   },
   "pnpm": {
     "overrides": {

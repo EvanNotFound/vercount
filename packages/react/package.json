@@ -22,15 +22,20 @@
   "homepage": "https://vercount.one",
   "license": "GPL-3.0",
   "scripts": {
+    "prebuild": "pnpm --dir ../core build",
+    "predev": "pnpm --dir ../core build",
     "build": "bunchee",
     "dev": "bunchee --watch",
     "lint": "tsc --noEmit",
     "prepublishOnly": "pnpm run build"
   },
+  "dependencies": {
+    "@vercount/core": "workspace:*"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/EvanNotFound/vercount.git",
-    "directory": "package/react"
+    "directory": "packages/react"
   },
   "devDependencies": {
     "@types/react": "^19.1.8",

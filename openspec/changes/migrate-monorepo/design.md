@@ -2,7 +2,7 @@
 
 This repository currently assumes a flat Next.js app at the repo root. Root scripts build and lint that single package directly, TypeScript path aliases assume `./src/*`, and build-specific files such as `next.config.js`, `eslint.config.mjs`, `public/js/client.min.js`, and `src/lib/client.js` all live under the same root package. At the same time, the project already treats `vercount-react` as part of the product surface: docs mention it directly, `src/components/pageview.tsx` imports `useVercount` from `vercount-react`, and the website includes usage examples for the package.
 
-The migration needs to convert the repo into a pnpm workspace while keeping the current web app working and bringing in the external React package. The user wants a simple layout with the current app under `/app` and the React package under `/package/react`.
+The migration needs to convert the repo into a pnpm workspace while keeping the current web app working and bringing in the external React package. The user wants a simple layout with the current app under `/app` and the React package under `/packages/react`.
 
 Constraints:
 
@@ -17,7 +17,7 @@ Constraints:
 
 - Convert the repo into a pnpm workspace monorepo.
 - Move the current Next.js app into `/app` with working dev/build/lint scripts.
-- Add the existing `vercount-react` package under `/package/react`.
+- Add the existing `vercount-react` package under `/packages/react`.
 - Update docs, imports, and workspace references so the React package is maintained in this repo.
 - Keep the public web app and React package build/publish workflows understandable.
 
@@ -30,9 +30,9 @@ Constraints:
 
 ## Decisions
 
-### 1. Use a pnpm workspace with `/app` and `/package/react`
+### 1. Use a pnpm workspace with `/app` and `/packages/react`
 
-The repository will become a workspace-based monorepo with the Next.js app moved into `/app` and the React package added under `/package/react`.
+The repository will become a workspace-based monorepo with the Next.js app moved into `/app` and the React package added under `/packages/react`.
 
 - **Why:** This matches the desired layout while keeping the repo simple.
 - **Alternative considered:** `/apps/web` and `/packages/react`. Rejected because the user explicitly prefers `/app` without the extra `web` level.
@@ -47,7 +47,7 @@ Files that currently assume the app lives at repo root should move with the app 
 
 ### 3. Keep `vercount-react` as a standalone publishable package inside the monorepo
 
-`/package/react` should keep its own package metadata and build flow so it can still be published as `vercount-react`.
+`/packages/react` should keep its own package metadata and build flow so it can still be published as `vercount-react`.
 
 - **Why:** The package already exists independently and users consume it by package name.
 - **Alternative considered:** fold the React code directly into the app. Rejected because a publishable package and a hosted app have different lifecycle needs.
@@ -70,7 +70,7 @@ The migration should focus first on colocating the package in the repo and updat
 
 - **Path assumption breakage in build/dev scripts** → Move app-owned config and scripts with the app and verify delegated root commands.
 - **Vercel or deployment config drift after moving the app into `/app`** → Explicitly review deployment-related files and document any required project root change.
-- **Workspace import/linking issues between app and `/package/react`** → Use pnpm workspace wiring and verify the app can consume the local package.
+- **Workspace import/linking issues between app and `/packages/react`** → Use pnpm workspace wiring and verify the app can consume the local package.
 - **Docs may become inconsistent during transition** → Update all obvious references to the external `vercount-react` repo as part of the migration.
 - **Monorepo adds some tooling complexity** → Keep the workspace minimal with one app and one package only.
 
@@ -79,7 +79,7 @@ The migration should focus first on colocating the package in the repo and updat
 1. Add pnpm workspace configuration at the repo root.
 2. Move the current Next.js app and its app-owned config into `/app`.
 3. Update root scripts to delegate to `/app` for web app workflows.
-4. Bring the `vercount-react` package into `/package/react`.
+4. Bring the `vercount-react` package into `/packages/react`.
 5. Wire workspace dependencies/imports so the app can use the local React package.
 6. Update docs, references, and any deployment/config assumptions.
 7. Run lint/build verification in the new workspace layout.
@@ -88,7 +88,7 @@ Rollback:
 
 - Move the app files back to repo root.
 - Remove workspace configuration.
-- Remove or re-externalize `/package/react`.
+- Remove or re-externalize `/packages/react`.
 - Restore root scripts/config to the single-package shape.
 
 ## Open Questions

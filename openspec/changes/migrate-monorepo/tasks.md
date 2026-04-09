@@ -1,6 +1,6 @@
 ## 1. Workspace foundation
 
-- [x] 1.1 Add pnpm workspace configuration for `/app` and `/package/*`.
+- [x] 1.1 Add pnpm workspace configuration for `/app` and `/packages/*`.
 - [x] 1.2 Convert the root `package.json` into a workspace root that delegates web app workflows into `/app`.
 - [x] 1.3 Update root lockfile/config assumptions needed for the workspace layout.
 
@@ -12,7 +12,7 @@
 
 ## 3. Bring in the React package
 
-- [x] 3.1 Add the existing `vercount-react` package under `/package/react` with its package metadata and source.
+- [x] 3.1 Add the existing `vercount-react` package under `/packages/react` with its package metadata and source.
 - [x] 3.2 Wire workspace dependency resolution so the app can import the local `vercount-react` package.
 - [x] 3.3 Verify the React package remains independently buildable/publishable in the monorepo layout.
 

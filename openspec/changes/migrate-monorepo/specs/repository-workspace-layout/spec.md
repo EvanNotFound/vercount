@@ -2,13 +2,13 @@
 
 ### Requirement: Repository uses a pnpm workspace layout
 
-The repository SHALL use a pnpm workspace layout that places the current Next.js app under `/app` and workspace packages under `/package/*`.
+The repository SHALL use a pnpm workspace layout that places the current Next.js app under `/app` and workspace packages under `/packages/*`.
 
 #### Scenario: Repository layout after migration
 
 - **WHEN** the monorepo migration is complete
 - **THEN** the current Next.js application SHALL live under `/app`
-- **AND** the React package SHALL live under `/package/react`
+- **AND** the React package SHALL live under `/packages/react`
 - **AND** the repository SHALL include workspace configuration that recognizes those package locations
 
 ### Requirement: Root workflows remain usable after the app move

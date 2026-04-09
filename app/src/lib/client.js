@@ -1,218 +1,115 @@
-(function () {
-  "use strict";
+import {
+  COUNTER_IDS,
+  fetchCounterData,
+  getCachedCounterData,
+  setCachedCounterData,
+} from "@vercount/core";
 
-  const readyCallbacks = [];
-  let isDocumentReady = false;
-  let cachedElements = null;
+const readyCallbacks = [];
+let isDocumentReady = false;
+let cachedElements = null;
 
-  const documentReady = (callback) => {
-    if (isDocumentReady || document.readyState !== "loading") {
-      callback();
-    } else {
-      readyCallbacks.push(callback);
-      document.addEventListener(
-        "DOMContentLoaded",
-        () => {
-          isDocumentReady = true;
-          readyCallbacks.forEach((cb) => cb());
-        },
-        { once: true },
-      );
-    }
-  };
+const documentReady = (callback) => {
+  if (isDocumentReady || document.readyState !== "loading") {
+    callback();
+  } else {
+    readyCallbacks.push(callback);
+    document.addEventListener(
+      "DOMContentLoaded",
+      () => {
+        isDocumentReady = true;
+        readyCallbacks.forEach((cb) => cb());
+      },
+      { once: true },
+    );
+  }
+};
 
-  const API_URL = "https://events.vercount.one/api/v2/log";
-  const CACHE_KEY = "visitorCountData";
-  const REQUEST_TIMEOUT = 5000; // 5 seconds
-  const UV_COOKIE_PREFIX = "vercount_uv_";
-  const UV_COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 1 year
+const getCachedElements = () => {
+  if (cachedElements) return cachedElements;
 
-  // Extract counter data from API response
-  const extractCounterData = (response) => {
-    if (response?.status === "success" && response.data) {
-      return response.data;
-    }
-    if (response?.status === "error") {
-      console.warn("API error:", response.message);
-      return response.data || { site_uv: 0, site_pv: 0, page_pv: 0 };
-    }
-    return response || { site_uv: 0, site_pv: 0, page_pv: 0 };
-  };
+  cachedElements = {};
 
-  const getSiteUvCookieName = () => {
-    const host = window.location.host || "unknown-host";
-    return `${UV_COOKIE_PREFIX}${host.replace(/[^a-zA-Z0-9_-]/g, "_")}`;
-  };
+  COUNTER_IDS.forEach((id) => {
+    cachedElements[`busuanzi_value_${id}`] = document.getElementById(
+      `busuanzi_value_${id}`,
+    );
+    cachedElements[`busuanzi_container_${id}`] = document.getElementById(
+      `busuanzi_container_${id}`,
+    );
+    cachedElements[`vercount_value_${id}`] = document.getElementById(
+      `vercount_value_${id}`,
+    );
+    cachedElements[`vercount_container_${id}`] = document.getElementById(
+      `vercount_container_${id}`,
+    );
+  });
 
-  const getCookieValue = (name) => {
-    const cookie = document.cookie
-      .split("; ")
-      .find((entry) => entry.startsWith(`${name}=`));
+  return cachedElements;
+};
 
-    return cookie ? cookie.substring(name.length + 1) : null;
-  };
+const updateCounters = (data) => {
+  const elements = getCachedElements();
 
-  const hasSiteUvCookie = () => getCookieValue(getSiteUvCookieName()) === "1";
+  COUNTER_IDS.forEach((id) => {
+    const value = String(data[id] || "0");
+    const busuanziEl = elements[`busuanzi_value_${id}`];
+    const vercountEl = elements[`vercount_value_${id}`];
 
-  const setSiteUvCookie = () => {
-    document.cookie = `${getSiteUvCookieName()}=1; path=/; max-age=${UV_COOKIE_MAX_AGE}; samesite=lax`;
-  };
+    if (busuanziEl) busuanziEl.textContent = value;
+    if (vercountEl) vercountEl.textContent = value;
+  });
+};
 
-  // Fetch counter data from API with timeout
-  const fetchCounterData = async () => {
-    // Skip tracking for non-HTTP URLs
-    const currentUrl = window.location.href;
-    if (!currentUrl.startsWith("http")) {
-      return null;
-    }
+const showCounters = () => {
+  const elements = getCachedElements();
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
-    const isNewUv = !hasSiteUvCookie();
+  COUNTER_IDS.forEach((id) => {
+    const busuanziContainer = elements[`busuanzi_container_${id}`];
+    const vercountContainer = elements[`vercount_container_${id}`];
 
-    if (isNewUv) {
-      setSiteUvCookie();
-    }
+    if (busuanziContainer) busuanziContainer.style.display = "inline";
+    if (vercountContainer) vercountContainer.style.display = "inline";
+  });
+};
 
-    try {
-      const response = await fetch(API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ url: currentUrl, isNewUv }),
-        signal: controller.signal,
-      });
+const hideCounters = () => {
+  const elements = getCachedElements();
 
-      clearTimeout(timeoutId);
+  COUNTER_IDS.forEach((id) => {
+    const busuanziContainer = elements[`busuanzi_container_${id}`];
+    const vercountContainer = elements[`vercount_container_${id}`];
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
+    if (busuanziContainer) busuanziContainer.style.display = "none";
+    if (vercountContainer) vercountContainer.style.display = "none";
+  });
+};
 
-      const responseData = await response.json();
-      return extractCounterData(responseData);
-    } catch (error) {
-      clearTimeout(timeoutId);
-      if (error.name === "AbortError") {
-        console.warn("Request timeout");
-      } else {
-        console.warn("API error:", error.message);
-      }
-      return null;
-    }
-  };
+const handleFetchError = (error) => {
+  if (error?.name === "AbortError") {
+    console.warn("Request timeout");
+  } else {
+    console.warn("API error:", error instanceof Error ? error.message : error);
+  }
+};
 
-  // Get cached data from localStorage
-  const getCachedData = () => {
-    try {
-      const cached = localStorage.getItem(CACHE_KEY);
-      return cached ? JSON.parse(cached) : null;
-    } catch (e) {
-      return null;
-    }
-  };
+const initCounter = async () => {
+  hideCounters();
 
-  // Save data to localStorage
-  const setCachedData = (data) => {
-    try {
-      localStorage.setItem(CACHE_KEY, JSON.stringify(data));
-    } catch (e) {
-      // localStorage might be disabled or full
-    }
-  };
+  const data = await fetchCounterData({ onError: handleFetchError });
 
-  // Cache DOM elements for better performance
-  const getCachedElements = () => {
-    if (cachedElements) return cachedElements;
+  if (data) {
+    updateCounters(data);
+    setCachedCounterData(data);
+    showCounters();
+    return;
+  }
 
-    const COUNTER_IDS = ["site_pv", "page_pv", "site_uv"];
-    cachedElements = {};
+  const cachedData = getCachedCounterData();
+  if (cachedData) {
+    updateCounters(cachedData);
+    showCounters();
+  }
+};
 
-    COUNTER_IDS.forEach((id) => {
-      cachedElements[`busuanzi_value_${id}`] = document.getElementById(
-        `busuanzi_value_${id}`,
-      );
-      cachedElements[`busuanzi_container_${id}`] = document.getElementById(
-        `busuanzi_container_${id}`,
-      );
-      cachedElements[`vercount_value_${id}`] = document.getElementById(
-        `vercount_value_${id}`,
-      );
-      cachedElements[`vercount_container_${id}`] = document.getElementById(
-        `vercount_container_${id}`,
-      );
-    });
-
-    return cachedElements;
-  };
-
-  // Update counter text values
-  const updateCounters = (data) => {
-    const elements = getCachedElements();
-    const COUNTER_IDS = ["site_pv", "page_pv", "site_uv"];
-
-    COUNTER_IDS.forEach((id) => {
-      const value = String(data[id] || "0");
-      const busuanziEl = elements[`busuanzi_value_${id}`];
-      const vercountEl = elements[`vercount_value_${id}`];
-
-      if (busuanziEl) busuanziEl.textContent = value;
-      if (vercountEl) vercountEl.textContent = value;
-    });
-  };
-
-  // Show all counter containers
-  const showCounters = () => {
-    const elements = getCachedElements();
-    const COUNTER_IDS = ["site_pv", "page_pv", "site_uv"];
-
-    COUNTER_IDS.forEach((id) => {
-      const busuanziContainer = elements[`busuanzi_container_${id}`];
-      const vercountContainer = elements[`vercount_container_${id}`];
-
-      if (busuanziContainer) busuanziContainer.style.display = "inline";
-      if (vercountContainer) vercountContainer.style.display = "inline";
-    });
-  };
-
-  // Hide all counter containers
-  const hideCounters = () => {
-    const elements = getCachedElements();
-    const COUNTER_IDS = ["site_pv", "page_pv", "site_uv"];
-
-    COUNTER_IDS.forEach((id) => {
-      const busuanziContainer = elements[`busuanzi_container_${id}`];
-      const vercountContainer = elements[`vercount_container_${id}`];
-
-      if (busuanziContainer) busuanziContainer.style.display = "none";
-      if (vercountContainer) vercountContainer.style.display = "none";
-    });
-  };
-
-  // Main initialization function
-  const initCounter = async () => {
-    hideCounters();
-
-    // Try to fetch new data
-    const data = await fetchCounterData();
-
-    if (data) {
-      // Use fresh data
-      updateCounters(data);
-      setCachedData(data);
-      showCounters();
-    } else {
-      // Use cached data as fallback
-      const cachedData = getCachedData();
-      if (cachedData) {
-        updateCounters(cachedData);
-        showCounters();
-      }
-      // If no cache either, containers remain hidden
-    }
-  };
-
-  // Start when DOM is ready
-  documentReady(initCounter);
-})();
+documentReady(initCounter);

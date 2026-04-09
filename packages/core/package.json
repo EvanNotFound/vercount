@@ -1,0 +1,25 @@
+{
+  "name": "@vercount/core",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Shared browser-side counter logic for Vercount clients.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/**/*"
+  ],
+  "scripts": {
+    "build": "bunchee",
+    "lint": "tsc --noEmit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EvanNotFound/vercount.git",
+    "directory": "package/core"
+  },
+  "license": "GPL-3.0",
+  "devDependencies": {
+    "bunchee": "^5.5.1",
+    "typescript": "^5.6.3"
+  }
+}
