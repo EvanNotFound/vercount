@@ -1,4 +1,3 @@
-import { headers } from "next/headers";
 import {
   fetchPagePVHistory,
   fetchSitePVHistory,
@@ -9,62 +8,72 @@ import {
 } from "@/utils/counter";
 import logger from "@/lib/logger";
 import { NextRequest, NextResponse } from "next/server";
-import { ipAddress } from "@vercel/functions";
 import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function GET(req: NextRequest) {
   // Check rate limit first
   const rateLimitResult = await checkRateLimit(req);
   if (!rateLimitResult.success) {
-    return Response.json({ 
-      error: rateLimitResult.error || "Rate limit exceeded"
-    }, { status: 429 });
+    return Response.json(
+      {
+        error: rateLimitResult.error || "Rate limit exceeded",
+      },
+      { status: 429 },
+    );
   }
 
   const url = new URL(req.url);
-  const targetUrl = url.searchParams.get('url');
-  
+  const targetUrl = url.searchParams.get("url");
+
   if (!targetUrl) {
     logger.warn(`GET request with missing URL parameter`, { status: 400 });
     return Response.json({ error: "Missing url parameter" }, { status: 400 });
   }
-  
+
   // Validate URL format
   try {
     const parsedUrl = new URL(targetUrl);
-    
+
     // Check if it's a file:// URL or other non-http(s) protocol
-    if (!parsedUrl.protocol.startsWith('http')) {
-      logger.warn(`Invalid URL protocol: ${parsedUrl.protocol}`, { status: 400 });
-      return Response.json({ 
-        error: "Invalid URL protocol. Only HTTP and HTTPS are supported.",
-        site_uv: 0,
-        site_pv: 0,
-        page_pv: 0
-      }, { status: 200 });
+    if (!parsedUrl.protocol.startsWith("http")) {
+      logger.warn(`Invalid URL protocol: ${parsedUrl.protocol}`, {
+        status: 400,
+      });
+      return Response.json(
+        {
+          error: "Invalid URL protocol. Only HTTP and HTTPS are supported.",
+          site_uv: 0,
+          site_pv: 0,
+          page_pv: 0,
+        },
+        { status: 200 },
+      );
     }
-    
+
     // Check if host is empty
     if (!parsedUrl.host) {
       logger.warn(`Invalid URL host: empty`, { status: 400 });
-      return Response.json({ 
-        error: "Invalid URL host",
-        site_uv: 0,
-        site_pv: 0,
-        page_pv: 0
-      }, { status: 200 });
+      return Response.json(
+        {
+          error: "Invalid URL host",
+          site_uv: 0,
+          site_pv: 0,
+          page_pv: 0,
+        },
+        { status: 200 },
+      );
     }
-    
+
     const host = parsedUrl.host;
     const path = parsedUrl.pathname.replace(/\/index$/, "");
-    
+
     // Get the counts without updating them
     const [siteUV, sitePV, pagePV] = await Promise.all([
       fetchSiteUVHistory(host, path),
       fetchSitePVHistory(host, path),
       fetchPagePVHistory(host, path),
     ]);
-    
+
     logger.info(`Retrieved data for GET request`, {
       host,
       path,
@@ -72,21 +81,23 @@ export async function GET(req: NextRequest) {
       sitePV,
       pagePV,
     });
-    
+
     return Response.json({
       site_uv: siteUV,
       site_pv: sitePV,
       page_pv: pagePV,
     });
-    
   } catch (error) {
     logger.warn(`Invalid URL format: ${targetUrl}`, { status: 400, error });
-    return Response.json({ 
-      error: "Invalid URL format",
-      site_uv: 0,
-      site_pv: 0,
-      page_pv: 0
-    }, { status: 200 });
+    return Response.json(
+      {
+        error: "Invalid URL format",
+        site_uv: 0,
+        site_pv: 0,
+        page_pv: 0,
+      },
+      { status: 200 },
+    );
   }
 }
 
@@ -94,12 +105,14 @@ export async function POST(req: NextRequest) {
   // Check rate limit first
   const rateLimitResult = await checkRateLimit(req);
   if (!rateLimitResult.success) {
-    return Response.json({ 
-      error: rateLimitResult.error || "Rate limit exceeded"
-    }, { status: 429 });
+    return Response.json(
+      {
+        error: rateLimitResult.error || "Rate limit exceeded",
+      },
+      { status: 429 },
+    );
   }
 
-  const header = await headers();
   const data = await req.json();
 
   if (!data.url) {
@@ -110,59 +123,49 @@ export async function POST(req: NextRequest) {
   // Validate URL format
   try {
     const url = new URL(data.url);
-    
+
     // Check if it's a file:// URL or other non-http(s) protocol
-    if (!url.protocol.startsWith('http')) {
+    if (!url.protocol.startsWith("http")) {
       logger.warn(`Invalid URL protocol: ${url.protocol}`, { status: 400 });
-      return Response.json({ 
-        error: "Invalid URL protocol. Only HTTP and HTTPS are supported.",
-        site_uv: 0,
-        site_pv: 0,
-        page_pv: 0
-      }, { status: 200 }); // Return 200 with zeros to not break client
+      return Response.json(
+        {
+          error: "Invalid URL protocol. Only HTTP and HTTPS are supported.",
+          site_uv: 0,
+          site_pv: 0,
+          page_pv: 0,
+        },
+        { status: 200 },
+      ); // Return 200 with zeros to not break client
     }
-    
+
     // Check if host is empty
     if (!url.host) {
       logger.warn(`Invalid URL host: empty`, { status: 400 });
-      return Response.json({ 
-        error: "Invalid URL host",
-        site_uv: 0,
-        site_pv: 0,
-        page_pv: 0
-      }, { status: 200 }); // Return 200 with zeros to not break client
+      return Response.json(
+        {
+          error: "Invalid URL host",
+          site_uv: 0,
+          site_pv: 0,
+          page_pv: 0,
+        },
+        { status: 200 },
+      ); // Return 200 with zeros to not break client
     }
   } catch (error) {
     logger.warn(`Invalid URL format: ${data.url}`, { status: 400, error });
-    return Response.json({ 
-      error: "Invalid URL format",
-      site_uv: 0,
-      site_pv: 0,
-      page_pv: 0
-    }, { status: 200 }); // Return 200 with zeros to not break client
-  }
-
-  // Browser token validation removed - rate limiting provides sufficient protection
-
-  const clientHost =
-    ipAddress(req) ||
-    header.get("X-Real-IP") ||
-    header.get("X-Forwarded-For")?.split(",")[0];
-
-  // Use structured logging where possible for easier parsing
-  logger.debug("Request details", {
-    clientHost,
-    realIp: header.get("X-Real-IP"),
-    xForwardedFor: header.get("X-Forwarded-For"),
-    reqIp: ipAddress(req),
-  });
-
-  if (!clientHost) {
-    logger.warn(`POST request with missing client host`, { status: 400 });
-    return Response.json({ error: "Missing host" }, { status: 400 });
+    return Response.json(
+      {
+        error: "Invalid URL format",
+        site_uv: 0,
+        site_pv: 0,
+        page_pv: 0,
+      },
+      { status: 200 },
+    ); // Return 200 with zeros to not break client
   }
 
   const parsedUrl = new URL(data.url);
+  const isNewUv = data.isNewUv === true;
   const [host, path] = [
     parsedUrl.host,
     parsedUrl.pathname.replace(/\/index$/, ""),
@@ -170,7 +173,7 @@ export async function POST(req: NextRequest) {
 
   // Update counts
   const [siteUV, sitePV, pagePV] = await Promise.all([
-    recordSiteUV(host, clientHost),
+    recordSiteUV(host, isNewUv),
     incrementSitePV(host),
     incrementPagePV(host, path),
   ]);
@@ -178,6 +181,7 @@ export async function POST(req: NextRequest) {
   logger.info(`Data updated`, {
     host,
     path,
+    isNewUv,
     siteUV,
     sitePV,
     pagePV,

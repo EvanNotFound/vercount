@@ -6,7 +6,7 @@
     "dev": "terser ./src/lib/client.js -o ./public/js/client.min.js --compress --timings --mangle --toplevel && next dev --turbopack",
     "build": "terser ./src/lib/client.js -o ./public/js/client.min.js --compress --timings --mangle --toplevel && next build",
     "start": "terser ./src/lib/client.js -o ./public/js/client.min.js --compress --timings --mangle --toplevel && next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "db:generate": "npx drizzle-kit generate",
     "db:migrate": "npx drizzle-kit migrate"
   },
