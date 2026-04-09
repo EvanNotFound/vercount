@@ -32,7 +32,10 @@ Vercount is designed to be faster, more stable, and secure. Easy deployment requ
 
 ## Quick Start
 
-**For React projects, use [vercount-react](https://github.com/EvanNotFound/vercount-react).**
+**For React projects, use `vercount-react`. Its source is now maintained inside this monorepo under `package/react`.**
+
+- Monorepo: https://github.com/EvanNotFound/vercount
+- Package path: https://github.com/EvanNotFound/vercount/tree/main/package/react
 
 To get started, simply add this script to your site:
 
@@ -43,9 +46,9 @@ To get started, simply add this script to your site:
 After adding the script, use these tags to start counting:
 
 ```html
-Total reads: <span id="vercount_value_page_pv">Loading</span>
-Total visits: <span id="vercount_value_site_pv">Loading</span>
-Total unique visitors: <span id="vercount_value_site_uv">Loading</span>
+Total reads: <span id="vercount_value_page_pv">Loading</span> Total visits:
+<span id="vercount_value_site_pv">Loading</span> Total unique visitors:
+<span id="vercount_value_site_uv">Loading</span>
 ```
 
 ## Counting Method
@@ -62,6 +65,7 @@ Please note that this service is entirely funded by me personally, and Vercel ch
 If you have special requirements to modify counts, please contact us through [evannotfound.com/contact](https://evannotfound.com/contact). We will evaluate your request based on specific circumstances.
 
 We have implemented multiple layers of security measures to detect and block automated script access, including but not limited to:
+
 - User agent detection
 - IP blocking
 - Browser fingerprinting
@@ -70,3 +74,8 @@ We have implemented multiple layers of security measures to detect and block aut
 ## Self-Hosting Guide
 
 Coming soon.
+
+## Development and Deployment Notes
+
+- The website app now lives in `app/`
+- If you deploy this repository on Vercel, set the Project Root Directory to `app`

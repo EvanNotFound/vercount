@@ -1,0 +1,47 @@
+{
+  "name": "vercount-react",
+  "version": "0.1.4",
+  "type": "module",
+  "description": "React hook package for Vercount website traffic counters.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/**/*"
+  ],
+  "keywords": [
+    "react",
+    "vercount",
+    "counter",
+    "website"
+  ],
+  "author": {
+    "name": "Evan Luo",
+    "email": "contact@ohevan.com",
+    "url": "https://evannotfound.com"
+  },
+  "homepage": "https://vercount.one",
+  "license": "GPL-3.0",
+  "scripts": {
+    "build": "bunchee",
+    "dev": "bunchee --watch",
+    "lint": "tsc --noEmit",
+    "prepublishOnly": "pnpm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EvanNotFound/vercount.git",
+    "directory": "package/react"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "bunchee": "^5.5.1",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "typescript": "^5.6.3"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  }
+}

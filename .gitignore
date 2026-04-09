@@ -11,10 +11,13 @@
 
 # next.js
 /.next/
+/app/.next/
 /out/
+/app/out/
 
 # production
 /build
+/app/build
 
 # misc
 .DS_Store
@@ -38,6 +41,12 @@ app.log
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+/app/next-env.d.ts
+
+# workspace packages
+/app/node_modules
+/package/*/node_modules
+/package/react/dist
 
 *.log
 
