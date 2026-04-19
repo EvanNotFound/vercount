@@ -79,5 +79,5 @@ Coming soon.
 
 ## Development and Deployment Notes
 
-- The website app now lives in `app/`
-- If you deploy this repository on Vercel, set the Project Root Directory to `app`
+- The website app now lives in `apps/web/`
+- If you deploy this repository on Vercel, set the Project Root Directory to `apps/web`

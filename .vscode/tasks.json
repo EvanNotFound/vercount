@@ -4,7 +4,7 @@
         {
             "label": "terser-compile",
             "type": "shell",
-            "command": "pnpm --dir ./app exec node ./scripts/build-client.mjs",
+            "command": "pnpm --dir ./apps/web exec node ./scripts/build-client.mjs",
             "group": {
                 "kind": "build",
                 "isDefault": true

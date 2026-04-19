@@ -21,9 +21,9 @@
       "skipFiles": ["<node_internals>/**"],
       "program": "${workspaceFolder}/node_modules/next/dist/bin/next",
       "args": ["dev"],
-      "cwd": "${workspaceFolder}/app",
+      "cwd": "${workspaceFolder}/apps/web",
       "console": "integratedTerminal",
-      "outFiles": ["${workspaceFolder}/app/.next/server/**/*.js"]
+      "outFiles": ["${workspaceFolder}/apps/web/.next/server/**/*.js"]
     },
     {
       "name": "Next.js: debug client-side",
@@ -51,8 +51,8 @@
       "type": "node",
       "request": "launch",
       "skipFiles": ["<node_internals>/**"],
-      "program": "${workspaceFolder}/app/src/lib/client.js",
-      "outFiles": ["${workspaceFolder}/app/public/js/client.min.js"],
+      "program": "${workspaceFolder}/apps/web/src/lib/client.js",
+      "outFiles": ["${workspaceFolder}/apps/web/public/js/client.min.js"],
       "sourceMaps": true,
       "preLaunchTask": "terser-compile"
     }

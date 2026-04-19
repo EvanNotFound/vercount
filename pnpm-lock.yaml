@@ -12,7 +12,7 @@ importers:
 
   .: {}
 
-  app:
+  apps/web:
     dependencies:
       '@icons-pack/react-simple-icons':
         specifier: ^12.1.0
@@ -76,10 +76,10 @@ importers:
         version: 2.2.13
       '@vercount/core':
         specifier: workspace:*
-        version: link:../packages/core
+        version: link:../../packages/core
       '@vercount/react':
         specifier: workspace:*
-        version: link:../packages/react
+        version: link:../../packages/react
       better-auth:
         specifier: ^1.2.12
         version: 1.6.1(@opentelemetry/api@1.9.1)(drizzle-kit@0.31.10)(drizzle-orm@0.44.7(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(@upstash/redis@1.37.0)(kysely@0.28.15)(pg@8.20.0))(next@15.6.0-canary.58(@babel/core@7.29.0)(@opentelemetry/api@1.9.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(pg@8.20.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
