@@ -36,7 +36,7 @@ async function fetchBusuanziData(
     const dataDict = JSON.parse(
       dataStr.substring(34, dataStr.length - 13),
     ) as BusuanziData;
-    logger.debug(dataDict);
+    logger.debug("Busuanzi data retrieved", dataDict);
     return dataDict;
   } catch (error) {
     logger.debug("Busuanzi request failed", error);
