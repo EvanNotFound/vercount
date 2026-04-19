@@ -1,9 +1,7 @@
 import kv from "@/lib/kv";
 import logger from "@/lib/logger";
 import {
-  fetchBusuanziPagePV,
   fetchBusuanziPagePVValue,
-  fetchBusuanziSitePV,
   fetchBusuanziSitePVValue,
   fetchBusuanziSiteUVValue,
 } from "@/utils/busuanzi";
@@ -40,42 +38,56 @@ async function addStoredPageToInventory(
   ]);
 }
 
-async function initializeSitePVCount(
-  hostSanitized: string,
-  hostOriginal: string,
+async function initializeCounterValue(
+  counterKey: string,
+  resolveInitialValue: () => Promise<number>,
+  afterInitialize?: () => Promise<void>,
 ): Promise<number> {
-  const sitePVKey = `pv:site:${hostSanitized}`;
-  const existingValue = await kv.get(sitePVKey);
+  const existingValue = await kv.get(counterKey);
 
   if (existingValue !== null) {
     return Number(existingValue || 0);
   }
 
-  const busuanziSitePV = await fetchBusuanziSitePV(hostSanitized, hostOriginal);
-  return Number(busuanziSitePV || 0);
+  const initialValue = Math.max(0, Number((await resolveInitialValue()) || 0));
+  const operations: Promise<unknown>[] = [
+    kv.set(counterKey, initialValue, { ex: EXPIRATION_TIME }),
+  ];
+
+  if (afterInitialize) {
+    operations.push(afterInitialize());
+  }
+
+  await Promise.all(operations);
+  return initialValue;
+}
+
+async function initializeSitePVCount(
+  hostSanitized: string,
+  hostOriginal: string,
+): Promise<number> {
+  return initializeCounterValue(`pv:site:${hostSanitized}`, async () =>
+    Number((await fetchBusuanziSitePVValue(hostSanitized, hostOriginal)) || 0),
+  );
 }
 
 async function initializePagePVCount(
   hostSanitized: string,
   pathSanitized: string,
   hostOriginal: string,
-  pathOriginal: string,
 ): Promise<number> {
-  const pagePVKey = `pv:page:${hostSanitized}:${pathSanitized}`;
-  const existingValue = await kv.get(pagePVKey);
-
-  if (existingValue !== null) {
-    return Number(existingValue || 0);
-  }
-
-  const busuanziPagePV = await fetchBusuanziPagePV(
-    hostSanitized,
-    pathSanitized,
-    hostOriginal,
-    pathOriginal,
+  return initializeCounterValue(
+    `pv:page:${hostSanitized}:${pathSanitized}`,
+    async () =>
+      Number(
+        (await fetchBusuanziPagePVValue(
+          hostSanitized,
+          pathSanitized,
+          hostOriginal,
+        )) || 0,
+      ),
+    async () => addStoredPageToInventory(hostSanitized, pathSanitized),
   );
-  await addStoredPageToInventory(hostSanitized, pathSanitized);
-  return Number(busuanziPagePV || 0);
 }
 
 async function scanStoredPageKeys(hostSanitized: string): Promise<string[]> {
@@ -117,20 +129,16 @@ async function initializeSiteUVCount(
   hostSanitized: string,
   hostOriginal: string,
 ): Promise<number> {
-  const siteUVKey = getSiteUVCountKey(hostSanitized);
-  const existingValue = await kv.get(siteUVKey);
-
-  if (existingValue !== null) {
-    return Number(existingValue || 0);
-  }
-
-  const legacyTotal = await getLegacySiteUVTotal(hostSanitized);
-  const initialValue =
-    legacyTotal ??
-    Number((await fetchBusuanziSiteUVValue(hostSanitized, hostOriginal)) || 0);
-
-  await kv.set(siteUVKey, initialValue, { ex: EXPIRATION_TIME });
-  return initialValue;
+  return initializeCounterValue(
+    getSiteUVCountKey(hostSanitized),
+    async () => {
+      const legacyTotal = await getLegacySiteUVTotal(hostSanitized);
+      return (
+        legacyTotal ??
+        Number((await fetchBusuanziSiteUVValue(hostSanitized, hostOriginal)) || 0)
+      );
+    },
+  );
 }
 
 /**
@@ -290,7 +298,7 @@ export async function fetchSiteUVHistory(
 }
 
 /**
- * Get site page view count without mutating Redis on reads
+ * Get site page view count, initializing a local value on first touch.
  * @param host The hostname
  * @param path The path
  * @returns The number of site page views
@@ -303,12 +311,7 @@ export async function fetchSitePVHistory(
     // Sanitize the URL components
     const sanitized = sanitizeUrlPath(host, path);
     const hostSanitized = sanitized.host;
-    const sitePVKey = `pv:site:${hostSanitized}`;
-    const sitePV = await kv.get(sitePVKey);
-    const result =
-      sitePV === null
-        ? Number((await fetchBusuanziSitePVValue(hostSanitized, host)) || 0)
-        : Number(sitePV || 0);
+    const result = await initializeSitePVCount(hostSanitized, host);
 
     logger.debug(
       `Site PV for host: https://${hostSanitized}${sanitized.path}, site_pv: ${result}`,
@@ -321,7 +324,7 @@ export async function fetchSitePVHistory(
 }
 
 /**
- * Get page view count for a specific page without mutating Redis on reads
+ * Get page view count for a specific page, initializing a local value on first touch.
  * @param host The hostname
  * @param path The path
  * @returns The number of page views
@@ -335,19 +338,11 @@ export async function fetchPagePVHistory(
     const sanitized = sanitizeUrlPath(host, path);
     const hostSanitized = sanitized.host;
     const pathSanitized = sanitized.path;
-    const pagePVKey = `pv:page:${hostSanitized}:${pathSanitized}`;
-    const pagePV = await kv.get(pagePVKey);
-    const result =
-      pagePV === null
-        ? Number(
-            (await fetchBusuanziPagePVValue(
-              hostSanitized,
-              pathSanitized,
-              host,
-              path,
-            )) || 0,
-          )
-        : Number(pagePV || 0);
+    const result = await initializePagePVCount(
+      hostSanitized,
+      pathSanitized,
+      host,
+    );
 
     logger.debug(
       `Page PV for host: https://${hostSanitized}${pathSanitized}, page_pv: ${result}`,
@@ -375,7 +370,7 @@ export async function incrementPagePV(
     const hostSanitized = sanitized.host;
     const pathSanitized = sanitized.path;
 
-    await initializePagePVCount(hostSanitized, pathSanitized, host, path);
+    await initializePagePVCount(hostSanitized, pathSanitized, host);
 
     logger.debug(
       `Updating page PV for host: https://${hostSanitized}${pathSanitized}`,
@@ -480,8 +475,7 @@ export async function updateTotalUV(
   const siteUVKey = getSiteUVCountKey(hostSanitized);
   const normalizedValue = Math.max(0, Number(newUvValue || 0));
 
-  await kv.set(siteUVKey, normalizedValue);
-  await kv.expire(siteUVKey, EXPIRATION_TIME);
+  await kv.set(siteUVKey, normalizedValue, { ex: EXPIRATION_TIME });
 
   return normalizedValue;
 }

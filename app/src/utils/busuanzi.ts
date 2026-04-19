@@ -1,38 +1,47 @@
-import kv from "@/lib/kv";
 import logger from "@/lib/logger";
-import { EXPIRATION_TIME } from "@/utils/counter";
 
-const MAX_RETRIES = 3;
+const BUSUANZI_TIMEOUT_MS = 500;
 const BUSUANZI_URL =
   "https://busuanzi.ibruce.info/busuanzi?jsonpCallback=BusuanziCallback_777487655111";
 
+type BusuanziData = {
+  site_uv?: number;
+  site_pv?: number;
+  page_pv?: number;
+};
+
 /**
- * Fetches analytics data from Busuanzi service with retry logic
+ * Fetches analytics data from Busuanzi service once with a short timeout.
  * @param url The Busuanzi service URL
  * @param headers Request headers including referer
  * @returns The parsed analytics data or null if failed
  */
-async function fetchBusuanziData(url: string, headers: any) {
-  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-    try {
-      const response = await fetch(url, {
-        method: "GET",
-        headers,
-      });
-      if (response.ok) {
-        const dataStr = await response.text();
-        const dataDict = JSON.parse(dataStr.substring(34, dataStr.length - 13));
-        logger.debug(dataDict);
-        return dataDict;
-      } else {
-        logger.debug(`Non-200 response: ${response.status}`);
-      }
-    } catch (e) {
-      logger.error(`Attempt ${attempt + 1} failed: ${e}`);
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Sleep for 1 second
+async function fetchBusuanziData(
+  url: string,
+  headers: Record<string, string>,
+): Promise<BusuanziData | null> {
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers,
+      signal: AbortSignal.timeout(BUSUANZI_TIMEOUT_MS),
+    });
+
+    if (!response.ok) {
+      logger.debug(`Busuanzi response status: ${response.status}`);
+      return null;
     }
+
+    const dataStr = await response.text();
+    const dataDict = JSON.parse(
+      dataStr.substring(34, dataStr.length - 13),
+    ) as BusuanziData;
+    logger.debug(dataDict);
+    return dataDict;
+  } catch (error) {
+    logger.debug("Busuanzi request failed", error);
+    return null;
   }
-  return null;
 }
 
 /**
@@ -58,20 +67,7 @@ async function fetchBusuanziSiteUVValue(
     return siteUv;
   }
 
-  logger.error(
-    `Max retries exceeded for ${hostSanitized}. Defaulting UV values to 0.`,
-  );
   return 0;
-}
-
-async function fetchBusuanziSiteUV(
-  hostSanitized: string,
-  hostOriginal: string,
-) {
-  const siteUv = await fetchBusuanziSiteUVValue(hostSanitized, hostOriginal);
-  await kv.set(`uv:baseline:${hostSanitized}`, siteUv, { ex: EXPIRATION_TIME });
-  logger.debug(`UV data stored for ${hostSanitized}`);
-  return siteUv;
 }
 
 /**
@@ -96,20 +92,7 @@ async function fetchBusuanziSitePVValue(
     return sitePv;
   }
 
-  logger.error(
-    `Max retries exceeded for ${hostSanitized}. Defaulting PV values to 0.`,
-  );
   return 0;
-}
-
-async function fetchBusuanziSitePV(
-  hostSanitized: string,
-  hostOriginal: string,
-) {
-  const sitePv = await fetchBusuanziSitePVValue(hostSanitized, hostOriginal);
-  await kv.set(`pv:site:${hostSanitized}`, sitePv, { ex: EXPIRATION_TIME });
-  logger.debug(`Site PV data stored for ${hostSanitized}`);
-  return sitePv;
 }
 
 /**
@@ -122,67 +105,23 @@ async function fetchBusuanziPagePVValue(
   hostSanitized: string,
   pathSanitized: string,
   hostOriginal: string,
-  pathOriginal: string,
 ) {
   // Note: host and path are already sanitized by the caller
   const headers = {
-    Referer: `https://${hostOriginal}${pathOriginal}`,
+    Referer: `https://${hostOriginal}${pathSanitized}`,
     Cookie: "busuanziId=89D15D1F66D2494F91FB315545BF9C2A",
   };
 
-  const headersWithSlash = {
-    ...headers,
-    Referer: `${headers["Referer"]}/`,
-  };
-
-  // Make both API calls in parallel
-  const [dataNoSlashResult, dataSlashResult] = await Promise.all([
-    fetchBusuanziData(BUSUANZI_URL, headers),
-    fetchBusuanziData(BUSUANZI_URL, headersWithSlash),
-  ]);
-
-  if (dataNoSlashResult && dataSlashResult) {
-    const pagePv = Math.max(
-      dataNoSlashResult.page_pv || 0,
-      dataSlashResult.page_pv || 0,
-    );
+  const data = await fetchBusuanziData(BUSUANZI_URL, headers);
+  if (data) {
+    const pagePv = data.page_pv || 0;
     logger.debug(
       `Page PV data retrieved for ${hostSanitized}${pathSanitized}, ${pagePv}`,
     );
     return pagePv;
-  } else if (dataNoSlashResult || dataSlashResult) {
-    const pagePv = (dataNoSlashResult || dataSlashResult).page_pv || 0;
-    logger.debug(
-      `Page PV data retrieved for ${hostSanitized}${pathSanitized}, ${pagePv}`,
-    );
-    return pagePv;
-  } else {
-    logger.error(
-      `Max retries exceeded for ${hostSanitized}${pathSanitized}. Defaulting Page PV values to 0.`,
-    );
-    return 0;
   }
-}
 
-async function fetchBusuanziPagePV(
-  hostSanitized: string,
-  pathSanitized: string,
-  hostOriginal: string,
-  pathOriginal: string,
-) {
-  const pagePv = await fetchBusuanziPagePVValue(
-    hostSanitized,
-    pathSanitized,
-    hostOriginal,
-    pathOriginal,
-  );
-  await kv.set(`pv:page:${hostSanitized}:${pathSanitized}`, pagePv, {
-    ex: EXPIRATION_TIME,
-  });
-  logger.debug(
-    `Page PV data stored for ${hostSanitized}${pathSanitized}, ${pagePv}`,
-  );
-  return pagePv;
+  return 0;
 }
 
 /**
@@ -217,10 +156,7 @@ function notifyBusuanziService(hostOriginal: string, pathOriginal: string) {
 
 export {
   fetchBusuanziSiteUVValue,
-  fetchBusuanziSiteUV,
   fetchBusuanziSitePVValue,
-  fetchBusuanziSitePV,
   fetchBusuanziPagePVValue,
-  fetchBusuanziPagePV,
   notifyBusuanziService,
 };

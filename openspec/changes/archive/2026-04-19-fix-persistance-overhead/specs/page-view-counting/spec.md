@@ -1,80 +1,38 @@
-## Purpose
-
-Define the public page view counting behavior for exact site/page PV writes, read-only PV retrieval, discoverable stored page records for analytics, and manual PV editing.
-
-## Requirements
-
-### Requirement: Public PV writes remain exact
-
-The system SHALL continue to store exact site PV and exact page PV for tracked requests, and public counter APIs SHALL continue to return the same `site_pv` and `page_pv` fields.
-
-#### Scenario: Tracked page request updates exact PV values
-
-- **WHEN** a valid public counter write request is received for a host and page path
-- **THEN** the system SHALL increment that host's stored site PV by one
-- **AND** the system SHALL increment that host/path's stored page PV by one
-- **AND** the response SHALL include the updated `site_pv` and `page_pv` values
+## MODIFIED Requirements
 
 ### Requirement: Read-only PV retrieval does not mutate persisted PV records
 
 Read-only PV retrieval SHALL return the current visible site PV and page PV values without extending retention for existing PV records. When a requested PV record is missing locally, the system SHALL resolve that missing counter through a one-time migration initialization flow that makes Redis authoritative for subsequent requests.
 
 #### Scenario: Read-only request for an existing PV record
-
 - **WHEN** a read-only PV request targets a host or page that already has a stored PV record
 - **THEN** the system SHALL return the stored PV value
 - **AND** the system SHALL NOT create a new PV record
 - **AND** the system SHALL NOT extend retention for that stored PV record
 
 #### Scenario: First read-only request for a missing PV record with fallback data
-
 - **WHEN** a read-only PV request targets a host or page that does not have a stored PV record and a fallback PV value is available
 - **THEN** the system SHALL attempt the fallback import at most once for that missing counter
 - **AND** the system SHALL persist the resolved PV value locally before returning it
 - **AND** subsequent requests for that same counter SHALL use the persisted local value without consulting Busuanzi again
 
 #### Scenario: First read-only request for a missing PV record without fallback data
-
 - **WHEN** a read-only PV request targets a host or page that does not have a stored PV record and no fallback PV value can be imported
 - **THEN** the system SHALL persist a local zero value for that missing counter
 - **AND** subsequent requests for that same counter SHALL return the local value without retrying Busuanzi
+
+## ADDED Requirements
 
 ### Requirement: PV migration fallback stays best-effort
 
 The system SHALL treat Busuanzi as a best-effort migration source for missing PV counters and SHALL NOT let fallback behavior materially delay normal public counter requests.
 
 #### Scenario: Missing PV counter triggers migration import
-
 - **WHEN** a public counter read or write touches a site PV or page PV counter that has not been initialized locally yet
 - **THEN** the system SHALL make at most one Busuanzi request for that counter's migration attempt
 - **AND** the system SHALL NOT retry failed Busuanzi requests in the hot path
 
 #### Scenario: Page PV migration uses a canonical fallback request
-
 - **WHEN** the system attempts to import a missing page PV counter from Busuanzi
 - **THEN** the system SHALL use one canonical fallback request shape for that page
 - **AND** the system SHALL NOT issue multiple Busuanzi requests for slash and non-slash variants of the same page during that migration attempt
-
-### Requirement: Known page PV records remain discoverable in domain analytics
-
-The system SHALL keep locally stored page PV records discoverable for a domain's analytics view without depending on whole-keyspace pattern matching.
-
-#### Scenario: New tracked page becomes discoverable
-
-- **WHEN** the system creates or updates a stored page PV record for a host/path
-- **THEN** that page SHALL be discoverable in subsequent domain analytics page listings for that host
-
-#### Scenario: Existing stored page records remain discoverable after cleanup rollout
-
-- **WHEN** domain analytics loads a domain that already has stored page PV records from before the cleanup
-- **THEN** the system SHALL rebuild page discoverability for those existing records without changing their stored PV counts
-
-### Requirement: Manual PV updates remain discoverable
-
-When an authenticated user saves page PV values for a verified domain, those page records SHALL remain discoverable in subsequent domain analytics reads.
-
-#### Scenario: User saves page PV values in analytics
-
-- **WHEN** an authenticated user saves one or more page PV values for a verified domain
-- **THEN** the system SHALL persist those exact page PV values
-- **AND** those pages SHALL appear in subsequent domain analytics page listings for that domain
