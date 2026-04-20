@@ -1,0 +1,12 @@
+.git
+.github
+.opencode
+openspec
+node_modules
+apps/web/.next
+apps/web/node_modules
+apps/api/.env
+packages/*/node_modules
+packages/core/dist
+packages/react/dist
+*.log

@@ -5,11 +5,12 @@
 - Use `pnpm`; this is now a workspace repo with the Next.js app in `apps/web/` and packages under `packages/*`.
 - Root commands (`pnpm dev`, `pnpm build`, `pnpm start`, `pnpm lint`, `pnpm db:generate`, `pnpm db:migrate`) delegate to the web app in `apps/web/`.
 - Use `pnpm api:dev` and `pnpm api:build` for the Go public events service in `apps/api/`.
+- Use `pnpm api:docker:build`, `pnpm api:compose`, and `pnpm api:compose:local` for the checked-in API container workflows. `compose.yaml` is the production-like GHCR path and `compose-local.yaml` is the local development path.
 - The web app bundles `apps/web/src/lib/client.js` into `apps/web/public/js/client.min.js` during app scripts. Edit `apps/web/src/lib/client.js`, not the built output.
 - Shared browser-side request/cache/cookie logic lives in `packages/core`.
 - `pnpm react:build` runs the React package build in `packages/react`.
 - `pnpm core:build` runs the shared core package build in `packages/core`.
-- There is no test script and no checked-in `.github/workflows/*` CI config in the repo as checked in.
+- The repo includes a checked-in GitHub Actions workflow for building and publishing the API image to GHCR.
 - Database commands run from `apps/web/`; `apps/web/drizzle.config.ts` reads `env.DATABASE_URL`, so these commands require env setup.
 
 ## Environment

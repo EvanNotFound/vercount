@@ -26,6 +26,8 @@ From the repo root:
 pnpm api:dev
 ```
 
+This runs the API directly from source and expects `apps/api/.env` to point at your existing Redis backend.
+
 ## Build
 
 From the repo root:
@@ -33,6 +35,71 @@ From the repo root:
 ```bash
 pnpm api:build
 ```
+
+## Docker image
+
+Build the local API image from the repo root:
+
+```bash
+pnpm api:docker:build
+```
+
+The image build includes the built browser script for `/js`, so the runtime container does not depend on a host-local `apps/web/public/js/client.min.js` path.
+
+## Docker Compose
+
+### Production-like compose
+
+Copy `apps/api/.env.example` to `apps/api/.env`, set `REDIS_URL`, then run:
+
+```bash
+pnpm api:compose
+```
+
+This uses `compose.yaml`, starts the published GHCR image from the repository root, and keeps using your existing Redis backend.
+
+The production-like Compose file uses:
+
+```text
+ghcr.io/evannotfound/vercount-api:edge
+```
+
+### Local development compose
+
+To run the API against a local Redis container instead:
+
+```bash
+pnpm api:compose:local
+```
+
+This uses `compose-local.yaml`, builds the API image locally, and wires the API container to `redis://redis:6379/0`.
+
+Stop the production-like Compose workflow from the repo root with:
+
+```bash
+pnpm api:compose:down
+```
+
+Stop the local Compose workflow with:
+
+```bash
+pnpm api:compose:local:down
+```
+
+## GHCR image publishing
+
+GitHub Actions builds and publishes the API image to:
+
+`ghcr.io/<owner>/vercount-api`
+
+Published tags follow this policy:
+
+- `edge` from the `main` branch
+- `latest` from stable release tags only
+- stable releases publish `v1.2.3`, `v1.2`, `v1`, and `latest`
+- pre-1.0 releases publish `v0.1.2` and `v0.1`, but never `v0`
+
+If GHCR creates the package with private visibility on first publish, update the package visibility in GitHub package settings.
 
 ## Cutover
 

@@ -1,0 +1,100 @@
+name: api-image
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/api-image.yml
+      - .dockerignore
+      - apps/api/**
+      - apps/web/scripts/build-client.mjs
+      - apps/web/src/lib/client.js
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - packages/core/**
+  push:
+    branches:
+      - main
+    tags:
+      - v*
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  api-image:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Prepare image tags
+        id: prep
+        shell: bash
+        run: |
+          owner="$(echo "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
+          image="ghcr.io/${owner}/vercount-api"
+
+          push="false"
+          declare -a tags=()
+
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+            tags+=("${image}:pr-${{ github.event.pull_request.number }}")
+          elif [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
+            push="true"
+            tags+=("${image}:edge")
+          elif [[ "${GITHUB_REF}" =~ ^refs/tags/(v[0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+            push="true"
+            version="${BASH_REMATCH[1]}"
+            version_no_v="${version#v}"
+            IFS='.' read -r major minor patch <<< "${version_no_v}"
+
+            tags+=("${image}:${version}")
+            tags+=("${image}:v${major}.${minor}")
+
+            if [[ "${major}" != "0" ]]; then
+              tags+=("${image}:v${major}")
+              tags+=("${image}:latest")
+            fi
+          else
+            echo "Unsupported ref: ${GITHUB_REF}" >&2
+            exit 1
+          fi
+
+          {
+            echo "image=${image}"
+            echo "push=${push}"
+            echo "tags<<EOF"
+            printf '%s\n' "${tags[@]}"
+            echo "EOF"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Log in to GHCR
+        if: steps.prep.outputs.push == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and publish API image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: ${{ steps.prep.outputs.push == 'true' }}
+          tags: ${{ steps.prep.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: false
+          labels: |
+            org.opencontainers.image.title=vercount-api
+            org.opencontainers.image.description=Vercount public events API server
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ github.ref_name }}
