@@ -74,7 +74,7 @@ export default function Home() {
 									<p className="text-lg text-zinc-500 leading-normal">
 										网站流量计数器，简单、快速、可靠
 										<br />
-										不蒜子计数器完美替代方案
+										Go + Redis 驱动计数后端，Next.js 负责后台
 									</p>
 								</BlurFadeStagger>
 							</div>

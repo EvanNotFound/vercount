@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 	title: "Vercount - 网站流量计数器",
 	metadataBase: new URL("https://vercount.one"),
 	description:
-		"Vercount is a straightforward, fast, and reliable website view counter. Vercount 是一个完美的不蒜子网站计数器替代方案，轻松统计页面浏览量和访客数量。",
+		"Vercount is a straightforward, fast, and reliable website counter powered by Go and Redis, with Next.js for dashboard and compatibility flows. Vercount 是一个基于 Go 和 Redis 的网站计数器，并由 Next.js 提供后台。",
 	keywords:
 		"Vercount, 网站计数器, 不蒜子替代品, 流量分析, 页面浏览量, 访客跟踪, Website Counter, Website View Counter, Website Visitor Counter",
 	robots: "index, follow",
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
 		creator: "EvanNotFound",
 		title: "Vercount - 不蒜子替代网站流量计数器",
 		description:
-			"Vercount 提供一个强大的不蒜子网站流量计数器替代方案。轻松追踪页面浏览量和访客数量。",
+			"Vercount 提供一个以 Go + Redis 为核心的不蒜子替代网站流量计数器，并由 Next.js 提供后台。",
 		images: "/assets/opengraph-image.png",
 	},
 };

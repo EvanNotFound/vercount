@@ -1,4 +1,4 @@
-import { Zap, Globe, Shield, RefreshCw, Code, Database, LucideIcon } from "lucide-react";
+import { Zap, Globe, Shield, RefreshCw, Code, Database, Server, LucideIcon } from "lucide-react";
 
 type FeatureItem = {
 	icon: LucideIcon | React.FC<React.SVGProps<SVGSVGElement>>;
@@ -6,25 +6,12 @@ type FeatureItem = {
 	description: string;
 };
 
-// Custom Vercel icon component
-const VercelIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-	<svg
-		className="h-5 w-5 text-blue-400"
-		viewBox="0 0 76 65"
-		fill="none"
-		xmlns="http://www.w3.org/2000/svg"
-		{...props}
-	>
-		<path d="M37.5274 0L75.0548 65H0L37.5274 0Z" fill="currentColor" />
-	</svg>
-);
-
 // Features configuration
 const featuresConfig: FeatureItem[] = [
 	{
 		icon: Zap,
 		title: "高速响应",
-		description: "速度快，服务器响应时间在 10ms 以内",
+		description: "公共计数链路由 Go 服务直接处理，响应更快也更稳定",
 	},
 	{
 		icon: Globe,
@@ -34,7 +21,7 @@ const featuresConfig: FeatureItem[] = [
 	{
 		icon: Shield,
 		title: "安全可靠",
-		description: "使用 Json 回调，不再使用不蒜子的 JSONP 回调方法，防止 CSRF 攻击",
+		description: "保留现有兼容接口的同时，持续加强公共计数接口的安全与风控能力",
 	},
 	{
 		icon: RefreshCw,
@@ -49,12 +36,12 @@ const featuresConfig: FeatureItem[] = [
 	{
 		icon: Database,
 		title: "数据可靠",
-		description: "使用 Upstash Redis 作为数据存储，数据不会丢失，保证 99.99% 可用性",
+		description: "使用 Redis 作为共享计数存储，数据稳定可靠，并由多个服务共同读取",
 	},
 	{
-		icon: VercelIcon,
-		title: "全球 CDN 加速",
-		description: "使用 Vercel Serverless Functions 和全球 CDN，提供快速、可靠的服务，确保 99.99% 的可用性",
+		icon: Server,
+		title: "清晰架构",
+		description: "Go + Redis 负责核心计数后端，Next.js 负责后台、鉴权、域名管理与兼容层",
 	},
 	{
 		icon: RefreshCw,
@@ -67,10 +54,10 @@ export default function Features() {
 	return (
 		<section id="features" className="w-full py-20 md:py-32 border-b border-white/10">
 			<div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-				<div className="flex flex-col items-center justify-center space-y-4 text-center mb-16 max-w-3xl mx-auto">
-					<h2 className="text-3xl md:text-5xl font-bold tracking-tighter">Features</h2>
-					<p className="text-xl text-zinc-400">Vercount 是一个完美的不蒜子计数替代方案</p>
-				</div>
+			<div className="flex flex-col items-center justify-center space-y-4 text-center mb-16 max-w-3xl mx-auto">
+				<h2 className="text-3xl md:text-5xl font-bold tracking-tighter">Features</h2>
+				<p className="text-xl text-zinc-400">Vercount 是一个更快、更稳定的不蒜子计数替代方案</p>
+			</div>
 
 				<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 max-w-6xl mx-auto">
 					{featuresConfig.map((feature, index) => {
