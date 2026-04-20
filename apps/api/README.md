@@ -11,7 +11,7 @@ Minimal Go service for the public `events.vercount.one` surface.
 
 ## Environment
 
-Copy `.env.example` to `.env` and set:
+For direct source runs from `apps/api`, copy `apps/api/.env.example` to `apps/api/.env` and set:
 
 - `REDIS_URL` - direct Redis connection URL for the existing counter backend
 - `PORT` - HTTP port (default `8080`)
@@ -26,7 +26,7 @@ From the repo root:
 pnpm api:dev
 ```
 
-This runs the API directly from source and expects `apps/api/.env` to point at your existing Redis backend.
+This runs the API directly from source and reads `apps/api/.env` first, then falls back to the repo-root `.env` if present.
 
 ## Build
 
@@ -51,7 +51,7 @@ The image build includes the built browser script for `/js`, and the API uses th
 
 ### Production-like compose
 
-Copy `apps/api/.env.example` to `apps/api/.env`, set `REDIS_URL`, then run:
+Copy `.env.example` to `.env` at the repo root, set `REDIS_URL`, then run:
 
 ```bash
 pnpm api:compose
@@ -76,6 +76,7 @@ pnpm api:compose:local
 
 This uses `compose-local.yaml`, builds the API image locally, and wires the API container to `redis://redis:6379/0`.
 It also defaults to the bundled in-image `/js` asset, with `SCRIPT_PATH` still available as a one-off shell override.
+The root `.env` file can still provide values like `API_PORT` and `DEBUG` for this workflow.
 
 Stop the production-like Compose workflow from the repo root with:
 

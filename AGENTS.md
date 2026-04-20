@@ -6,6 +6,7 @@
 - Root commands (`pnpm dev`, `pnpm build`, `pnpm start`, `pnpm lint`, `pnpm db:generate`, `pnpm db:migrate`) delegate to the web app in `apps/web/`.
 - Use `pnpm api:dev` and `pnpm api:build` for the Go public events service in `apps/api/`.
 - Use `pnpm api:docker:build`, `pnpm api:compose`, and `pnpm api:compose:local` for the checked-in API container workflows. `compose.yaml` is the production-like GHCR path and `compose-local.yaml` is the local development path.
+- Compose workflows read repo-root `.env`; direct source runs in `apps/api` read `apps/api/.env` first and then fall back to the repo-root `.env`.
 - The web app bundles `apps/web/src/lib/client.js` into `apps/web/public/js/client.min.js` during app scripts. Edit `apps/web/src/lib/client.js`, not the built output.
 - Shared browser-side request/cache/cookie logic lives in `packages/core`.
 - `pnpm react:build` runs the React package build in `packages/react`.

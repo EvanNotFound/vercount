@@ -14,6 +14,9 @@ func main() {
 	if err := app.LoadEnvFile(".env"); err != nil {
 		panic(err)
 	}
+	if err := app.LoadEnvFile("../../.env"); err != nil {
+		panic(err)
+	}
 
 	config, err := app.LoadConfig()
 	if err != nil {
