@@ -1,12 +1,12 @@
 package app
 
 import (
-	"encoding/json"
 	"fmt"
-	"log"
+	"io"
+	"log/slog"
 	"os"
+	"sort"
 	"strings"
-	"time"
 )
 
 const (
@@ -96,45 +96,130 @@ func resolveScriptPath() string {
 
 type Logger struct {
 	debug bool
+	inner *slog.Logger
 }
 
 func NewLogger(debug bool) *Logger {
-	log.SetOutput(os.Stdout)
-	log.SetFlags(0)
-	return &Logger{debug: debug}
+	return newLogger(debug, os.Stdout)
+}
+
+func newLogger(debug bool, writer io.Writer) *Logger {
+	if writer == nil {
+		writer = os.Stdout
+	}
+
+	options := &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+		ReplaceAttr: func(_ []string, attr slog.Attr) slog.Attr {
+			if attr.Key == slog.LevelKey {
+				if level, ok := attr.Value.Any().(slog.Level); ok {
+					attr.Value = slog.StringValue(strings.ToLower(level.String()))
+				}
+			}
+			return attr
+		},
+	}
+	if debug {
+		options.Level = slog.LevelDebug
+	}
+
+	var handler slog.Handler
+	if debug {
+		handler = slog.NewTextHandler(writer, options)
+	} else {
+		handler = slog.NewJSONHandler(writer, options)
+	}
+
+	env := "production"
+	if debug {
+		env = "development"
+	}
+
+	return &Logger{
+		debug: debug,
+		inner: slog.New(handler).With("service", "api", "env", env),
+	}
 }
 
 func (l *Logger) Debug(message string, data any) {
 	if !l.debug {
 		return
 	}
-	l.print("DEBUG", message, data)
+	l.log(slog.LevelDebug, message, data)
 }
 
 func (l *Logger) Info(message string, data any) {
-	l.print("INFO", message, data)
+	l.log(slog.LevelInfo, message, data)
 }
 
 func (l *Logger) Warn(message string, data any) {
-	l.print("WARN", message, data)
+	l.log(slog.LevelWarn, message, data)
 }
 
 func (l *Logger) Error(message string, data any) {
-	l.print("ERROR", message, data)
+	l.log(slog.LevelError, message, data)
 }
 
-func (l *Logger) print(level string, message string, data any) {
-	prefix := fmt.Sprintf("[%s] %s: %s", time.Now().UTC().Format(time.RFC3339), level, message)
-	if data == nil {
-		log.Print(prefix)
+func (l *Logger) log(level slog.Level, message string, data any) {
+	if l == nil || l.inner == nil {
 		return
 	}
 
-	encoded, err := json.Marshal(data)
-	if err != nil {
-		log.Printf("%s %v", prefix, data)
-		return
+	args := slogArgs(data)
+	switch level {
+	case slog.LevelDebug:
+		l.inner.Debug(message, args...)
+	case slog.LevelWarn:
+		l.inner.Warn(message, args...)
+	case slog.LevelError:
+		l.inner.Error(message, args...)
+	default:
+		l.inner.Info(message, args...)
 	}
+}
 
-	log.Printf("%s %s", prefix, string(encoded))
+func slogArgs(data any) []any {
+	switch value := data.(type) {
+	case nil:
+		return nil
+	case error:
+		return []any{"error", value.Error()}
+	case map[string]any:
+		keys := make([]string, 0, len(value))
+		for key := range value {
+			keys = append(keys, key)
+		}
+		sort.Strings(keys)
+
+		args := make([]any, 0, len(value)*2)
+		for _, key := range keys {
+			args = append(args, key, sanitizeLogValue(value[key]))
+		}
+		return args
+	default:
+		return []any{"data", sanitizeLogValue(value)}
+	}
+}
+
+func sanitizeLogValue(value any) any {
+	switch typed := value.(type) {
+	case nil:
+		return nil
+	case error:
+		return typed.Error()
+	case map[string]any:
+		cleaned := make(map[string]any, len(typed))
+		for key, nested := range typed {
+			cleaned[key] = sanitizeLogValue(nested)
+		}
+		return cleaned
+	case []any:
+		cleaned := make([]any, len(typed))
+		for index, nested := range typed {
+			cleaned[index] = sanitizeLogValue(nested)
+		}
+		return cleaned
+	default:
+		return typed
+	}
 }

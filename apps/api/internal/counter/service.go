@@ -70,7 +70,7 @@ func (s *Service) FetchSiteUV(ctx context.Context, host string, path string) (in
 		return 0, err
 	}
 
-	s.log.Debug("Site UV read", map[string]any{"host": sanitized.Host, "path": sanitized.Path, "site_uv": count})
+	s.log.Debug("site UV read", counterLogFields("counter.site_uv.read", map[string]any{"host": sanitized.Host, "target_path": sanitized.Path, "site_uv": count}))
 	return count, nil
 }
 
@@ -81,7 +81,7 @@ func (s *Service) FetchSitePV(ctx context.Context, host string, path string) (in
 		return 0, err
 	}
 
-	s.log.Debug("Site PV read", map[string]any{"host": sanitized.Host, "path": sanitized.Path, "site_pv": count})
+	s.log.Debug("site PV read", counterLogFields("counter.site_pv.read", map[string]any{"host": sanitized.Host, "target_path": sanitized.Path, "site_pv": count}))
 	return count, nil
 }
 
@@ -92,7 +92,7 @@ func (s *Service) FetchPagePV(ctx context.Context, host string, path string) (in
 		return 0, err
 	}
 
-	s.log.Debug("Page PV read", map[string]any{"host": sanitized.Host, "path": sanitized.Path, "page_pv": count})
+	s.log.Debug("page PV read", counterLogFields("counter.page_pv.read", map[string]any{"host": sanitized.Host, "target_path": sanitized.Path, "page_pv": count}))
 	return count, nil
 }
 
@@ -118,7 +118,7 @@ func (s *Service) IncrementSitePV(ctx context.Context, host string) (int64, erro
 		return 0, err
 	}
 
-	s.log.Debug("Site PV updated", map[string]any{"host": sanitized.Host, "site_pv": count})
+	s.log.Debug("site PV updated", counterLogFields("counter.site_pv.updated", map[string]any{"host": sanitized.Host, "site_pv": count}))
 	return count, nil
 }
 
@@ -147,7 +147,7 @@ func (s *Service) IncrementPagePV(ctx context.Context, host string, path string)
 		return 0, err
 	}
 
-	s.log.Debug("Page PV updated", map[string]any{"host": sanitized.Host, "path": sanitized.Path, "page_pv": count})
+	s.log.Debug("page PV updated", counterLogFields("counter.page_pv.updated", map[string]any{"host": sanitized.Host, "target_path": sanitized.Path, "page_pv": count}))
 	return count, nil
 }
 
@@ -191,7 +191,7 @@ func (s *Service) RecordSiteUV(ctx context.Context, host string, isNew bool) (in
 		}
 	}
 
-	s.log.Debug("Site UV updated", map[string]any{"host": sanitized.Host, "is_new_uv": isNew, "site_uv": count})
+	s.log.Debug("site UV updated", counterLogFields("counter.site_uv.updated", map[string]any{"host": sanitized.Host, "is_new_uv": isNew, "site_uv": count}))
 	return count, nil
 }
 
@@ -311,12 +311,12 @@ func getPageInventoryKey(host string) string {
 
 func sanitizeURL(host string, path string, log Logger) SanitizedURL {
 	if host == "" {
-		log.Warn("Invalid host detected", map[string]any{"path": path})
+		log.Warn("invalid host detected", counterLogFields("counter.target.invalid_host", map[string]any{"target_path": path}))
 		return SanitizedURL{Host: "invalid-host", Path: "/invalid-path"}
 	}
 
 	if drivePathPattern.MatchString(path) {
-		log.Warn("Local file path detected", map[string]any{"path": path})
+		log.Warn("local file path detected", counterLogFields("counter.target.local_file_path", map[string]any{"target_path": path}))
 		return SanitizedURL{Host: host, Path: "/invalid-local-path"}
 	}
 
@@ -351,7 +351,7 @@ func sanitizeURL(host string, path string, log Logger) SanitizedURL {
 	}
 
 	if len(path) > 200 {
-		log.Warn("Path too long", map[string]any{"path": path[:50]})
+		log.Warn("tracked path truncated", counterLogFields("counter.target.path_truncated", map[string]any{"target_path_prefix": path[:50]}))
 		path = path[:200]
 	}
 
@@ -363,4 +363,12 @@ func parseInt(value string) (int64, error) {
 		return 0, nil
 	}
 	return strconv.ParseInt(value, 10, 64)
+}
+
+func counterLogFields(event string, fields map[string]any) map[string]any {
+	out := map[string]any{"event": event}
+	for key, value := range fields {
+		out[key] = value
+	}
+	return out
 }

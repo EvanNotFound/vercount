@@ -1,6 +1,7 @@
 package app
 
 import (
+	"bytes"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -195,12 +196,50 @@ func TestOptionsRoutesStayAvailable(t *testing.T) {
 	}
 }
 
+func TestRequestLoggingEmitsStructuredCompletionEvent(t *testing.T) {
+	redisServer := mustStartMiniRedis(t)
+	var logs bytes.Buffer
+	logger := newLogger(false, &logs)
+	handler, _ := newTestHandlerWithLogger(t, redisServer.Addr(), "console.log('test');", logger)
+	recorder := httptest.NewRecorder()
+
+	handler.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/api/v2/log?url=file:///bad", nil))
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", recorder.Code)
+	}
+
+	entry := findLogEntry(t, logs.String(), "request.completed")
+	if entry["service"] != "api" {
+		t.Fatalf("expected api service field, got %#v", entry["service"])
+	}
+	if entry["method"] != http.MethodGet {
+		t.Fatalf("expected GET method, got %#v", entry["method"])
+	}
+	if entry["route"] != "/api/v2/log" {
+		t.Fatalf("expected route pattern, got %#v", entry["route"])
+	}
+	if entry["status"] != float64(http.StatusOK) {
+		t.Fatalf("expected status 200, got %#v", entry["status"])
+	}
+	if entry["request_id"] == "" {
+		t.Fatalf("expected request_id to be present, got %#v", entry["request_id"])
+	}
+	if _, ok := entry["duration_ms"].(float64); !ok {
+		t.Fatalf("expected duration_ms numeric field, got %#v", entry["duration_ms"])
+	}
+}
+
 func newTestHandler(t *testing.T, redisAddr string) http.Handler {
 	handler, _ := newTestHandlerWithScript(t, redisAddr, "console.log('test');")
 	return handler
 }
 
 func newTestHandlerWithScript(t *testing.T, redisAddr string, scriptContents string) (http.Handler, string) {
+	return newTestHandlerWithLogger(t, redisAddr, scriptContents, NewLogger(false))
+}
+
+func newTestHandlerWithLogger(t *testing.T, redisAddr string, scriptContents string, logger *Logger) (http.Handler, string) {
 	t.Helper()
 
 	scriptPath := filepath.Join(t.TempDir(), "client.min.js")
@@ -211,7 +250,6 @@ func newTestHandlerWithScript(t *testing.T, redisAddr string, scriptContents str
 	redisClient := redis.NewClient(&redis.Options{Addr: redisAddr})
 	t.Cleanup(func() { _ = redisClient.Close() })
 
-	logger := NewLogger(false)
 	server := NewServer(
 		Config{ScriptPath: scriptPath},
 		logger,
@@ -220,6 +258,28 @@ func newTestHandlerWithScript(t *testing.T, redisAddr string, scriptContents str
 	)
 
 	return server.Routes(), scriptContents
+}
+
+func findLogEntry(t *testing.T, output string, event string) map[string]any {
+	t.Helper()
+
+	for _, line := range strings.Split(strings.TrimSpace(output), "\n") {
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+
+		var entry map[string]any
+		if err := json.Unmarshal([]byte(line), &entry); err != nil {
+			t.Fatalf("unmarshal log line %q: %v", line, err)
+		}
+
+		if entry["event"] == event {
+			return entry
+		}
+	}
+
+	t.Fatalf("expected log entry with event %q in output %q", event, output)
+	return nil
 }
 
 func mustStartMiniRedis(t *testing.T) *miniredis.Miniredis {

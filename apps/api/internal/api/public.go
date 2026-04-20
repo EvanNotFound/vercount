@@ -50,7 +50,7 @@ func (h *PublicHandler) Healthz(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	if err := h.redis.Ping(ctx).Err(); err != nil {
-		h.log.Warn("Redis readiness check failed", map[string]any{"error": err.Error()})
+		h.log.Warn("redis readiness check failed", map[string]any{"event": "healthz.redis_unreachable", "error": err.Error()})
 		writeJSON(w, http.StatusServiceUnavailable, map[string]any{
 			"service": publicServiceName,
 			"status":  "not_ready",
@@ -78,7 +78,7 @@ func (h *PublicHandler) Script(w http.ResponseWriter, r *http.Request) {
 
 	fullPath := filepath.Clean(h.scriptPath)
 	if _, err := os.Stat(fullPath); err != nil {
-		h.log.Error("Script file not found", map[string]any{"path": fullPath, "error": err.Error()})
+		h.log.Error("script file not found", map[string]any{"event": "script.not_found", "path": fullPath, "error": err.Error()})
 		http.NotFound(w, r)
 		return
 	}

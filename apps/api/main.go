@@ -67,8 +67,9 @@ func main() {
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 
-	logger.Info("Starting API server", map[string]any{"addr": config.Addr, "script_path": config.ScriptPath})
+	logger.Info("api server starting", map[string]any{"event": "server.starting", "addr": config.Addr, "script_path": config.ScriptPath})
 	if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		logger.Error("api server stopped unexpectedly", map[string]any{"event": "server.listen_failed", "error": err.Error()})
 		panic(err)
 	}
 }

@@ -13,6 +13,8 @@ import (
 	"time"
 
 	"github.com/EvanNotFound/vercount/apps/api/internal/counter"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	redis "github.com/redis/go-redis/v9"
 )
 
@@ -102,14 +104,14 @@ func (h *LogHandler) V1Get(w http.ResponseWriter, r *http.Request) {
 
 	targetURL := r.URL.Query().Get("url")
 	if targetURL == "" {
-		h.log.Warn("GET request with missing URL parameter", nil)
+		h.log.Warn("missing tracked url parameter", requestLogFields(r, "request.invalid", map[string]any{"status": http.StatusBadRequest, "reason": "missing_url"}))
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "Missing url parameter"})
 		return
 	}
 
 	target, message := validateTargetURL(targetURL)
 	if message != "" {
-		h.log.Warn("Invalid URL for v1 GET", map[string]any{"url": targetURL, "message": message})
+		h.log.Warn("invalid tracked url", requestLogFields(r, "target_url.invalid", map[string]any{"status": http.StatusOK, "target_url": targetURL, "reason": message}))
 		writeJSON(w, http.StatusOK, map[string]any{
 			"error":   message,
 			"site_uv": 0,
@@ -121,12 +123,12 @@ func (h *LogHandler) V1Get(w http.ResponseWriter, r *http.Request) {
 
 	data, err := h.readCounts(r.Context(), target.Host, target.Path)
 	if err != nil {
-		h.log.Error("Failed to read counts", map[string]any{"error": err.Error(), "url": targetURL})
+		h.log.Error("counter read failed", requestLogFields(r, "counter.read_failed", map[string]any{"status": http.StatusInternalServerError, "error": err.Error(), "target_url": targetURL}))
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "Internal server error"})
 		return
 	}
 
-	h.log.Info("Retrieved data for GET request", map[string]any{"host": target.Host, "path": target.Path, "site_uv": data.SiteUV, "site_pv": data.SitePV, "page_pv": data.PagePV})
+	h.log.Debug("counter read completed", requestLogFields(r, "counter.read_completed", map[string]any{"host": target.Host, "target_path": target.Path, "site_uv": data.SiteUV, "site_pv": data.SitePV, "page_pv": data.PagePV}))
 	writeJSON(w, http.StatusOK, data)
 }
 
@@ -143,7 +145,7 @@ func (h *LogHandler) V1Post(w http.ResponseWriter, r *http.Request) {
 
 	target, message := validateTargetURL(data.URL)
 	if message != "" {
-		h.log.Warn("Invalid URL for v1 POST", map[string]any{"url": data.URL, "message": message})
+		h.log.Warn("invalid tracked url", requestLogFields(r, "target_url.invalid", map[string]any{"status": http.StatusOK, "target_url": data.URL, "reason": message}))
 		writeJSON(w, http.StatusOK, map[string]any{
 			"error":   message,
 			"site_uv": 0,
@@ -155,12 +157,12 @@ func (h *LogHandler) V1Post(w http.ResponseWriter, r *http.Request) {
 
 	counts, err := h.writeCounts(r.Context(), target.Host, target.Path, data.IsNewUV)
 	if err != nil {
-		h.log.Error("Failed to update counts", map[string]any{"error": err.Error(), "url": data.URL})
+		h.log.Error("counter update failed", requestLogFields(r, "counter.write_failed", map[string]any{"status": http.StatusInternalServerError, "error": err.Error(), "target_url": data.URL}))
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "Internal server error"})
 		return
 	}
 
-	h.log.Info("Data updated", map[string]any{"host": target.Host, "path": target.Path, "isNewUv": data.IsNewUV, "site_uv": counts.SiteUV, "site_pv": counts.SitePV, "page_pv": counts.PagePV})
+	h.log.Debug("counter update completed", requestLogFields(r, "counter.write_completed", map[string]any{"host": target.Host, "target_path": target.Path, "is_new_uv": data.IsNewUV, "site_uv": counts.SiteUV, "site_pv": counts.SitePV, "page_pv": counts.PagePV}))
 	writeJSON(w, http.StatusOK, counts)
 }
 
@@ -172,26 +174,26 @@ func (h *LogHandler) V2Get(w http.ResponseWriter, r *http.Request) {
 
 	targetURL := r.URL.Query().Get("url")
 	if targetURL == "" {
-		h.log.Warn("GET request with missing URL parameter", nil)
+		h.log.Warn("missing tracked url parameter", requestLogFields(r, "request.invalid", map[string]any{"status": http.StatusBadRequest, "reason": "missing_url"}))
 		h.writeV2Error(w, http.StatusBadRequest, "Missing url parameter", nil)
 		return
 	}
 
 	target, message := validateTargetURL(targetURL)
 	if message != "" {
-		h.log.Warn("Invalid URL for v2 GET", map[string]any{"url": targetURL, "message": message})
+		h.log.Warn("invalid tracked url", requestLogFields(r, "target_url.invalid", map[string]any{"status": http.StatusOK, "target_url": targetURL, "reason": message}))
 		h.writeV2Success(w, http.StatusOK, message, zeroCounters())
 		return
 	}
 
 	data, err := h.readCounts(r.Context(), target.Host, target.Path)
 	if err != nil {
-		h.log.Error("Failed to read counts", map[string]any{"error": err.Error(), "url": targetURL})
+		h.log.Error("counter read failed", requestLogFields(r, "counter.read_failed", map[string]any{"status": http.StatusInternalServerError, "error": err.Error(), "target_url": targetURL}))
 		h.writeV2Error(w, http.StatusInternalServerError, "Internal server error", nil)
 		return
 	}
 
-	h.log.Info("Retrieved data for GET request", map[string]any{"host": target.Host, "path": target.Path, "site_uv": data.SiteUV, "site_pv": data.SitePV, "page_pv": data.PagePV})
+	h.log.Debug("counter read completed", requestLogFields(r, "counter.read_completed", map[string]any{"host": target.Host, "target_path": target.Path, "site_uv": data.SiteUV, "site_pv": data.SitePV, "page_pv": data.PagePV}))
 	h.writeV2Success(w, http.StatusOK, "Data retrieved successfully", data)
 }
 
@@ -208,19 +210,19 @@ func (h *LogHandler) V2Post(w http.ResponseWriter, r *http.Request) {
 
 	target, message := validateTargetURL(data.URL)
 	if message != "" {
-		h.log.Warn("Invalid URL for v2 POST", map[string]any{"url": data.URL, "message": message})
+		h.log.Warn("invalid tracked url", requestLogFields(r, "target_url.invalid", map[string]any{"status": http.StatusOK, "target_url": data.URL, "reason": message}))
 		h.writeV2Success(w, http.StatusOK, message, zeroCounters())
 		return
 	}
 
 	counts, err := h.writeCounts(r.Context(), target.Host, target.Path, data.IsNewUV)
 	if err != nil {
-		h.log.Error("Failed to update counts", map[string]any{"error": err.Error(), "url": data.URL})
+		h.log.Error("counter update failed", requestLogFields(r, "counter.write_failed", map[string]any{"status": http.StatusInternalServerError, "error": err.Error(), "target_url": data.URL}))
 		h.writeV2Error(w, http.StatusInternalServerError, "Internal server error", nil)
 		return
 	}
 
-	h.log.Info("Data updated", map[string]any{"host": target.Host, "path": target.Path, "isNewUv": data.IsNewUV, "site_uv": counts.SiteUV, "site_pv": counts.SitePV, "page_pv": counts.PagePV})
+	h.log.Debug("counter update completed", requestLogFields(r, "counter.write_completed", map[string]any{"host": target.Host, "target_path": target.Path, "is_new_uv": data.IsNewUV, "site_uv": counts.SiteUV, "site_pv": counts.SitePV, "page_pv": counts.PagePV}))
 	h.writeV2Success(w, http.StatusOK, "Data updated successfully", counts)
 }
 
@@ -250,6 +252,7 @@ func (h *LogHandler) allowV2Request(w http.ResponseWriter, r *http.Request) bool
 func (h *LogHandler) decodeCountRequest(w http.ResponseWriter, r *http.Request, v2 bool) (countRequest, bool) {
 	var data countRequest
 	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
+		h.log.Warn("invalid JSON request body", requestLogFields(r, "request.invalid", map[string]any{"status": http.StatusBadRequest, "reason": "invalid_json", "error": err.Error()}))
 		if v2 {
 			h.writeV2Error(w, http.StatusBadRequest, "Invalid JSON body", nil)
 		} else {
@@ -259,6 +262,7 @@ func (h *LogHandler) decodeCountRequest(w http.ResponseWriter, r *http.Request, 
 	}
 
 	if data.URL == "" {
+		h.log.Warn("missing tracked url parameter", requestLogFields(r, "request.invalid", map[string]any{"status": http.StatusBadRequest, "reason": "missing_url"}))
 		if v2 {
 			h.writeV2Error(w, http.StatusBadRequest, "Missing url", nil)
 		} else {
@@ -367,18 +371,18 @@ func (l *rateLimiter) Check(ctx context.Context, r *http.Request) rateLimitResul
 		return nil
 	})
 	if err != nil {
-		l.log.Warn("Rate limit cleanup failed", map[string]any{"ip": ip, "error": err.Error()})
+		l.log.Warn("rate limit cleanup failed", requestLogFields(r, "rate_limit.cleanup_failed", map[string]any{"ip": ip, "ua": ua, "error": err.Error()}))
 		return rateLimitResult{Success: true, Limit: rateLimitCount, Remaining: rateLimitCount, Reset: reset}
 	}
 
 	count, err := countCmd.Result()
 	if err != nil {
-		l.log.Warn("Rate limit count failed", map[string]any{"ip": ip, "error": err.Error()})
+		l.log.Warn("rate limit count failed", requestLogFields(r, "rate_limit.count_failed", map[string]any{"ip": ip, "ua": ua, "error": err.Error()}))
 		return rateLimitResult{Success: true, Limit: rateLimitCount, Remaining: rateLimitCount, Reset: reset}
 	}
 
 	if count >= rateLimitCount {
-		l.log.Warn("Rate limit exceeded", map[string]any{"ip": ip, "ua": ua, "limit": rateLimitCount, "remaining": 0})
+		l.log.Warn("rate limit exceeded", requestLogFields(r, "rate_limit.exceeded", map[string]any{"ip": ip, "ua": ua, "limit": rateLimitCount, "remaining": 0, "status": http.StatusTooManyRequests}))
 		return rateLimitResult{
 			Success:   false,
 			Limit:     rateLimitCount,
@@ -395,19 +399,18 @@ func (l *rateLimiter) Check(ctx context.Context, r *http.Request) rateLimitResul
 		return nil
 	})
 	if err != nil {
-		l.log.Warn("Rate limit add failed", map[string]any{"ip": ip, "error": err.Error()})
+		l.log.Warn("rate limit state update failed", requestLogFields(r, "rate_limit.persist_failed", map[string]any{"ip": ip, "ua": ua, "error": err.Error()}))
 		return rateLimitResult{Success: true, Limit: rateLimitCount, Remaining: rateLimitCount, Reset: reset}
 	}
 
 	remaining := rateLimitCount - (count + 1)
-	l.log.Info("Request received", map[string]any{"ip": ip, "ua": ua, "path": r.URL.Path, "timestamp": now.UnixMilli()})
 
 	if suspiciousUA.MatchString(ua) {
-		l.log.Warn("Suspicious user agent detected", map[string]any{"ip": ip, "ua": ua})
+		l.log.Warn("suspicious user agent detected", requestLogFields(r, "security.suspicious_user_agent", map[string]any{"ip": ip, "ua": ua}))
 	}
 
 	if remaining < 20 {
-		l.log.Warn("Approaching rate limit", map[string]any{"ip": ip, "ua": ua, "remaining": remaining})
+		l.log.Warn("request is nearing rate limit", requestLogFields(r, "rate_limit.near_limit", map[string]any{"ip": ip, "ua": ua, "remaining": remaining, "limit": rateLimitCount}))
 	}
 
 	return rateLimitResult{Success: true, Limit: rateLimitCount, Remaining: remaining, Reset: reset}
@@ -435,4 +438,30 @@ func clientIP(r *http.Request) string {
 	}
 
 	return "127.0.0.1"
+}
+
+func requestLogFields(r *http.Request, event string, fields map[string]any) map[string]any {
+	out := map[string]any{
+		"event":      event,
+		"request_id": middleware.GetReqID(r.Context()),
+		"method":     r.Method,
+		"route":      routePattern(r),
+		"path":       r.URL.Path,
+	}
+
+	for key, value := range fields {
+		out[key] = value
+	}
+
+	return out
+}
+
+func routePattern(r *http.Request) string {
+	if routeContext := chi.RouteContext(r.Context()); routeContext != nil {
+		if pattern := routeContext.RoutePattern(); pattern != "" {
+			return pattern
+		}
+	}
+
+	return r.URL.Path
 }

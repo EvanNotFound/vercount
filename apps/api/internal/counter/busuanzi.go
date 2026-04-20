@@ -27,7 +27,7 @@ func (s *Service) fetchBusuanziData(ctx context.Context, referer string) *busuan
 
 	req, err := http.NewRequestWithContext(requestCtx, http.MethodGet, busuanziURL, nil)
 	if err != nil {
-		s.log.Debug("Busuanzi request creation failed", map[string]any{"error": err.Error()})
+		s.log.Debug("Busuanzi request creation failed", counterLogFields("busuanzi.request.create_failed", map[string]any{"error": err.Error()}))
 		return nil
 	}
 
@@ -36,19 +36,19 @@ func (s *Service) fetchBusuanziData(ctx context.Context, referer string) *busuan
 
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
-		s.log.Debug("Busuanzi request failed", map[string]any{"error": err.Error()})
+		s.log.Debug("Busuanzi request failed", counterLogFields("busuanzi.request.failed", map[string]any{"error": err.Error()}))
 		return nil
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		s.log.Debug("Busuanzi response status", map[string]any{"status": resp.StatusCode})
+		s.log.Debug("Busuanzi response returned non-OK status", counterLogFields("busuanzi.response.invalid_status", map[string]any{"status": resp.StatusCode}))
 		return nil
 	}
 
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		s.log.Debug("Busuanzi read failed", map[string]any{"error": err.Error()})
+		s.log.Debug("Busuanzi response read failed", counterLogFields("busuanzi.response.read_failed", map[string]any{"error": err.Error()}))
 		return nil
 	}
 
@@ -56,17 +56,17 @@ func (s *Service) fetchBusuanziData(ctx context.Context, referer string) *busuan
 	start := strings.IndexByte(body, '{')
 	end := strings.LastIndexByte(body, '}')
 	if start == -1 || end == -1 || end < start {
-		s.log.Debug("Busuanzi payload parse failed", nil)
+		s.log.Debug("Busuanzi payload parse failed", counterLogFields("busuanzi.response.parse_failed", nil))
 		return nil
 	}
 
 	data := &busuanziData{}
 	if err := json.Unmarshal([]byte(body[start:end+1]), data); err != nil {
-		s.log.Debug("Busuanzi JSON decode failed", map[string]any{"error": err.Error()})
+		s.log.Debug("Busuanzi JSON decode failed", counterLogFields("busuanzi.response.decode_failed", map[string]any{"error": err.Error()}))
 		return nil
 	}
 
-	s.log.Debug("Busuanzi data retrieved", data)
+	s.log.Debug("Busuanzi data retrieved", counterLogFields("busuanzi.data.retrieved", map[string]any{"site_uv": data.SiteUV, "site_pv": data.SitePV, "page_pv": data.PagePV}))
 	return data
 }
 
@@ -76,7 +76,7 @@ func (s *Service) fetchBusuanziSiteUV(ctx context.Context, hostSanitized string,
 		return 0
 	}
 
-	s.log.Debug("Busuanzi UV data retrieved", map[string]any{"host": hostSanitized, "value": data.SiteUV})
+	s.log.Debug("Busuanzi site UV retrieved", counterLogFields("busuanzi.site_uv.retrieved", map[string]any{"host": hostSanitized, "site_uv": data.SiteUV}))
 	return data.SiteUV
 }
 
@@ -86,7 +86,7 @@ func (s *Service) fetchBusuanziSitePV(ctx context.Context, hostSanitized string,
 		return 0
 	}
 
-	s.log.Debug("Busuanzi site PV data retrieved", map[string]any{"host": hostSanitized, "value": data.SitePV})
+	s.log.Debug("Busuanzi site PV retrieved", counterLogFields("busuanzi.site_pv.retrieved", map[string]any{"host": hostSanitized, "site_pv": data.SitePV}))
 	return data.SitePV
 }
 
@@ -96,6 +96,6 @@ func (s *Service) fetchBusuanziPagePV(ctx context.Context, hostSanitized string,
 		return 0
 	}
 
-	s.log.Debug("Busuanzi page PV data retrieved", map[string]any{"host": hostSanitized, "path": pathSanitized, "value": data.PagePV})
+	s.log.Debug("Busuanzi page PV retrieved", counterLogFields("busuanzi.page_pv.retrieved", map[string]any{"host": hostSanitized, "target_path": pathSanitized, "page_pv": data.PagePV}))
 	return data.PagePV
 }
