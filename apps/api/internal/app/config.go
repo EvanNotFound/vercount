@@ -6,6 +6,11 @@ import (
 	"strings"
 )
 
+const (
+	containerScriptPath = "/app/public/js/client.min.js"
+	localScriptPath     = "../web/public/js/client.min.js"
+)
+
 type Config struct {
 	Addr       string
 	RedisURL   string
@@ -29,10 +34,7 @@ func LoadConfig() (Config, error) {
 		return Config{}, fmt.Errorf("REDIS_URL is required")
 	}
 
-	scriptPath := strings.TrimSpace(os.Getenv("SCRIPT_PATH"))
-	if scriptPath == "" {
-		scriptPath = "../web/public/js/client.min.js"
-	}
+	scriptPath := resolveScriptPath()
 
 	debug := strings.EqualFold(strings.TrimSpace(os.Getenv("DEBUG")), "true")
 
@@ -76,4 +78,16 @@ func LoadEnvFile(path string) error {
 	}
 
 	return nil
+}
+
+func resolveScriptPath() string {
+	if override := strings.TrimSpace(os.Getenv("SCRIPT_PATH")); override != "" {
+		return override
+	}
+
+	if _, err := os.Stat(containerScriptPath); err == nil {
+		return containerScriptPath
+	}
+
+	return localScriptPath
 }

@@ -15,7 +15,7 @@ Copy `.env.example` to `.env` and set:
 
 - `REDIS_URL` - direct Redis connection URL for the existing counter backend
 - `PORT` - HTTP port (default `8080`)
-- `SCRIPT_PATH` - path to the built browser script (default `../web/public/js/client.min.js`)
+- `SCRIPT_PATH` - optional override for the browser script path used for `/js`
 - `DEBUG` - set to `true` for debug logs
 
 ## Run
@@ -44,7 +44,8 @@ Build the local API image from the repo root:
 pnpm api:docker:build
 ```
 
-The image build includes the built browser script for `/js`, so the runtime container does not depend on a host-local `apps/web/public/js/client.min.js` path.
+The image build includes the built browser script for `/js`, and the API uses that bundled copy automatically inside the container.
+`SCRIPT_PATH` remains available as an override if you ever need to point at a different file.
 
 ## Docker Compose
 
@@ -57,6 +58,7 @@ pnpm api:compose
 ```
 
 This uses `compose.yaml`, starts the published GHCR image from the repository root, and keeps using your existing Redis backend.
+If you need to override the bundled `/js` file path for a one-off run, set `SCRIPT_PATH` in the shell before starting Compose.
 
 The production-like Compose file uses:
 
@@ -73,6 +75,7 @@ pnpm api:compose:local
 ```
 
 This uses `compose-local.yaml`, builds the API image locally, and wires the API container to `redis://redis:6379/0`.
+It also defaults to the bundled in-image `/js` asset, with `SCRIPT_PATH` still available as a one-off shell override.
 
 Stop the production-like Compose workflow from the repo root with:
 

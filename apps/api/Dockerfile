@@ -40,7 +40,6 @@ COPY --from=api-builder /out/vercount-api /app/vercount-api
 COPY --from=web-builder /src/apps/web/public/js/client.min.js /app/public/js/client.min.js
 
 ENV PORT=8080
-ENV SCRIPT_PATH=/app/public/js/client.min.js
 
 EXPOSE 8080
 
