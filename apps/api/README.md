@@ -59,6 +59,7 @@ pnpm api:compose
 
 This uses `compose.yaml`, starts the published GHCR image from the repository root, and keeps using your existing Redis backend.
 If you need to override the bundled `/js` file path for a one-off run, set `SCRIPT_PATH` in the shell before starting Compose.
+Inside the container, the API always listens on `8080`; use `API_PORT` in the root `.env` to choose the host-side published port.
 
 The production-like Compose file uses:
 
@@ -77,6 +78,7 @@ pnpm api:compose:local
 This uses `compose-local.yaml`, builds the API image locally, and wires the API container to `redis://redis:6379/0`.
 It also defaults to the bundled in-image `/js` asset, with `SCRIPT_PATH` still available as a one-off shell override.
 The root `.env` file can still provide values like `API_PORT` and `DEBUG` for this workflow.
+Inside the container, the API still listens on `8080`; `API_PORT` only controls the host-side published port.
 
 Stop the production-like Compose workflow from the repo root with:
 

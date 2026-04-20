@@ -5,7 +5,7 @@ services:
       context: .
       dockerfile: apps/api/Dockerfile
     environment:
-      PORT: ${API_PORT:-8080}
+      PORT: 8080
       REDIS_URL: redis://redis:6379/0
       SCRIPT_PATH: ${SCRIPT_PATH:-}
       DEBUG: ${DEBUG:-false}
