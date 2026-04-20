@@ -7,24 +7,24 @@
 
 # Vercount Website Counter
 
-> Powered by: 🚀 NextJS + ✨ Redis + ▲ Vercel
+> Powered by: 🚀 Go + ✨ Redis + ▲ Next.js
 
-Looking for a simple, easy-to-use website counter? Try Vercount! It's the ultimate solution for fast and reliable statistics.
+Looking for a simple, easy-to-use website counter? Try Vercount! It's a fast and reliable alternative for website analytics.
 
-Vercount is an efficient website counter based on NextJS and Redis, featuring:
+Vercount is an efficient website counter built around a Go public events service and Redis, with Next.js serving as the dashboard, auth, and compatibility layer. It features:
 
-- **Lightning Fast**: Server response time under 10ms.
-- **High Availability**: 99.99% uptime with global CDN support.
+- **Lightning Fast**: The public counting path is handled directly by the Go service for fast and stable responses.
+- **High Availability**: Public event traffic is separated from the management web app, reducing pressure on the main site runtime.
 - **Accurate Statistics**: Utilizes POST requests for precise data.
-- **Security**: JSON callback to eliminate CSRF attack risks; learn more: [JSONP](https://en.wikipedia.org/wiki/JSONP).
-- **Automatic Data Sync**: No manual operation needed; data auto-syncs.
-- **Seamless Compatibility**: Easy integration with existing HTML.
-- **Persistent Data Storage**: Regular Redis backups to prevent data loss.
-- **Serverless Architecture**: Back-end support via Vercel Serverless Functions.
+- **Security**: Keeps the compatibility surface while continuing to strengthen public endpoint safety and abuse protection.
+- **Automatic Data Sync**: No manual operation needed; counter data can initialize automatically from existing Busuanzi data.
+- **Seamless Compatibility**: Easy integration with existing HTML and Busuanzi-compatible spans.
+- **Persistent Data Storage**: Redis remains the shared counter storage layer.
+- **Clear Architecture**: Go + Redis power the core counting backend, while Next.js handles dashboard, auth, domain management, and compatibility flows.
 
 ## Why Choose Vercount?
 
-Vercount is designed to be faster, more stable, and secure. Easy deployment requires only adding a script tag. Future updates will include customizable statistics.
+Vercount is designed to be faster, more stable, and more secure. From the user's perspective, it still takes only a script tag to get started. Under the hood, Vercount now centers on a Go + Redis counting backend, while the Next.js app handles dashboard, authentication, and compatibility workflows. Future updates will include more customizable statistics and management features.
 
 ## Project Website
 
@@ -42,7 +42,7 @@ Vercount is designed to be faster, more stable, and secure. Easy deployment requ
 To get started, simply add this script to your site:
 
 ```html
-<script defer src="https://cn.vercount.one/js"></script>
+<script defer src="https://events.vercount.one/js"></script>
 ```
 
 After adding the script, use these tags to start counting:
@@ -75,9 +75,18 @@ We have implemented multiple layers of security measures to detect and block aut
 
 ## Self-Hosting Guide
 
-Coming soon.
+Full self-hosting documentation is still being organized. At a high level, the current architecture consists of:
+
+- `apps/api`: the Go public events service
+- `apps/web`: the Next.js dashboard and compatibility layer
+- Redis: the shared counter storage backend
+
+More detailed deployment instructions will be added soon.
 
 ## Development and Deployment Notes
 
-- The website app now lives in `apps/web/`
-- If you deploy this repository on Vercel, set the Project Root Directory to `apps/web`
+- The web dashboard app lives in `apps/web/`
+- The public events service lives in `apps/api/`
+- The main counting backend is now Go + Redis, while Next.js remains the dashboard, auth, and compatibility layer
+- If you deploy the web app on Vercel, set the Project Root Directory to `apps/web`
+- Public counter traffic such as `events.vercount.one` should be served by `apps/api`
