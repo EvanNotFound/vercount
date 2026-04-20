@@ -38,10 +38,12 @@ func (h *PublicHandler) Root(w http.ResponseWriter, _ *http.Request) {
 			"/",
 			"/healthz",
 			"/js",
-			"/log",
+			// "/log", deprecated
 			"/api/v1/log",
 			"/api/v2/log",
 		},
+		"github": "https://github.com/EvanNotFound/vercount",
+		"homepage": "https://www.vercount.one",
 	})
 }
 
