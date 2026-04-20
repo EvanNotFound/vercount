@@ -24,7 +24,7 @@ FROM golang:1.22-alpine AS api-builder
 
 WORKDIR /src/apps/api
 
-COPY apps/api/go.mod ./go.mod
+COPY apps/api/go.mod apps/api/go.sum ./
 COPY apps/api/main.go ./main.go
 COPY apps/api/internal ./internal
 

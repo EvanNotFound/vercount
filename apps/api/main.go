@@ -1,13 +1,14 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"time"
 
 	"github.com/EvanNotFound/vercount/apps/api/internal/app"
 	"github.com/EvanNotFound/vercount/apps/api/internal/counter"
-	"github.com/EvanNotFound/vercount/apps/api/internal/redis"
+	redis "github.com/redis/go-redis/v9"
 )
 
 func main() {
@@ -24,11 +25,34 @@ func main() {
 	}
 
 	logger := app.NewLogger(config.Debug)
-	redisClient, err := redis.New(config.RedisURL)
+	redisOptions, err := redis.ParseURL(config.RedisURL)
 	if err != nil {
 		panic(err)
 	}
+	if redisOptions.DialTimeout == 0 {
+		redisOptions.DialTimeout = 5 * time.Second
+	}
+	if redisOptions.ReadTimeout == 0 {
+		redisOptions.ReadTimeout = 3 * time.Second
+	}
+	if redisOptions.WriteTimeout == 0 {
+		redisOptions.WriteTimeout = 3 * time.Second
+	}
+	if redisOptions.PoolSize == 0 {
+		redisOptions.PoolSize = 32
+	}
+	if redisOptions.MinIdleConns == 0 {
+		redisOptions.MinIdleConns = 4
+	}
+
+	redisClient := redis.NewClient(redisOptions)
 	defer redisClient.Close()
+
+	pingCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := redisClient.Ping(pingCtx).Err(); err != nil {
+		panic(err)
+	}
 
 	server := app.NewServer(
 		config,

@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/EvanNotFound/vercount/apps/api/internal/counter"
-	"github.com/EvanNotFound/vercount/apps/api/internal/redis"
+	redis "github.com/redis/go-redis/v9"
 )
 
 type Server struct {

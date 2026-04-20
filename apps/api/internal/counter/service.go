@@ -9,13 +9,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/EvanNotFound/vercount/apps/api/internal/redis"
+	redis "github.com/redis/go-redis/v9"
 )
 
 const (
-	ExpirationTime        int64 = 60 * 60 * 24 * 30 * 3
-	siteUVCountKeyPrefix        = "uv:site:count:"
-	pageInventoryKeyPrefix      = "pv:page:index:"
+	ExpirationTime         int64 = 60 * 60 * 24 * 30 * 3
+	expirationTTL                = time.Duration(ExpirationTime) * time.Second
+	siteUVCountKeyPrefix         = "uv:site:count:"
+	pageInventoryKeyPrefix       = "pv:page:index:"
 )
 
 var drivePathPattern = regexp.MustCompile(`^/[A-Za-z]:/`)
@@ -56,15 +57,15 @@ func (s *Service) FetchSiteUV(ctx context.Context, host string, path string) (in
 		return 0, err
 	}
 
-	value, ok, err := s.redis.Get(ctx, siteKey)
+	value, err := s.redis.Get(ctx, siteKey).Result()
 	if err != nil {
+		if err == redis.Nil {
+			return 0, nil
+		}
 		return 0, err
 	}
-	if err := s.redis.Expire(ctx, siteKey, ExpirationTime); err != nil {
+	if err := s.redis.Expire(ctx, siteKey, expirationTTL).Err(); err != nil {
 		return 0, err
-	}
-	if !ok {
-		return 0, nil
 	}
 
 	count, err := parseInt(value)
@@ -105,11 +106,11 @@ func (s *Service) IncrementSitePV(ctx context.Context, host string) (int64, erro
 	}
 
 	siteKey := "pv:site:" + sanitized.Host
-	count, err := s.redis.Incr(ctx, siteKey)
+	count, err := s.redis.Incr(ctx, siteKey).Result()
 	if err != nil {
 		return 0, err
 	}
-	if err := s.redis.Expire(ctx, siteKey, ExpirationTime); err != nil {
+	if err := s.redis.Expire(ctx, siteKey, expirationTTL).Err(); err != nil {
 		return 0, err
 	}
 
@@ -124,11 +125,11 @@ func (s *Service) IncrementPagePV(ctx context.Context, host string, path string)
 	}
 
 	pageKey := fmt.Sprintf("pv:page:%s:%s", sanitized.Host, sanitized.Path)
-	count, err := s.redis.Incr(ctx, pageKey)
+	count, err := s.redis.Incr(ctx, pageKey).Result()
 	if err != nil {
 		return 0, err
 	}
-	if err := s.redis.Expire(ctx, pageKey, ExpirationTime); err != nil {
+	if err := s.redis.Expire(ctx, pageKey, expirationTTL).Err(); err != nil {
 		return 0, err
 	}
 	if err := s.addStoredPage(ctx, sanitized.Host, sanitized.Path); err != nil {
@@ -148,17 +149,21 @@ func (s *Service) RecordSiteUV(ctx context.Context, host string, isNew bool) (in
 	siteKey := getSiteUVCountKey(sanitized.Host)
 	var count int64
 	if isNew {
-		value, err := s.redis.Incr(ctx, siteKey)
+		value, err := s.redis.Incr(ctx, siteKey).Result()
 		if err != nil {
 			return 0, err
 		}
 		count = value
 	} else {
-		value, ok, err := s.redis.Get(ctx, siteKey)
+		value, err := s.redis.Get(ctx, siteKey).Result()
 		if err != nil {
-			return 0, err
+			if err == redis.Nil {
+				value = ""
+			} else {
+				return 0, err
+			}
 		}
-		if ok {
+		if value != "" {
 			count, err = parseInt(value)
 			if err != nil {
 				return 0, err
@@ -166,7 +171,7 @@ func (s *Service) RecordSiteUV(ctx context.Context, host string, isNew bool) (in
 		}
 	}
 
-	if err := s.redis.Expire(ctx, siteKey, ExpirationTime); err != nil {
+	if err := s.redis.Expire(ctx, siteKey, expirationTTL).Err(); err != nil {
 		return 0, err
 	}
 
@@ -202,11 +207,12 @@ func (s *Service) initializeSiteUV(ctx context.Context, hostSanitized string, ho
 }
 
 func (s *Service) initializeCounter(ctx context.Context, key string, resolve func(context.Context) int64, after func(context.Context) error) (int64, error) {
-	value, ok, err := s.redis.Get(ctx, key)
+	value, err := s.redis.Get(ctx, key).Result()
 	if err != nil {
-		return 0, err
-	}
-	if ok {
+		if err != redis.Nil {
+			return 0, err
+		}
+	} else {
 		return parseInt(value)
 	}
 
@@ -215,7 +221,7 @@ func (s *Service) initializeCounter(ctx context.Context, key string, resolve fun
 		initial = 0
 	}
 
-	if err := s.redis.SetEX(ctx, key, initial, ExpirationTime); err != nil {
+	if err := s.redis.Set(ctx, key, initial, expirationTTL).Err(); err != nil {
 		return 0, err
 	}
 
@@ -230,35 +236,36 @@ func (s *Service) initializeCounter(ctx context.Context, key string, resolve fun
 
 func (s *Service) addStoredPage(ctx context.Context, hostSanitized string, pathSanitized string) error {
 	inventoryKey := getPageInventoryKey(hostSanitized)
-	if err := s.redis.SAdd(ctx, inventoryKey, pathSanitized); err != nil {
+	if err := s.redis.SAdd(ctx, inventoryKey, pathSanitized).Err(); err != nil {
 		return err
 	}
-	return s.redis.Expire(ctx, inventoryKey, ExpirationTime)
+	return s.redis.Expire(ctx, inventoryKey, expirationTTL).Err()
 }
 
 func (s *Service) getLegacySiteUVTotal(ctx context.Context, hostSanitized string) (int64, bool, error) {
 	legacySiteKey := "uv:site:" + hostSanitized
 	legacyBaselineKey := "uv:baseline:" + hostSanitized
 
-	setCount, err := s.redis.SCard(ctx, legacySiteKey)
+	setCount, err := s.redis.SCard(ctx, legacySiteKey).Result()
 	if err != nil {
 		return 0, false, err
 	}
 
-	baselineValue, ok, err := s.redis.Get(ctx, legacyBaselineKey)
+	baselineValue, err := s.redis.Get(ctx, legacyBaselineKey).Result()
 	if err != nil {
+		if err == redis.Nil {
+			return setCount, setCount > 0, nil
+		}
 		return 0, false, err
 	}
 
 	baseline := int64(0)
-	if ok {
-		baseline, err = parseInt(baselineValue)
-		if err != nil {
-			return 0, false, err
-		}
+	baseline, err = parseInt(baselineValue)
+	if err != nil {
+		return 0, false, err
 	}
 
-	if setCount > 0 || ok {
+	if setCount > 0 || baselineValue != "" {
 		return setCount + baseline, true, nil
 	}
 
