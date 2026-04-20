@@ -1,35 +1,42 @@
 ## Purpose
 
-Define the repository's pnpm workspace layout, root developer workflows, and app-owned build assumptions after the monorepo migration.
+Define the repository's pnpm workspace layout, root developer workflows, and app-owned build assumptions after the move to `apps/web` and `apps/api`.
 
 ## Requirements
 
 ### Requirement: Repository uses a pnpm workspace layout
 
-The repository SHALL use a pnpm workspace layout that places the current Next.js app under `/app` and workspace packages under `/packages/*`.
+The repository SHALL use a pnpm workspace layout that places the current Next.js app under `/apps/web`, the public events Go app under `/apps/api`, and workspace packages under `/packages/*`.
 
 #### Scenario: Repository layout after migration
 
-- **WHEN** the monorepo migration is complete
-- **THEN** the current Next.js application SHALL live under `/app`
+- **WHEN** the repository layout migration is complete
+- **THEN** the current Next.js application SHALL live under `/apps/web`
+- **AND** the public events Go app SHALL live under `/apps/api`
 - **AND** the React package SHALL live under `/packages/react`
 - **AND** the repository SHALL include workspace configuration that recognizes those package locations
 
 ### Requirement: Root workflows remain usable after the app move
 
-The repository SHALL continue to provide a usable root-level development workflow after the Next.js app moves into `/app`.
+The repository SHALL continue to provide a usable root-level development workflow after the Next.js app moves into `/apps/web`, the public events Go app lives under `/apps/api`, and the API service gains checked-in container workflows.
 
 #### Scenario: Developer runs root workflow commands
 
-- **WHEN** a developer runs the repository's standard root commands for development, build, or lint
-- **THEN** those commands SHALL delegate to the moved app package in `/app`
-- **AND** the commands SHALL not require the app to remain at repo root
+- **WHEN** a developer runs the repository's standard root commands for development, build, start, lint, database tasks, or API container workflows
+- **THEN** the web app workflows SHALL delegate to the web app package in `/apps/web`
+- **AND** the API workflows SHALL remain addressable from the repository root
+- **AND** the repository SHALL support checked-in root-level container workflows for the API service without requiring the developer to restructure the repo
 
 ### Requirement: App-owned build assumptions move with the app
 
-Files and scripts that are part of the web app's runtime or build process SHALL move with the app into `/app`.
+Files and scripts that are part of an app's runtime or build process SHALL live with that app under its app directory.
 
 #### Scenario: Web app build after migration
 
 - **WHEN** the web app builds or starts from its new location
-- **THEN** app-owned config, source, static assets, and generated client bundle paths SHALL resolve correctly from within `/app`
+- **THEN** the web app's config, source, static assets, and generated client bundle paths SHALL resolve correctly from within `/apps/web`
+
+#### Scenario: Public events app build after migration
+
+- **WHEN** the public events Go app builds or starts from its new location
+- **THEN** that app's source, config, runtime assets, and container workflows SHALL resolve correctly from within `/apps/api`
