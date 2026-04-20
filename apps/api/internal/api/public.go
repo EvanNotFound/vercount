@@ -33,6 +33,7 @@ func NewPublicHandler(scriptPath string, log Logger, redisClient *redis.Client) 
 func (h *PublicHandler) Root(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{
 		"service": publicServiceName,
+		"description": "Straightforward, Fast, and Reliable Website Visitor Counter.",
 		"status":  "ok",
 		"routes": []string{
 			"/",
