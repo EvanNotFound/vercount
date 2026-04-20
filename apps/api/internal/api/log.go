@@ -19,8 +19,9 @@ import (
 )
 
 const (
-	rateLimitWindow = 60 * time.Second
-	rateLimitCount  = int64(80)
+	rateLimitWindow         = 60 * time.Second
+	rateLimitCount          = int64(80)
+	benchmarkWriteTargetURL = "https://bench.vercount.one/gurt"
 )
 
 var suspiciousUA = regexp.MustCompile(`python-requests|python/|requests/|curl/|wget/|go-http-client/|httpie/|postman/|axios/|node-fetch/|empty|unknown|bot|crawl|spider`)
@@ -224,6 +225,31 @@ func (h *LogHandler) V2Post(w http.ResponseWriter, r *http.Request) {
 
 	h.log.Debug("counter update completed", requestLogFields(r, "counter.write_completed", map[string]any{"host": target.Host, "target_path": target.Path, "is_new_uv": data.IsNewUV, "site_uv": counts.SiteUV, "site_pv": counts.SitePV, "page_pv": counts.PagePV}))
 	h.writeV2Success(w, http.StatusOK, "Data updated successfully", counts)
+}
+
+func (h *LogHandler) BenchmarkWrite(w http.ResponseWriter, r *http.Request) {
+	applyCORSHeaders(w)
+	applyNoStoreHeaders(w)
+	if !h.allowV2Request(w, r) {
+		return
+	}
+
+	target, message := validateTargetURL(benchmarkWriteTargetURL)
+	if message != "" {
+		h.log.Error("benchmark target configuration invalid", requestLogFields(r, "benchmark.target.invalid", map[string]any{"status": http.StatusInternalServerError, "target_url": benchmarkWriteTargetURL, "reason": message}))
+		h.writeV2Error(w, http.StatusInternalServerError, "Benchmark target configuration invalid", nil)
+		return
+	}
+
+	counts, err := h.writeCounts(r.Context(), target.Host, target.Path, true)
+	if err != nil {
+		h.log.Error("benchmark counter update failed", requestLogFields(r, "counter.benchmark_write_failed", map[string]any{"status": http.StatusInternalServerError, "error": err.Error(), "target_url": benchmarkWriteTargetURL}))
+		h.writeV2Error(w, http.StatusInternalServerError, "Internal server error", nil)
+		return
+	}
+
+	h.log.Debug("benchmark counter update completed", requestLogFields(r, "counter.benchmark_write_completed", map[string]any{"host": target.Host, "target_path": target.Path, "target_url": benchmarkWriteTargetURL, "is_new_uv": true, "site_uv": counts.SiteUV, "site_pv": counts.SitePV, "page_pv": counts.PagePV}))
+	h.writeV2Success(w, http.StatusOK, "Benchmark data updated successfully", counts)
 }
 
 func (h *LogHandler) allowV1Request(w http.ResponseWriter, r *http.Request) bool {

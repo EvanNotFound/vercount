@@ -32,18 +32,19 @@ func NewPublicHandler(scriptPath string, log Logger, redisClient *redis.Client) 
 
 func (h *PublicHandler) Root(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{
-		"service": publicServiceName,
+		"service":     publicServiceName,
 		"description": "Straightforward, Fast, and Reliable Website Visitor Counter.",
-		"status":  "ok",
+		"status":      "ok",
 		"routes": []string{
 			"/",
 			"/healthz",
 			"/js",
+			"/bench/write",
 			// "/log", deprecated
 			"/api/v1/log",
 			"/api/v2/log",
 		},
-		"github": "https://github.com/EvanNotFound/vercount",
+		"github":   "https://github.com/EvanNotFound/vercount",
 		"homepage": "https://www.vercount.one",
 	})
 }
@@ -102,4 +103,10 @@ func applyCORSHeaders(w http.ResponseWriter) {
 	w.Header().Set("Access-Control-Allow-Methods", "GET, HEAD, DELETE, PATCH, POST, PUT, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, X-Browser-Token")
 	w.Header().Set("Access-Control-Max-Age", "86400")
+}
+
+func applyNoStoreHeaders(w http.ResponseWriter) {
+	w.Header().Set("Cache-Control", "no-store, max-age=0")
+	w.Header().Set("Pragma", "no-cache")
+	w.Header().Set("Expires", "0")
 }

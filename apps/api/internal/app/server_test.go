@@ -2,6 +2,7 @@ package app
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -37,6 +38,10 @@ func TestRootEndpointReturnsServiceMetadata(t *testing.T) {
 	routes, ok := payload["routes"].([]any)
 	if !ok || len(routes) == 0 {
 		t.Fatalf("expected routes array, got %#v", payload["routes"])
+	}
+
+	if !containsRoute(routes, "/bench/write") {
+		t.Fatalf("expected benchmark route in metadata, got %#v", routes)
 	}
 }
 
@@ -196,6 +201,146 @@ func TestOptionsRoutesStayAvailable(t *testing.T) {
 	}
 }
 
+func TestBenchmarkWriteRouteUsesFixedTargetAndNoStoreHeaders(t *testing.T) {
+	redisServer := mustStartMiniRedis(t)
+	handler := newTestHandler(t, redisServer.Addr())
+	client := redis.NewClient(&redis.Options{Addr: redisServer.Addr()})
+	t.Cleanup(func() { _ = client.Close() })
+	seedBenchmarkNamespace(t, client)
+
+	recorder := httptest.NewRecorder()
+	handler.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/bench/write", nil))
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", recorder.Code)
+	}
+
+	if recorder.Header().Get("Access-Control-Allow-Origin") != "*" {
+		t.Fatalf("expected CORS header, got %q", recorder.Header().Get("Access-Control-Allow-Origin"))
+	}
+
+	if !strings.Contains(recorder.Header().Get("Cache-Control"), "no-store") {
+		t.Fatalf("expected no-store cache header, got %q", recorder.Header().Get("Cache-Control"))
+	}
+
+	if recorder.Header().Get("Pragma") != "no-cache" {
+		t.Fatalf("expected pragma no-cache header, got %q", recorder.Header().Get("Pragma"))
+	}
+
+	if recorder.Header().Get("Expires") != "0" {
+		t.Fatalf("expected expires header 0, got %q", recorder.Header().Get("Expires"))
+	}
+
+	var payload map[string]any
+	if err := json.Unmarshal(recorder.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("unmarshal benchmark response: %v", err)
+	}
+
+	if payload["status"] != "success" {
+		t.Fatalf("expected success envelope, got %#v", payload)
+	}
+
+	data, ok := payload["data"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected data envelope, got %#v", payload)
+	}
+
+	for field, want := range map[string]float64{"site_uv": 1, "site_pv": 1, "page_pv": 1} {
+		if data[field] != want {
+			t.Fatalf("expected %s=%v, got %#v", field, want, data[field])
+		}
+	}
+
+	keys, err := client.Keys(context.Background(), "*").Result()
+	if err != nil {
+		t.Fatalf("list redis keys: %v", err)
+	}
+
+	for _, key := range keys {
+		if strings.HasPrefix(key, "ratelimit:") {
+			continue
+		}
+		if !strings.Contains(key, "bench.vercount.one") {
+			t.Fatalf("expected only benchmark namespace keys, got %q in %#v", key, keys)
+		}
+	}
+
+	pageValue, err := client.Get(context.Background(), "pv:page:bench.vercount.one:/gurt").Result()
+	if err != nil {
+		t.Fatalf("read benchmark page key: %v", err)
+	}
+
+	if pageValue != "1" {
+		t.Fatalf("expected fixed /gurt page key to increment to 1, got %q", pageValue)
+	}
+}
+
+func TestBenchmarkWriteRouteUsesV2RateLimitErrors(t *testing.T) {
+	redisServer := mustStartMiniRedis(t)
+	handler := newTestHandler(t, redisServer.Addr())
+	client := redis.NewClient(&redis.Options{Addr: redisServer.Addr()})
+	t.Cleanup(func() { _ = client.Close() })
+	seedBenchmarkNamespace(t, client)
+
+	for i := 0; i < 80; i++ {
+		recorder := httptest.NewRecorder()
+		request := httptest.NewRequest(http.MethodGet, "/bench/write", nil)
+		request.RemoteAddr = "203.0.113.10:1234"
+		handler.ServeHTTP(recorder, request)
+
+		if recorder.Code != http.StatusOK {
+			t.Fatalf("expected warm-up request to succeed, got %d", recorder.Code)
+		}
+	}
+
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/bench/write", nil)
+	request.RemoteAddr = "203.0.113.10:1234"
+	handler.ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusTooManyRequests {
+		t.Fatalf("expected 429, got %d", recorder.Code)
+	}
+
+	if !strings.Contains(recorder.Header().Get("Cache-Control"), "no-store") {
+		t.Fatalf("expected no-store cache header, got %q", recorder.Header().Get("Cache-Control"))
+	}
+
+	if recorder.Header().Get("Pragma") != "no-cache" {
+		t.Fatalf("expected pragma no-cache header, got %q", recorder.Header().Get("Pragma"))
+	}
+
+	if recorder.Header().Get("Expires") != "0" {
+		t.Fatalf("expected expires header 0, got %q", recorder.Header().Get("Expires"))
+	}
+
+	var payload map[string]any
+	if err := json.Unmarshal(recorder.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("unmarshal rate-limit response: %v", err)
+	}
+
+	if payload["status"] != "error" {
+		t.Fatalf("expected error envelope, got %#v", payload)
+	}
+
+	if payload["code"] != float64(http.StatusTooManyRequests) {
+		t.Fatalf("expected 429 code, got %#v", payload["code"])
+	}
+
+	if payload["message"] != "Rate limit exceeded" {
+		t.Fatalf("expected rate-limit message, got %#v", payload["message"])
+	}
+
+	details, ok := payload["details"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected details payload, got %#v", payload)
+	}
+
+	if details["limit"] != float64(80) || details["remaining"] != float64(0) {
+		t.Fatalf("expected v2 rate-limit details, got %#v", details)
+	}
+}
+
 func TestRequestLoggingEmitsStructuredCompletionEvent(t *testing.T) {
 	redisServer := mustStartMiniRedis(t)
 	var logs bytes.Buffer
@@ -280,6 +425,33 @@ func findLogEntry(t *testing.T, output string, event string) map[string]any {
 
 	t.Fatalf("expected log entry with event %q in output %q", event, output)
 	return nil
+}
+
+func containsRoute(routes []any, want string) bool {
+	for _, route := range routes {
+		if route == want {
+			return true
+		}
+	}
+
+	return false
+}
+
+func seedBenchmarkNamespace(t *testing.T, client *redis.Client) {
+	t.Helper()
+
+	ctx := context.Background()
+	seedValues := map[string]string{
+		"uv:site:count:bench.vercount.one": "0",
+		"pv:site:bench.vercount.one":       "0",
+		"pv:page:bench.vercount.one:/gurt": "0",
+	}
+
+	for key, value := range seedValues {
+		if err := client.Set(ctx, key, value, 0).Err(); err != nil {
+			t.Fatalf("seed %s: %v", key, err)
+		}
+	}
 }
 
 func mustStartMiniRedis(t *testing.T) *miniredis.Miniredis {

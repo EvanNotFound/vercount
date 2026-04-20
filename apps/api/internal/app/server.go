@@ -34,6 +34,7 @@ func (s *Server) Routes() http.Handler {
 	r.Get("/healthz", s.public.Healthz)
 	r.Get("/js", s.public.Script)
 	r.Head("/js", s.public.Script)
+	r.Get("/bench/write", s.logAPI.BenchmarkWrite)
 
 	r.Options("/log", s.logAPI.V1Options)
 	r.Get("/log", s.logAPI.V1Get)
