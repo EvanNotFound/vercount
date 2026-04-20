@@ -4,10 +4,22 @@ Minimal Go service for the public `events.vercount.one` surface.
 
 ## What it serves
 
+- `/`
+- `/healthz`
 - `/js`
 - `/log`
 - `/api/v1/log`
 - `/api/v2/log`
+
+## Internal structure
+
+The Go API stays intentionally small and is organized by runtime surface instead of generic web layers:
+
+- `internal/app/runtime.go` - env/config loading and logger setup
+- `internal/app/server.go` - dependency wiring and chi route registration
+- `internal/api/public.go` - `/`, `/healthz`, and `/js`
+- `internal/api/log.go` - `/log`, `/api/v1/log`, and `/api/v2/log`
+- `internal/counter/*` - counter reads/writes and Redis-backed counting behavior
 
 ## Environment
 
