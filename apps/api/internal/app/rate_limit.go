@@ -50,12 +50,18 @@ func (l *RateLimiter) Check(ctx context.Context, r *http.Request) RateLimitResul
 	cutoff := now.Add(-rateLimitWindow).UnixMilli()
 	reset := now.Add(rateLimitWindow).UnixMilli()
 
-	if err := l.redis.ZRemRangeByScore(ctx, key, "-inf", fmt.Sprintf("%d", cutoff)).Err(); err != nil {
+	var countCmd *redis.IntCmd
+	_, err := l.redis.Pipelined(ctx, func(pipe redis.Pipeliner) error {
+		pipe.ZRemRangeByScore(ctx, key, "-inf", fmt.Sprintf("%d", cutoff))
+		countCmd = pipe.ZCard(ctx, key)
+		return nil
+	})
+	if err != nil {
 		l.log.Warn("Rate limit cleanup failed", map[string]any{"ip": ip, "error": err.Error()})
 		return RateLimitResult{Success: true, Limit: rateLimitCount, Remaining: rateLimitCount, Reset: reset}
 	}
 
-	count, err := l.redis.ZCard(ctx, key).Result()
+	count, err := countCmd.Result()
 	if err != nil {
 		l.log.Warn("Rate limit count failed", map[string]any{"ip": ip, "error": err.Error()})
 		return RateLimitResult{Success: true, Limit: rateLimitCount, Remaining: rateLimitCount, Reset: reset}
@@ -73,12 +79,14 @@ func (l *RateLimiter) Check(ctx context.Context, r *http.Request) RateLimitResul
 	}
 
 	member := fmt.Sprintf("%d-%d", now.UnixMilli(), atomic.AddUint64(&l.counter, 1))
-	if err := l.redis.ZAdd(ctx, key, redis.Z{Score: float64(now.UnixMilli()), Member: member}).Err(); err != nil {
+	_, err = l.redis.Pipelined(ctx, func(pipe redis.Pipeliner) error {
+		pipe.ZAdd(ctx, key, redis.Z{Score: float64(now.UnixMilli()), Member: member})
+		pipe.Expire(ctx, key, rateLimitWindow)
+		return nil
+	})
+	if err != nil {
 		l.log.Warn("Rate limit add failed", map[string]any{"ip": ip, "error": err.Error()})
 		return RateLimitResult{Success: true, Limit: rateLimitCount, Remaining: rateLimitCount, Reset: reset}
-	}
-	if err := l.redis.Expire(ctx, key, rateLimitWindow).Err(); err != nil {
-		l.log.Warn("Rate limit expire failed", map[string]any{"ip": ip, "error": err.Error()})
 	}
 
 	remaining := rateLimitCount - (count + 1)

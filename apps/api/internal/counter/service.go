@@ -57,14 +57,11 @@ func (s *Service) FetchSiteUV(ctx context.Context, host string, path string) (in
 		return 0, err
 	}
 
-	value, err := s.redis.Get(ctx, siteKey).Result()
+	value, err := s.redis.GetEx(ctx, siteKey, expirationTTL).Result()
 	if err != nil {
 		if err == redis.Nil {
 			return 0, nil
 		}
-		return 0, err
-	}
-	if err := s.redis.Expire(ctx, siteKey, expirationTTL).Err(); err != nil {
 		return 0, err
 	}
 
@@ -106,11 +103,18 @@ func (s *Service) IncrementSitePV(ctx context.Context, host string) (int64, erro
 	}
 
 	siteKey := "pv:site:" + sanitized.Host
-	count, err := s.redis.Incr(ctx, siteKey).Result()
+	var countCmd *redis.IntCmd
+	_, err := s.redis.Pipelined(ctx, func(pipe redis.Pipeliner) error {
+		countCmd = pipe.Incr(ctx, siteKey)
+		pipe.Expire(ctx, siteKey, expirationTTL)
+		return nil
+	})
 	if err != nil {
 		return 0, err
 	}
-	if err := s.redis.Expire(ctx, siteKey, expirationTTL).Err(); err != nil {
+
+	count, err := countCmd.Result()
+	if err != nil {
 		return 0, err
 	}
 
@@ -125,14 +129,21 @@ func (s *Service) IncrementPagePV(ctx context.Context, host string, path string)
 	}
 
 	pageKey := fmt.Sprintf("pv:page:%s:%s", sanitized.Host, sanitized.Path)
-	count, err := s.redis.Incr(ctx, pageKey).Result()
+	inventoryKey := getPageInventoryKey(sanitized.Host)
+	var countCmd *redis.IntCmd
+	_, err := s.redis.Pipelined(ctx, func(pipe redis.Pipeliner) error {
+		countCmd = pipe.Incr(ctx, pageKey)
+		pipe.Expire(ctx, pageKey, expirationTTL)
+		pipe.SAdd(ctx, inventoryKey, sanitized.Path)
+		pipe.Expire(ctx, inventoryKey, expirationTTL)
+		return nil
+	})
 	if err != nil {
 		return 0, err
 	}
-	if err := s.redis.Expire(ctx, pageKey, expirationTTL).Err(); err != nil {
-		return 0, err
-	}
-	if err := s.addStoredPage(ctx, sanitized.Host, sanitized.Path); err != nil {
+
+	count, err := countCmd.Result()
+	if err != nil {
 		return 0, err
 	}
 
@@ -149,13 +160,22 @@ func (s *Service) RecordSiteUV(ctx context.Context, host string, isNew bool) (in
 	siteKey := getSiteUVCountKey(sanitized.Host)
 	var count int64
 	if isNew {
-		value, err := s.redis.Incr(ctx, siteKey).Result()
+		var countCmd *redis.IntCmd
+		_, err := s.redis.Pipelined(ctx, func(pipe redis.Pipeliner) error {
+			countCmd = pipe.Incr(ctx, siteKey)
+			pipe.Expire(ctx, siteKey, expirationTTL)
+			return nil
+		})
 		if err != nil {
 			return 0, err
 		}
-		count = value
+
+		count, err = countCmd.Result()
+		if err != nil {
+			return 0, err
+		}
 	} else {
-		value, err := s.redis.Get(ctx, siteKey).Result()
+		value, err := s.redis.GetEx(ctx, siteKey, expirationTTL).Result()
 		if err != nil {
 			if err == redis.Nil {
 				value = ""
@@ -169,10 +189,6 @@ func (s *Service) RecordSiteUV(ctx context.Context, host string, isNew bool) (in
 				return 0, err
 			}
 		}
-	}
-
-	if err := s.redis.Expire(ctx, siteKey, expirationTTL).Err(); err != nil {
-		return 0, err
 	}
 
 	s.log.Debug("Site UV updated", map[string]any{"host": sanitized.Host, "is_new_uv": isNew, "site_uv": count})
@@ -236,22 +252,35 @@ func (s *Service) initializeCounter(ctx context.Context, key string, resolve fun
 
 func (s *Service) addStoredPage(ctx context.Context, hostSanitized string, pathSanitized string) error {
 	inventoryKey := getPageInventoryKey(hostSanitized)
-	if err := s.redis.SAdd(ctx, inventoryKey, pathSanitized).Err(); err != nil {
-		return err
-	}
-	return s.redis.Expire(ctx, inventoryKey, expirationTTL).Err()
+	_, err := s.redis.Pipelined(ctx, func(pipe redis.Pipeliner) error {
+		pipe.SAdd(ctx, inventoryKey, pathSanitized)
+		pipe.Expire(ctx, inventoryKey, expirationTTL)
+		return nil
+	})
+	return err
 }
 
 func (s *Service) getLegacySiteUVTotal(ctx context.Context, hostSanitized string) (int64, bool, error) {
 	legacySiteKey := "uv:site:" + hostSanitized
 	legacyBaselineKey := "uv:baseline:" + hostSanitized
 
-	setCount, err := s.redis.SCard(ctx, legacySiteKey).Result()
+	var setCountCmd *redis.IntCmd
+	var baselineCmd *redis.StringCmd
+	_, err := s.redis.Pipelined(ctx, func(pipe redis.Pipeliner) error {
+		setCountCmd = pipe.SCard(ctx, legacySiteKey)
+		baselineCmd = pipe.Get(ctx, legacyBaselineKey)
+		return nil
+	})
+	if err != nil && err != redis.Nil {
+		return 0, false, err
+	}
+
+	setCount, err := setCountCmd.Result()
 	if err != nil {
 		return 0, false, err
 	}
 
-	baselineValue, err := s.redis.Get(ctx, legacyBaselineKey).Result()
+	baselineValue, err := baselineCmd.Result()
 	if err != nil {
 		if err == redis.Nil {
 			return setCount, setCount > 0, nil
