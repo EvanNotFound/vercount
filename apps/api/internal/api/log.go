@@ -22,6 +22,8 @@ const (
 	rateLimitWindow         = 60 * time.Second
 	rateLimitCount          = int64(80)
 	benchmarkWriteTargetURL = "https://bench.vercount.one/gurt"
+	readCountsTimeout       = 5 * time.Second
+	writeCountsTimeout      = 5 * time.Second
 )
 
 var suspiciousUA = regexp.MustCompile(`python-requests|python/|requests/|curl/|wget/|go-http-client/|httpie/|postman/|axios/|node-fetch/|empty|unknown|bot|crawl|spider`)
@@ -112,7 +114,7 @@ func (h *LogHandler) V1Get(w http.ResponseWriter, r *http.Request) {
 
 	target, message := validateTargetURL(targetURL)
 	if message != "" {
-		h.log.Warn("invalid tracked url", requestLogFields(r, "target_url.invalid", map[string]any{"status": http.StatusOK, "target_url": targetURL, "reason": message}))
+		h.log.Warn("invalid tracked url", requestLogFields(r, "target_url.invalid", map[string]any{"status": http.StatusOK, "target_url": strings.TrimSpace(targetURL), "reason": message}))
 		writeJSON(w, http.StatusOK, map[string]any{
 			"error":   message,
 			"site_uv": 0,
@@ -124,7 +126,7 @@ func (h *LogHandler) V1Get(w http.ResponseWriter, r *http.Request) {
 
 	data, err := h.readCounts(r.Context(), target.Host, target.Path)
 	if err != nil {
-		h.log.Error("counter read failed", requestLogFields(r, "counter.read_failed", map[string]any{"status": http.StatusInternalServerError, "error": err.Error(), "target_url": targetURL}))
+		h.log.Error("counter read failed", requestLogFields(r, "counter.read_failed", mergeFields(targetLogFields(strings.TrimSpace(targetURL), target), map[string]any{"status": http.StatusInternalServerError, "error": err.Error()})))
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "Internal server error"})
 		return
 	}
@@ -146,7 +148,7 @@ func (h *LogHandler) V1Post(w http.ResponseWriter, r *http.Request) {
 
 	target, message := validateTargetURL(data.URL)
 	if message != "" {
-		h.log.Warn("invalid tracked url", requestLogFields(r, "target_url.invalid", map[string]any{"status": http.StatusOK, "target_url": data.URL, "reason": message}))
+		h.log.Warn("invalid tracked url", requestLogFields(r, "target_url.invalid", map[string]any{"status": http.StatusOK, "target_url": strings.TrimSpace(data.URL), "reason": message}))
 		writeJSON(w, http.StatusOK, map[string]any{
 			"error":   message,
 			"site_uv": 0,
@@ -156,14 +158,14 @@ func (h *LogHandler) V1Post(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	counts, err := h.writeCounts(r.Context(), target.Host, target.Path, data.IsNewUV)
+	counts, err := h.writeAcceptedCounts(r.Context(), target.Host, target.Path, data.IsNewUV)
 	if err != nil {
-		h.log.Error("counter update failed", requestLogFields(r, "counter.write_failed", map[string]any{"status": http.StatusInternalServerError, "error": err.Error(), "target_url": data.URL}))
+		h.logWriteFailure(r, strings.TrimSpace(data.URL), target, data.IsNewUV, err)
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "Internal server error"})
 		return
 	}
 
-	h.log.Debug("counter update completed", requestLogFields(r, "counter.write_completed", map[string]any{"host": target.Host, "target_path": target.Path, "is_new_uv": data.IsNewUV, "site_uv": counts.SiteUV, "site_pv": counts.SitePV, "page_pv": counts.PagePV}))
+	h.logWriteSuccess(r, strings.TrimSpace(data.URL), target, data.IsNewUV, counts)
 	writeJSON(w, http.StatusOK, counts)
 }
 
@@ -182,14 +184,14 @@ func (h *LogHandler) V2Get(w http.ResponseWriter, r *http.Request) {
 
 	target, message := validateTargetURL(targetURL)
 	if message != "" {
-		h.log.Warn("invalid tracked url", requestLogFields(r, "target_url.invalid", map[string]any{"status": http.StatusOK, "target_url": targetURL, "reason": message}))
+		h.log.Warn("invalid tracked url", requestLogFields(r, "target_url.invalid", map[string]any{"status": http.StatusOK, "target_url": strings.TrimSpace(targetURL), "reason": message}))
 		h.writeV2Success(w, http.StatusOK, message, zeroCounters())
 		return
 	}
 
 	data, err := h.readCounts(r.Context(), target.Host, target.Path)
 	if err != nil {
-		h.log.Error("counter read failed", requestLogFields(r, "counter.read_failed", map[string]any{"status": http.StatusInternalServerError, "error": err.Error(), "target_url": targetURL}))
+		h.log.Error("counter read failed", requestLogFields(r, "counter.read_failed", mergeFields(targetLogFields(strings.TrimSpace(targetURL), target), map[string]any{"status": http.StatusInternalServerError, "error": err.Error()})))
 		h.writeV2Error(w, http.StatusInternalServerError, "Internal server error", nil)
 		return
 	}
@@ -211,19 +213,19 @@ func (h *LogHandler) V2Post(w http.ResponseWriter, r *http.Request) {
 
 	target, message := validateTargetURL(data.URL)
 	if message != "" {
-		h.log.Warn("invalid tracked url", requestLogFields(r, "target_url.invalid", map[string]any{"status": http.StatusOK, "target_url": data.URL, "reason": message}))
+		h.log.Warn("invalid tracked url", requestLogFields(r, "target_url.invalid", map[string]any{"status": http.StatusOK, "target_url": strings.TrimSpace(data.URL), "reason": message}))
 		h.writeV2Success(w, http.StatusOK, message, zeroCounters())
 		return
 	}
 
-	counts, err := h.writeCounts(r.Context(), target.Host, target.Path, data.IsNewUV)
+	counts, err := h.writeAcceptedCounts(r.Context(), target.Host, target.Path, data.IsNewUV)
 	if err != nil {
-		h.log.Error("counter update failed", requestLogFields(r, "counter.write_failed", map[string]any{"status": http.StatusInternalServerError, "error": err.Error(), "target_url": data.URL}))
+		h.logWriteFailure(r, strings.TrimSpace(data.URL), target, data.IsNewUV, err)
 		h.writeV2Error(w, http.StatusInternalServerError, "Internal server error", nil)
 		return
 	}
 
-	h.log.Debug("counter update completed", requestLogFields(r, "counter.write_completed", map[string]any{"host": target.Host, "target_path": target.Path, "is_new_uv": data.IsNewUV, "site_uv": counts.SiteUV, "site_pv": counts.SitePV, "page_pv": counts.PagePV}))
+	h.logWriteSuccess(r, strings.TrimSpace(data.URL), target, data.IsNewUV, counts)
 	h.writeV2Success(w, http.StatusOK, "Data updated successfully", counts)
 }
 
@@ -241,9 +243,9 @@ func (h *LogHandler) BenchmarkWrite(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	counts, err := h.writeCounts(r.Context(), target.Host, target.Path, true)
+	counts, err := h.writeRequestScopedCounts(r.Context(), target.Host, target.Path, true)
 	if err != nil {
-		h.log.Error("benchmark counter update failed", requestLogFields(r, "counter.benchmark_write_failed", map[string]any{"status": http.StatusInternalServerError, "error": err.Error(), "target_url": benchmarkWriteTargetURL}))
+		h.log.Error("benchmark counter update failed", requestLogFields(r, "counter.benchmark_write_failed", mergeFields(targetLogFields(benchmarkWriteTargetURL, target), map[string]any{"status": http.StatusInternalServerError, "error": err.Error()})))
 		h.writeV2Error(w, http.StatusInternalServerError, "Internal server error", nil)
 		return
 	}
@@ -301,7 +303,7 @@ func (h *LogHandler) decodeCountRequest(w http.ResponseWriter, r *http.Request, 
 }
 
 func (h *LogHandler) readCounts(ctx context.Context, host string, path string) (CounterData, error) {
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, readCountsTimeout)
 	defer cancel()
 
 	siteUV, err := h.counter.FetchSiteUV(ctx, host, path)
@@ -322,9 +324,19 @@ func (h *LogHandler) readCounts(ctx context.Context, host string, path string) (
 	return CounterData{SiteUV: siteUV, SitePV: sitePV, PagePV: pagePV}, nil
 }
 
-func (h *LogHandler) writeCounts(ctx context.Context, host string, path string, isNewUV bool) (CounterData, error) {
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+func (h *LogHandler) writeAcceptedCounts(ctx context.Context, host string, path string, isNewUV bool) (CounterData, error) {
+	detachedCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), writeCountsTimeout)
 	defer cancel()
+	return h.writeCounts(detachedCtx, host, path, isNewUV)
+}
+
+func (h *LogHandler) writeRequestScopedCounts(ctx context.Context, host string, path string, isNewUV bool) (CounterData, error) {
+	timeoutCtx, cancel := context.WithTimeout(ctx, writeCountsTimeout)
+	defer cancel()
+	return h.writeCounts(timeoutCtx, host, path, isNewUV)
+}
+
+func (h *LogHandler) writeCounts(ctx context.Context, host string, path string, isNewUV bool) (CounterData, error) {
 
 	siteUV, err := h.counter.RecordSiteUV(ctx, host, isNewUV)
 	if err != nil {
@@ -357,6 +369,7 @@ func zeroCounters() CounterData {
 }
 
 func validateTargetURL(raw string) (targetURL, string) {
+	raw = strings.TrimSpace(raw)
 	parsed, err := url.Parse(raw)
 	if err != nil {
 		return targetURL{}, "Invalid URL format"
@@ -370,12 +383,77 @@ func validateTargetURL(raw string) (targetURL, string) {
 		return targetURL{}, "Invalid URL host"
 	}
 
-	path := parsed.Path
-	if path == "" {
-		path = "/"
+	host := strings.ToLower(parsed.Hostname())
+	if host == "" {
+		return targetURL{}, "Invalid URL host"
 	}
 
-	return targetURL{Host: parsed.Host, Path: path}, ""
+	port := parsed.Port()
+	if port != "" && !isDefaultPort(parsed.Scheme, port) {
+		host = net.JoinHostPort(host, port)
+	}
+
+	normalized := counter.NormalizeTarget(host, parsed.Path)
+	return targetURL{Host: normalized.Host, Path: normalized.Path}, ""
+}
+
+func isDefaultPort(scheme string, port string) bool {
+	return (scheme == "http" && port == "80") || (scheme == "https" && port == "443")
+}
+
+func (h *LogHandler) logWriteSuccess(r *http.Request, rawTarget string, target targetURL, isNewUV bool, counts CounterData) {
+	fields := mergeFields(targetLogFields(rawTarget, target), map[string]any{
+		"is_new_uv": isNewUV,
+		"site_uv":   counts.SiteUV,
+		"site_pv":   counts.SitePV,
+		"page_pv":   counts.PagePV,
+	})
+
+	if transportErr := r.Context().Err(); transportErr != nil {
+		fields["transport_error"] = transportErr.Error()
+		h.log.Info("counter update completed after transport abort", requestLogFields(r, "counter.write_detached_completed", fields))
+		return
+	}
+
+	h.log.Debug("counter update completed", requestLogFields(r, "counter.write_completed", fields))
+}
+
+func (h *LogHandler) logWriteFailure(r *http.Request, rawTarget string, target targetURL, isNewUV bool, err error) {
+	fields := mergeFields(targetLogFields(rawTarget, target), map[string]any{
+		"status":    http.StatusInternalServerError,
+		"error":     err.Error(),
+		"is_new_uv": isNewUV,
+	})
+
+	if transportErr := r.Context().Err(); transportErr != nil {
+		fields["transport_error"] = transportErr.Error()
+		h.log.Error("counter update failed after transport abort", requestLogFields(r, "counter.write_detached_failed", fields))
+		return
+	}
+
+	h.log.Error("counter update failed", requestLogFields(r, "counter.write_failed", fields))
+}
+
+func targetLogFields(raw string, target targetURL) map[string]any {
+	fields := map[string]any{
+		"host":        target.Host,
+		"target_path": target.Path,
+	}
+	if raw != "" {
+		fields["target_url"] = raw
+	}
+	return fields
+}
+
+func mergeFields(base map[string]any, extra map[string]any) map[string]any {
+	merged := make(map[string]any, len(base)+len(extra))
+	for key, value := range base {
+		merged[key] = value
+	}
+	for key, value := range extra {
+		merged[key] = value
+	}
+	return merged
 }
 
 func (l *rateLimiter) Check(ctx context.Context, r *http.Request) rateLimitResult {

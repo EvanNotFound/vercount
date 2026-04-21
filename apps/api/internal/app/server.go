@@ -66,20 +66,32 @@ func requestLoggingMiddleware(log *Logger) func(http.Handler) http.Handler {
 			next.ServeHTTP(wrapped, r)
 
 			status := wrapped.Status()
-			if status == 0 {
-				status = http.StatusOK
-			}
-
 			route := routePattern(r)
-			log.Info("request completed", map[string]any{
-				"event":       "request.completed",
+			fields := map[string]any{
 				"request_id":  middleware.GetReqID(r.Context()),
 				"method":      r.Method,
 				"route":       route,
 				"path":        r.URL.Path,
-				"status":      status,
 				"duration_ms": time.Since(startedAt).Milliseconds(),
-			})
+			}
+			if status != 0 {
+				fields["status"] = status
+			}
+
+			if transportErr := r.Context().Err(); transportErr != nil {
+				fields["event"] = "request.aborted"
+				fields["transport_error"] = transportErr.Error()
+				log.Warn("request aborted", fields)
+				return
+			}
+
+			if status == 0 {
+				status = http.StatusOK
+				fields["status"] = status
+			}
+
+			fields["event"] = "request.completed"
+			log.Info("request completed", fields)
 		})
 	}
 }

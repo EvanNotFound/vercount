@@ -17,6 +17,7 @@ const (
 	expirationTTL                = time.Duration(ExpirationTime) * time.Second
 	siteUVCountKeyPrefix         = "uv:site:count:"
 	pageInventoryKeyPrefix       = "pv:page:index:"
+	maxTrackedPathLength         = 200
 )
 
 var drivePathPattern = regexp.MustCompile(`^/[A-Za-z]:/`)
@@ -264,16 +265,8 @@ func getPageInventoryKey(host string) string {
 	return pageInventoryKeyPrefix + host
 }
 
-func sanitizeURL(host string, path string, log Logger) SanitizedURL {
-	if host == "" {
-		log.Warn("invalid host detected", counterLogFields("counter.target.invalid_host", map[string]any{"target_path": path}))
-		return SanitizedURL{Host: "invalid-host", Path: "/invalid-path"}
-	}
-
-	if drivePathPattern.MatchString(path) {
-		log.Warn("local file path detected", counterLogFields("counter.target.local_file_path", map[string]any{"target_path": path}))
-		return SanitizedURL{Host: host, Path: "/invalid-local-path"}
-	}
+func NormalizeTarget(host string, path string) SanitizedURL {
+	host = strings.ToLower(strings.TrimSpace(host))
 
 	if path == "" {
 		path = "/"
@@ -305,12 +298,30 @@ func sanitizeURL(host string, path string, log Logger) SanitizedURL {
 		path = "/"
 	}
 
-	if len(path) > 200 {
-		log.Warn("tracked path truncated", counterLogFields("counter.target.path_truncated", map[string]any{"target_path_prefix": path[:50]}))
-		path = path[:200]
+	if len(path) > maxTrackedPathLength {
+		path = path[:maxTrackedPathLength]
 	}
 
 	return SanitizedURL{Host: host, Path: path}
+}
+
+func sanitizeURL(host string, path string, log Logger) SanitizedURL {
+	host = strings.TrimSpace(host)
+	if host == "" {
+		log.Warn("invalid host detected", counterLogFields("counter.target.invalid_host", map[string]any{"target_path": path}))
+		return SanitizedURL{Host: "invalid-host", Path: "/invalid-path"}
+	}
+
+	if drivePathPattern.MatchString(path) {
+		log.Warn("local file path detected", counterLogFields("counter.target.local_file_path", map[string]any{"target_path": path}))
+		return SanitizedURL{Host: strings.ToLower(host), Path: "/invalid-local-path"}
+	}
+
+	if len(path) > maxTrackedPathLength {
+		log.Warn("tracked path truncated", counterLogFields("counter.target.path_truncated", map[string]any{"target_path_prefix": path[:50]}))
+	}
+
+	return NormalizeTarget(host, path)
 }
 
 func parseInt(value string) (int64, error) {

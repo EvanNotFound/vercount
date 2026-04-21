@@ -97,6 +97,25 @@ func TestFetchSiteUVFallsBackToZeroWithoutBusuanziAndIgnoresLegacyRedisValues(t 
 	}
 }
 
+func TestNormalizeTargetCanonicalizesHostAndPath(t *testing.T) {
+	normalized := NormalizeTarget(" Example.COM ", "/blog/index/")
+
+	if normalized.Host != "example.com" {
+		t.Fatalf("expected lowercased host, got %q", normalized.Host)
+	}
+	if normalized.Path != "/blog" {
+		t.Fatalf("expected canonical path /blog, got %q", normalized.Path)
+	}
+}
+
+func TestNormalizeTargetTruncatesLongPaths(t *testing.T) {
+	normalized := NormalizeTarget("example.com", "/"+strings.Repeat("a", 250))
+
+	if len(normalized.Path) != maxTrackedPathLength {
+		t.Fatalf("expected path length %d, got %d", maxTrackedPathLength, len(normalized.Path))
+	}
+}
+
 func newTestService(client *redis.Client, roundTrip roundTripFunc) *Service {
 	service := NewService(client, noopLogger{})
 	service.httpClient = &http.Client{Transport: roundTrip}

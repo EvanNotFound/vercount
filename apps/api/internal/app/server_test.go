@@ -375,6 +375,134 @@ func TestRequestLoggingEmitsStructuredCompletionEvent(t *testing.T) {
 	}
 }
 
+func TestAcceptedPostWriteContinuesAfterCanceledRequestContext(t *testing.T) {
+	redisServer := mustStartMiniRedis(t)
+	client := redis.NewClient(&redis.Options{Addr: redisServer.Addr()})
+	t.Cleanup(func() { _ = client.Close() })
+	seedTrackedNamespace(t, client, "example.com", "/blog")
+
+	handler := newTestHandler(t, redisServer.Addr())
+	body := bytes.NewBufferString(`{"url":" https://Example.com:443/blog/index/ ","isNewUv":true}`)
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	request := httptest.NewRequest(http.MethodPost, "/api/v2/log", body).WithContext(ctx)
+	request.Header.Set("Content-Type", "application/json")
+	request.RemoteAddr = "203.0.113.10:1234"
+	recorder := httptest.NewRecorder()
+
+	handler.ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", recorder.Code)
+	}
+
+	var payload map[string]any
+	if err := json.Unmarshal(recorder.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("unmarshal post response: %v", err)
+	}
+	if payload["status"] != "success" {
+		t.Fatalf("expected success envelope, got %#v", payload)
+	}
+
+	data, ok := payload["data"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected data envelope, got %#v", payload)
+	}
+	for field, want := range map[string]float64{"site_uv": 1, "site_pv": 1, "page_pv": 1} {
+		if data[field] != want {
+			t.Fatalf("expected %s=%v, got %#v", field, want, data[field])
+		}
+	}
+
+	for key, want := range map[string]string{
+		"uv:site:count:example.com": "1",
+		"pv:site:example.com":       "1",
+		"pv:page:example.com:/blog": "1",
+	} {
+		got, err := client.Get(context.Background(), key).Result()
+		if err != nil {
+			t.Fatalf("read %s: %v", key, err)
+		}
+		if got != want {
+			t.Fatalf("expected %s=%q, got %q", key, want, got)
+		}
+	}
+}
+
+func TestCanceledReadRequestRemainsRequestScoped(t *testing.T) {
+	redisServer := mustStartMiniRedis(t)
+	handler := newTestHandler(t, redisServer.Addr())
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	request := httptest.NewRequest(http.MethodGet, "/api/v2/log?url=https://example.com/blog", nil).WithContext(ctx)
+	request.RemoteAddr = "203.0.113.11:1234"
+	recorder := httptest.NewRecorder()
+
+	handler.ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusInternalServerError {
+		t.Fatalf("expected 500, got %d", recorder.Code)
+	}
+
+	var payload map[string]any
+	if err := json.Unmarshal(recorder.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("unmarshal read response: %v", err)
+	}
+	if payload["status"] != "error" {
+		t.Fatalf("expected error envelope, got %#v", payload)
+	}
+}
+
+func TestCanceledPostEmitsAbortedRequestAndDetachedWriteLogs(t *testing.T) {
+	redisServer := mustStartMiniRedis(t)
+	client := redis.NewClient(&redis.Options{Addr: redisServer.Addr()})
+	t.Cleanup(func() { _ = client.Close() })
+	seedTrackedNamespace(t, client, "example.com", "/blog")
+
+	var logs bytes.Buffer
+	logger := newLogger(false, &logs)
+	handler, _ := newTestHandlerWithLogger(t, redisServer.Addr(), "console.log('test');", logger)
+	body := bytes.NewBufferString(`{"url":" https://Example.com:443/blog/index/ ","isNewUv":true}`)
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	request := httptest.NewRequest(http.MethodPost, "/api/v2/log", body).WithContext(ctx)
+	request.Header.Set("Content-Type", "application/json")
+	request.RemoteAddr = "203.0.113.12:1234"
+	recorder := httptest.NewRecorder()
+
+	handler.ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", recorder.Code)
+	}
+
+	aborted := findLogEntry(t, logs.String(), "request.aborted")
+	if aborted["route"] != "/api/v2/log" {
+		t.Fatalf("expected aborted route, got %#v", aborted["route"])
+	}
+	if aborted["transport_error"] == "" {
+		t.Fatalf("expected transport_error, got %#v", aborted)
+	}
+
+	detached := findLogEntry(t, logs.String(), "counter.write_detached_completed")
+	if detached["host"] != "example.com" {
+		t.Fatalf("expected normalized host, got %#v", detached["host"])
+	}
+	if detached["target_path"] != "/blog" {
+		t.Fatalf("expected normalized target_path, got %#v", detached["target_path"])
+	}
+	if detached["target_url"] != "https://Example.com:443/blog/index/" {
+		t.Fatalf("expected trimmed raw target_url, got %#v", detached["target_url"])
+	}
+	if detached["transport_error"] == "" {
+		t.Fatalf("expected detached transport_error, got %#v", detached)
+	}
+
+	if hasLogEvent(logs.String(), "request.completed") {
+		t.Fatalf("did not expect request.completed log in output %q", logs.String())
+	}
+}
+
 func newTestHandler(t *testing.T, redisAddr string) http.Handler {
 	handler, _ := newTestHandlerWithScript(t, redisAddr, "console.log('test');")
 	return handler
@@ -427,6 +555,25 @@ func findLogEntry(t *testing.T, output string, event string) map[string]any {
 	return nil
 }
 
+func hasLogEvent(output string, event string) bool {
+	for _, line := range strings.Split(strings.TrimSpace(output), "\n") {
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+
+		var entry map[string]any
+		if err := json.Unmarshal([]byte(line), &entry); err != nil {
+			return false
+		}
+
+		if entry["event"] == event {
+			return true
+		}
+	}
+
+	return false
+}
+
 func containsRoute(routes []any, want string) bool {
 	for _, route := range routes {
 		if route == want {
@@ -445,6 +592,23 @@ func seedBenchmarkNamespace(t *testing.T, client *redis.Client) {
 		"uv:site:count:bench.vercount.one": "0",
 		"pv:site:bench.vercount.one":       "0",
 		"pv:page:bench.vercount.one:/gurt": "0",
+	}
+
+	for key, value := range seedValues {
+		if err := client.Set(ctx, key, value, 0).Err(); err != nil {
+			t.Fatalf("seed %s: %v", key, err)
+		}
+	}
+}
+
+func seedTrackedNamespace(t *testing.T, client *redis.Client, host string, path string) {
+	t.Helper()
+
+	ctx := context.Background()
+	seedValues := map[string]string{
+		"uv:site:count:" + host:        "0",
+		"pv:site:" + host:              "0",
+		"pv:page:" + host + ":" + path: "0",
 	}
 
 	for key, value := range seedValues {
