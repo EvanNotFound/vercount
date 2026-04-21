@@ -70,32 +70,32 @@ func (s *Service) fetchBusuanziData(ctx context.Context, referer string) *busuan
 	return data
 }
 
-func (s *Service) fetchBusuanziSiteUV(ctx context.Context, hostSanitized string, hostOriginal string) int64 {
-	data := s.fetchBusuanziData(ctx, "https://"+hostOriginal+"/")
+func (s *Service) fetchBusuanziSiteUV(ctx context.Context, target Target) int64 {
+	data := s.fetchBusuanziData(ctx, "https://"+target.Host+"/")
 	if data == nil {
 		return 0
 	}
 
-	s.log.Debug("Busuanzi site UV retrieved", counterLogFields("busuanzi.site_uv.retrieved", map[string]any{"host": hostSanitized, "site_uv": data.SiteUV}))
+	s.log.Debug("Busuanzi site UV retrieved", counterLogFields("busuanzi.site_uv.retrieved", map[string]any{"host": target.Host, "site_uv": data.SiteUV}))
 	return data.SiteUV
 }
 
-func (s *Service) fetchBusuanziSitePV(ctx context.Context, hostSanitized string, hostOriginal string) int64 {
-	data := s.fetchBusuanziData(ctx, "https://"+hostOriginal+"/")
+func (s *Service) fetchBusuanziSitePV(ctx context.Context, target Target) int64 {
+	data := s.fetchBusuanziData(ctx, "https://"+target.Host+"/")
 	if data == nil {
 		return 0
 	}
 
-	s.log.Debug("Busuanzi site PV retrieved", counterLogFields("busuanzi.site_pv.retrieved", map[string]any{"host": hostSanitized, "site_pv": data.SitePV}))
+	s.log.Debug("Busuanzi site PV retrieved", counterLogFields("busuanzi.site_pv.retrieved", map[string]any{"host": target.Host, "site_pv": data.SitePV}))
 	return data.SitePV
 }
 
-func (s *Service) fetchBusuanziPagePV(ctx context.Context, hostSanitized string, pathSanitized string, hostOriginal string) int64 {
-	data := s.fetchBusuanziData(ctx, "https://"+hostOriginal+pathSanitized)
+func (s *Service) fetchBusuanziPagePV(ctx context.Context, target Target) int64 {
+	data := s.fetchBusuanziData(ctx, "https://"+target.Host+target.Path)
 	if data == nil {
 		return 0
 	}
 
-	s.log.Debug("Busuanzi page PV retrieved", counterLogFields("busuanzi.page_pv.retrieved", map[string]any{"host": hostSanitized, "target_path": pathSanitized, "page_pv": data.PagePV}))
+	s.log.Debug("Busuanzi page PV retrieved", counterLogFields("busuanzi.page_pv.retrieved", map[string]any{"host": target.Host, "target_path": target.Path, "page_pv": data.PagePV}))
 	return data.PagePV
 }

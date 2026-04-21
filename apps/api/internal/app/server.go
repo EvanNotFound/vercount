@@ -36,21 +36,15 @@ func (s *Server) Routes() http.Handler {
 	r.Head("/js", s.public.Script)
 	r.Get("/bench/write", s.logAPI.BenchmarkWrite)
 
-	r.Options("/log", s.logAPI.V1Options)
-	r.Get("/log", s.logAPI.V1Get)
-	r.Post("/log", s.logAPI.V1Post)
+	registerCounterRoutes(r, "/log", s.logAPI.V1Options, s.logAPI.V1Get, s.logAPI.V1Post)
 
 	r.Route("/api", func(r chi.Router) {
 		r.Route("/v1", func(r chi.Router) {
-			r.Options("/log", s.logAPI.V1Options)
-			r.Get("/log", s.logAPI.V1Get)
-			r.Post("/log", s.logAPI.V1Post)
+			registerCounterRoutes(r, "/log", s.logAPI.V1Options, s.logAPI.V1Get, s.logAPI.V1Post)
 		})
 
 		r.Route("/v2", func(r chi.Router) {
-			r.Options("/log", s.logAPI.V2Options)
-			r.Get("/log", s.logAPI.V2Get)
-			r.Post("/log", s.logAPI.V2Post)
+			registerCounterRoutes(r, "/log", s.logAPI.V2Options, s.logAPI.V2Get, s.logAPI.V2Post)
 		})
 	})
 
@@ -66,7 +60,7 @@ func requestLoggingMiddleware(log *Logger) func(http.Handler) http.Handler {
 			next.ServeHTTP(wrapped, r)
 
 			status := wrapped.Status()
-			route := routePattern(r)
+			route := api.RoutePattern(r)
 			fields := map[string]any{
 				"request_id":  middleware.GetReqID(r.Context()),
 				"method":      r.Method,
@@ -96,12 +90,8 @@ func requestLoggingMiddleware(log *Logger) func(http.Handler) http.Handler {
 	}
 }
 
-func routePattern(r *http.Request) string {
-	if routeContext := chi.RouteContext(r.Context()); routeContext != nil {
-		if pattern := routeContext.RoutePattern(); pattern != "" {
-			return pattern
-		}
-	}
-
-	return r.URL.Path
+func registerCounterRoutes(r chi.Router, path string, options http.HandlerFunc, get http.HandlerFunc, post http.HandlerFunc) {
+	r.Options(path, options)
+	r.Get(path, get)
+	r.Post(path, post)
 }

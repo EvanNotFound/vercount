@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	redis "github.com/redis/go-redis/v9"
 )
 
@@ -40,7 +41,7 @@ func (h *PublicHandler) Root(w http.ResponseWriter, _ *http.Request) {
 			"/healthz",
 			"/js",
 			"/bench/write",
-			// "/log", deprecated
+			"/log",
 			"/api/v1/log",
 			"/api/v2/log",
 		},
@@ -98,11 +99,20 @@ func writeJSON(w http.ResponseWriter, status int, payload any) {
 }
 
 func applyCORSHeaders(w http.ResponseWriter) {
-	w.Header().Set("Access-Control-Allow-Credentials", "true")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "GET, HEAD, DELETE, PATCH, POST, PUT, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, X-Browser-Token")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, HEAD, POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	w.Header().Set("Access-Control-Max-Age", "86400")
+}
+
+func RoutePattern(r *http.Request) string {
+	if routeContext := chi.RouteContext(r.Context()); routeContext != nil {
+		if pattern := routeContext.RoutePattern(); pattern != "" {
+			return pattern
+		}
+	}
+
+	return r.URL.Path
 }
 
 func applyNoStoreHeaders(w http.ResponseWriter) {

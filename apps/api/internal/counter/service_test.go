@@ -46,7 +46,7 @@ func TestFetchSiteUVIgnoresLegacyRedisValuesWhenBusuanziDataExists(t *testing.T)
 		return jsonpResponse(`{"site_uv":7,"site_pv":0,"page_pv":0}`), nil
 	})
 
-	got, err := service.FetchSiteUV(ctx, "example.com", "/")
+	got, err := service.FetchSiteUV(ctx, NormalizeTarget("example.com", "/"))
 	if err != nil {
 		t.Fatalf("fetch site UV: %v", err)
 	}
@@ -80,7 +80,7 @@ func TestFetchSiteUVFallsBackToZeroWithoutBusuanziAndIgnoresLegacyRedisValues(t 
 		return nil, fmt.Errorf("busuanzi unavailable")
 	})
 
-	got, err := service.FetchSiteUV(ctx, "example.com", "/")
+	got, err := service.FetchSiteUV(ctx, NormalizeTarget("example.com", "/"))
 	if err != nil {
 		t.Fatalf("fetch site UV: %v", err)
 	}
@@ -113,6 +113,49 @@ func TestNormalizeTargetTruncatesLongPaths(t *testing.T) {
 
 	if len(normalized.Path) != maxTrackedPathLength {
 		t.Fatalf("expected path length %d, got %d", maxTrackedPathLength, len(normalized.Path))
+	}
+}
+
+func TestFetchPagePVInitializesNormalizedPageAndInventory(t *testing.T) {
+	ctx := context.Background()
+	server := mustStartMiniRedisCounter(t)
+	client := redis.NewClient(&redis.Options{Addr: server.Addr()})
+	t.Cleanup(func() { _ = client.Close() })
+
+	service := newTestService(client, func(req *http.Request) (*http.Response, error) {
+		if req.URL.String() != busuanziURL {
+			t.Fatalf("unexpected Busuanzi URL %q", req.URL.String())
+		}
+		if got := req.Header.Get("Referer"); got != "https://example.com/blog" {
+			t.Fatalf("expected normalized referer, got %q", got)
+		}
+
+		return jsonpResponse(`{"site_uv":0,"site_pv":0,"page_pv":9}`), nil
+	})
+
+	target := NormalizeTarget(" Example.com ", "/blog/index/")
+	got, err := service.FetchPagePV(ctx, target)
+	if err != nil {
+		t.Fatalf("fetch page PV: %v", err)
+	}
+	if got != 9 {
+		t.Fatalf("expected Busuanzi-backed page PV 9, got %d", got)
+	}
+
+	stored, err := client.Get(ctx, "pv:page:example.com:/blog").Result()
+	if err != nil {
+		t.Fatalf("read normalized page key: %v", err)
+	}
+	if stored != "9" {
+		t.Fatalf("expected normalized page key to persist 9, got %q", stored)
+	}
+
+	paths, err := client.SMembers(ctx, "pv:page:index:example.com").Result()
+	if err != nil {
+		t.Fatalf("read page inventory: %v", err)
+	}
+	if len(paths) != 1 || paths[0] != "/blog" {
+		t.Fatalf("expected normalized page inventory, got %#v", paths)
 	}
 }
 

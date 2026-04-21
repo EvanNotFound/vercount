@@ -43,6 +43,11 @@ func TestRootEndpointReturnsServiceMetadata(t *testing.T) {
 	if !containsRoute(routes, "/bench/write") {
 		t.Fatalf("expected benchmark route in metadata, got %#v", routes)
 	}
+	for _, route := range []string{"/log", "/api/v1/log", "/api/v2/log"} {
+		if !containsRoute(routes, route) {
+			t.Fatalf("expected route %q in metadata, got %#v", route, routes)
+		}
+	}
 }
 
 func TestHealthzReportsReadyWhenRedisReachable(t *testing.T) {
@@ -108,6 +113,10 @@ func TestScriptRouteServesJavaScriptAsset(t *testing.T) {
 		t.Fatalf("expected CORS header, got %q", recorder.Header().Get("Access-Control-Allow-Origin"))
 	}
 
+	if recorder.Header().Get("Access-Control-Allow-Credentials") != "" {
+		t.Fatalf("expected credentialless CORS, got %q", recorder.Header().Get("Access-Control-Allow-Credentials"))
+	}
+
 	if recorder.Body.String() != scriptContents {
 		t.Fatalf("expected script contents %q, got %q", scriptContents, recorder.Body.String())
 	}
@@ -120,6 +129,36 @@ func TestV1RoutesKeepPlainJSONResponseShape(t *testing.T) {
 		t.Run(path, func(t *testing.T) {
 			recorder := httptest.NewRecorder()
 			handler.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, path, nil))
+
+			if recorder.Code != http.StatusOK {
+				t.Fatalf("expected 200, got %d", recorder.Code)
+			}
+
+			var payload map[string]any
+			if err := json.Unmarshal(recorder.Body.Bytes(), &payload); err != nil {
+				t.Fatalf("unmarshal v1 response: %v", err)
+			}
+
+			if _, hasStatus := payload["status"]; hasStatus {
+				t.Fatalf("expected plain JSON payload, got envelope %#v", payload)
+			}
+
+			if payload["error"] == nil || payload["site_uv"] == nil {
+				t.Fatalf("expected legacy v1 fields, got %#v", payload)
+			}
+		})
+	}
+}
+
+func TestV1PostRoutesKeepPlainJSONResponseShape(t *testing.T) {
+	handler := newTestHandler(t, mustStartMiniRedis(t).Addr())
+
+	for _, path := range []string{"/log", "/api/v1/log"} {
+		t.Run(path, func(t *testing.T) {
+			recorder := httptest.NewRecorder()
+			request := httptest.NewRequest(http.MethodPost, path, strings.NewReader(`{"url":"file:///bad","isNewUv":true}`))
+			request.Header.Set("Content-Type", "application/json")
+			handler.ServeHTTP(recorder, request)
 
 			if recorder.Code != http.StatusOK {
 				t.Fatalf("expected 200, got %d", recorder.Code)
@@ -166,6 +205,33 @@ func TestV2RouteKeepsEnvelopeResponseShape(t *testing.T) {
 	}
 }
 
+func TestV2PostRouteKeepsEnvelopeResponseShape(t *testing.T) {
+	handler := newTestHandler(t, mustStartMiniRedis(t).Addr())
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodPost, "/api/v2/log", strings.NewReader(`{"url":"file:///bad","isNewUv":true}`))
+	request.Header.Set("Content-Type", "application/json")
+
+	handler.ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", recorder.Code)
+	}
+
+	var payload map[string]any
+	if err := json.Unmarshal(recorder.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("unmarshal v2 response: %v", err)
+	}
+
+	if payload["status"] != "success" {
+		t.Fatalf("expected success envelope, got %#v", payload)
+	}
+
+	data, ok := payload["data"].(map[string]any)
+	if !ok || data["site_uv"] == nil {
+		t.Fatalf("expected data envelope, got %#v", payload)
+	}
+}
+
 func TestOptionsRoutesStayAvailable(t *testing.T) {
 	handler := newTestHandler(t, mustStartMiniRedis(t).Addr())
 
@@ -174,7 +240,8 @@ func TestOptionsRoutesStayAvailable(t *testing.T) {
 		path         string
 		expectStatus any
 	}{
-		{name: "v1 options", path: "/log", expectStatus: nil},
+		{name: "legacy options", path: "/log", expectStatus: nil},
+		{name: "v1 options", path: "/api/v1/log", expectStatus: nil},
 		{name: "v2 options", path: "/api/v2/log", expectStatus: "success"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -187,6 +254,10 @@ func TestOptionsRoutesStayAvailable(t *testing.T) {
 
 			if recorder.Header().Get("Access-Control-Allow-Origin") != "*" {
 				t.Fatalf("expected CORS header, got %q", recorder.Header().Get("Access-Control-Allow-Origin"))
+			}
+
+			if recorder.Header().Get("Access-Control-Allow-Credentials") != "" {
+				t.Fatalf("expected credentialless CORS, got %q", recorder.Header().Get("Access-Control-Allow-Credentials"))
 			}
 
 			var payload map[string]any
@@ -217,6 +288,10 @@ func TestBenchmarkWriteRouteUsesFixedTargetAndNoStoreHeaders(t *testing.T) {
 
 	if recorder.Header().Get("Access-Control-Allow-Origin") != "*" {
 		t.Fatalf("expected CORS header, got %q", recorder.Header().Get("Access-Control-Allow-Origin"))
+	}
+
+	if recorder.Header().Get("Access-Control-Allow-Credentials") != "" {
+		t.Fatalf("expected credentialless CORS, got %q", recorder.Header().Get("Access-Control-Allow-Credentials"))
 	}
 
 	if !strings.Contains(recorder.Header().Get("Cache-Control"), "no-store") {

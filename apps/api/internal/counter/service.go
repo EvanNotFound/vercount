@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -20,8 +19,6 @@ const (
 	maxTrackedPathLength         = 200
 )
 
-var drivePathPattern = regexp.MustCompile(`^/[A-Za-z]:/`)
-
 type Logger interface {
 	Debug(message string, data any)
 	Info(message string, data any)
@@ -29,7 +26,7 @@ type Logger interface {
 	Error(message string, data any)
 }
 
-type SanitizedURL struct {
+type Target struct {
 	Host string
 	Path string
 }
@@ -50,15 +47,12 @@ func NewService(redisClient *redis.Client, log Logger) *Service {
 	}
 }
 
-func (s *Service) FetchSiteUV(ctx context.Context, host string, path string) (int64, error) {
-	sanitized := sanitizeURL(host, path, s.log)
-	siteKey := getSiteUVCountKey(sanitized.Host)
-
-	if _, err := s.initializeSiteUV(ctx, sanitized.Host, host); err != nil {
+func (s *Service) FetchSiteUV(ctx context.Context, target Target) (int64, error) {
+	if _, err := s.initSiteUV(ctx, target); err != nil {
 		return 0, err
 	}
 
-	value, err := s.redis.GetEx(ctx, siteKey, expirationTTL).Result()
+	value, err := s.redis.GetEx(ctx, siteUVKey(target.Host), expirationTTL).Result()
 	if err != nil {
 		if err == redis.Nil {
 			return 0, nil
@@ -71,43 +65,39 @@ func (s *Service) FetchSiteUV(ctx context.Context, host string, path string) (in
 		return 0, err
 	}
 
-	s.log.Debug("site UV read", counterLogFields("counter.site_uv.read", map[string]any{"host": sanitized.Host, "target_path": sanitized.Path, "site_uv": count}))
+	s.log.Debug("site UV read", counterLogFields("counter.site_uv.read", map[string]any{"host": target.Host, "target_path": target.Path, "site_uv": count}))
 	return count, nil
 }
 
-func (s *Service) FetchSitePV(ctx context.Context, host string, path string) (int64, error) {
-	sanitized := sanitizeURL(host, path, s.log)
-	count, err := s.initializeSitePV(ctx, sanitized.Host, host)
+func (s *Service) FetchSitePV(ctx context.Context, target Target) (int64, error) {
+	count, err := s.initSitePV(ctx, target)
 	if err != nil {
 		return 0, err
 	}
 
-	s.log.Debug("site PV read", counterLogFields("counter.site_pv.read", map[string]any{"host": sanitized.Host, "target_path": sanitized.Path, "site_pv": count}))
+	s.log.Debug("site PV read", counterLogFields("counter.site_pv.read", map[string]any{"host": target.Host, "target_path": target.Path, "site_pv": count}))
 	return count, nil
 }
 
-func (s *Service) FetchPagePV(ctx context.Context, host string, path string) (int64, error) {
-	sanitized := sanitizeURL(host, path, s.log)
-	count, err := s.initializePagePV(ctx, sanitized.Host, sanitized.Path, host)
+func (s *Service) FetchPagePV(ctx context.Context, target Target) (int64, error) {
+	count, err := s.initPagePV(ctx, target)
 	if err != nil {
 		return 0, err
 	}
 
-	s.log.Debug("page PV read", counterLogFields("counter.page_pv.read", map[string]any{"host": sanitized.Host, "target_path": sanitized.Path, "page_pv": count}))
+	s.log.Debug("page PV read", counterLogFields("counter.page_pv.read", map[string]any{"host": target.Host, "target_path": target.Path, "page_pv": count}))
 	return count, nil
 }
 
-func (s *Service) IncrementSitePV(ctx context.Context, host string) (int64, error) {
-	sanitized := sanitizeURL(host, "", s.log)
-	if _, err := s.initializeSitePV(ctx, sanitized.Host, host); err != nil {
+func (s *Service) IncrementSitePV(ctx context.Context, target Target) (int64, error) {
+	if _, err := s.initSitePV(ctx, target); err != nil {
 		return 0, err
 	}
 
-	siteKey := "pv:site:" + sanitized.Host
 	var countCmd *redis.IntCmd
 	_, err := s.redis.Pipelined(ctx, func(pipe redis.Pipeliner) error {
-		countCmd = pipe.Incr(ctx, siteKey)
-		pipe.Expire(ctx, siteKey, expirationTTL)
+		countCmd = pipe.Incr(ctx, sitePVKey(target.Host))
+		pipe.Expire(ctx, sitePVKey(target.Host), expirationTTL)
 		return nil
 	})
 	if err != nil {
@@ -119,24 +109,21 @@ func (s *Service) IncrementSitePV(ctx context.Context, host string) (int64, erro
 		return 0, err
 	}
 
-	s.log.Debug("site PV updated", counterLogFields("counter.site_pv.updated", map[string]any{"host": sanitized.Host, "site_pv": count}))
+	s.log.Debug("site PV updated", counterLogFields("counter.site_pv.updated", map[string]any{"host": target.Host, "site_pv": count}))
 	return count, nil
 }
 
-func (s *Service) IncrementPagePV(ctx context.Context, host string, path string) (int64, error) {
-	sanitized := sanitizeURL(host, path, s.log)
-	if _, err := s.initializePagePV(ctx, sanitized.Host, sanitized.Path, host); err != nil {
+func (s *Service) IncrementPagePV(ctx context.Context, target Target) (int64, error) {
+	if _, err := s.initPagePV(ctx, target); err != nil {
 		return 0, err
 	}
 
-	pageKey := fmt.Sprintf("pv:page:%s:%s", sanitized.Host, sanitized.Path)
-	inventoryKey := getPageInventoryKey(sanitized.Host)
 	var countCmd *redis.IntCmd
 	_, err := s.redis.Pipelined(ctx, func(pipe redis.Pipeliner) error {
-		countCmd = pipe.Incr(ctx, pageKey)
-		pipe.Expire(ctx, pageKey, expirationTTL)
-		pipe.SAdd(ctx, inventoryKey, sanitized.Path)
-		pipe.Expire(ctx, inventoryKey, expirationTTL)
+		countCmd = pipe.Incr(ctx, pagePVKey(target))
+		pipe.Expire(ctx, pagePVKey(target), expirationTTL)
+		pipe.SAdd(ctx, pageInventoryKey(target.Host), target.Path)
+		pipe.Expire(ctx, pageInventoryKey(target.Host), expirationTTL)
 		return nil
 	})
 	if err != nil {
@@ -148,17 +135,16 @@ func (s *Service) IncrementPagePV(ctx context.Context, host string, path string)
 		return 0, err
 	}
 
-	s.log.Debug("page PV updated", counterLogFields("counter.page_pv.updated", map[string]any{"host": sanitized.Host, "target_path": sanitized.Path, "page_pv": count}))
+	s.log.Debug("page PV updated", counterLogFields("counter.page_pv.updated", map[string]any{"host": target.Host, "target_path": target.Path, "page_pv": count}))
 	return count, nil
 }
 
-func (s *Service) RecordSiteUV(ctx context.Context, host string, isNew bool) (int64, error) {
-	sanitized := sanitizeURL(host, "", s.log)
-	if _, err := s.initializeSiteUV(ctx, sanitized.Host, host); err != nil {
+func (s *Service) RecordSiteUV(ctx context.Context, target Target, isNew bool) (int64, error) {
+	if _, err := s.initSiteUV(ctx, target); err != nil {
 		return 0, err
 	}
 
-	siteKey := getSiteUVCountKey(sanitized.Host)
+	siteKey := siteUVKey(target.Host)
 	var count int64
 	if isNew {
 		var countCmd *redis.IntCmd
@@ -192,80 +178,107 @@ func (s *Service) RecordSiteUV(ctx context.Context, host string, isNew bool) (in
 		}
 	}
 
-	s.log.Debug("site UV updated", counterLogFields("counter.site_uv.updated", map[string]any{"host": sanitized.Host, "is_new_uv": isNew, "site_uv": count}))
+	s.log.Debug("site UV updated", counterLogFields("counter.site_uv.updated", map[string]any{"host": target.Host, "is_new_uv": isNew, "site_uv": count}))
 	return count, nil
 }
 
-func (s *Service) initializeSitePV(ctx context.Context, hostSanitized string, hostOriginal string) (int64, error) {
-	key := "pv:site:" + hostSanitized
-	return s.initializeCounter(ctx, key, func(ctx context.Context) int64 {
-		return s.fetchBusuanziSitePV(ctx, hostSanitized, hostOriginal)
-	}, nil)
-}
-
-func (s *Service) initializePagePV(ctx context.Context, hostSanitized string, pathSanitized string, hostOriginal string) (int64, error) {
-	key := fmt.Sprintf("pv:page:%s:%s", hostSanitized, pathSanitized)
-	return s.initializeCounter(ctx, key, func(ctx context.Context) int64 {
-		return s.fetchBusuanziPagePV(ctx, hostSanitized, pathSanitized, hostOriginal)
-	}, func(ctx context.Context) error {
-		return s.addStoredPage(ctx, hostSanitized, pathSanitized)
-	})
-}
-
-func (s *Service) initializeSiteUV(ctx context.Context, hostSanitized string, hostOriginal string) (int64, error) {
-	key := getSiteUVCountKey(hostSanitized)
-	return s.initializeCounter(ctx, key, func(ctx context.Context) int64 {
-		return s.fetchBusuanziSiteUV(ctx, hostSanitized, hostOriginal)
-	}, nil)
-}
-
-func (s *Service) initializeCounter(ctx context.Context, key string, resolve func(context.Context) int64, after func(context.Context) error) (int64, error) {
-	value, err := s.redis.Get(ctx, key).Result()
-	if err != nil {
-		if err != redis.Nil {
-			return 0, err
-		}
-	} else {
-		return parseInt(value)
+func (s *Service) initSitePV(ctx context.Context, target Target) (int64, error) {
+	count, found, err := s.readCount(ctx, sitePVKey(target.Host))
+	if err != nil || found {
+		return count, err
 	}
 
-	initial := resolve(ctx)
-	if initial < 0 {
-		initial = 0
-	}
-
-	if err := s.redis.Set(ctx, key, initial, expirationTTL).Err(); err != nil {
+	count = s.fetchBusuanziSitePV(ctx, target)
+	if err := s.storeCount(ctx, sitePVKey(target.Host), count); err != nil {
 		return 0, err
 	}
 
-	if after != nil {
-		if err := after(ctx); err != nil {
-			return 0, err
-		}
-	}
-
-	return initial, nil
+	return count, nil
 }
 
-func (s *Service) addStoredPage(ctx context.Context, hostSanitized string, pathSanitized string) error {
-	inventoryKey := getPageInventoryKey(hostSanitized)
+func (s *Service) initPagePV(ctx context.Context, target Target) (int64, error) {
+	count, found, err := s.readCount(ctx, pagePVKey(target))
+	if err != nil {
+		return 0, err
+	}
+	if found {
+		return count, nil
+	}
+
+	count = s.fetchBusuanziPagePV(ctx, target)
+	if err := s.storeCount(ctx, pagePVKey(target), count); err != nil {
+		return 0, err
+	}
+	if err := s.rememberPage(ctx, target); err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
+
+func (s *Service) initSiteUV(ctx context.Context, target Target) (int64, error) {
+	count, found, err := s.readCount(ctx, siteUVKey(target.Host))
+	if err != nil || found {
+		return count, err
+	}
+
+	count = s.fetchBusuanziSiteUV(ctx, target)
+	if err := s.storeCount(ctx, siteUVKey(target.Host), count); err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
+
+func (s *Service) readCount(ctx context.Context, key string) (int64, bool, error) {
+	value, err := s.redis.Get(ctx, key).Result()
+	if err != nil {
+		if err == redis.Nil {
+			return 0, false, nil
+		}
+		return 0, false, err
+	}
+
+	count, err := parseInt(value)
+	if err != nil {
+		return 0, false, err
+	}
+	return count, true, nil
+}
+
+func (s *Service) storeCount(ctx context.Context, key string, count int64) error {
+	if count < 0 {
+		count = 0
+	}
+	return s.redis.Set(ctx, key, count, expirationTTL).Err()
+}
+
+func (s *Service) rememberPage(ctx context.Context, target Target) error {
 	_, err := s.redis.Pipelined(ctx, func(pipe redis.Pipeliner) error {
-		pipe.SAdd(ctx, inventoryKey, pathSanitized)
-		pipe.Expire(ctx, inventoryKey, expirationTTL)
+		pipe.SAdd(ctx, pageInventoryKey(target.Host), target.Path)
+		pipe.Expire(ctx, pageInventoryKey(target.Host), expirationTTL)
 		return nil
 	})
 	return err
 }
 
-func getSiteUVCountKey(host string) string {
+func siteUVKey(host string) string {
 	return siteUVCountKeyPrefix + host
 }
 
-func getPageInventoryKey(host string) string {
+func sitePVKey(host string) string {
+	return "pv:site:" + host
+}
+
+func pagePVKey(target Target) string {
+	return fmt.Sprintf("pv:page:%s:%s", target.Host, target.Path)
+}
+
+func pageInventoryKey(host string) string {
 	return pageInventoryKeyPrefix + host
 }
 
-func NormalizeTarget(host string, path string) SanitizedURL {
+func NormalizeTarget(host string, path string) Target {
 	host = strings.ToLower(strings.TrimSpace(host))
 
 	if path == "" {
@@ -302,26 +315,7 @@ func NormalizeTarget(host string, path string) SanitizedURL {
 		path = path[:maxTrackedPathLength]
 	}
 
-	return SanitizedURL{Host: host, Path: path}
-}
-
-func sanitizeURL(host string, path string, log Logger) SanitizedURL {
-	host = strings.TrimSpace(host)
-	if host == "" {
-		log.Warn("invalid host detected", counterLogFields("counter.target.invalid_host", map[string]any{"target_path": path}))
-		return SanitizedURL{Host: "invalid-host", Path: "/invalid-path"}
-	}
-
-	if drivePathPattern.MatchString(path) {
-		log.Warn("local file path detected", counterLogFields("counter.target.local_file_path", map[string]any{"target_path": path}))
-		return SanitizedURL{Host: strings.ToLower(host), Path: "/invalid-local-path"}
-	}
-
-	if len(path) > maxTrackedPathLength {
-		log.Warn("tracked path truncated", counterLogFields("counter.target.path_truncated", map[string]any{"target_path_prefix": path[:50]}))
-	}
-
-	return NormalizeTarget(host, path)
+	return Target{Host: host, Path: path}
 }
 
 func parseInt(value string) (int64, error) {

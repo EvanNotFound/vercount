@@ -13,20 +13,30 @@ import (
 	"time"
 
 	"github.com/EvanNotFound/vercount/apps/api/internal/counter"
-	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	redis "github.com/redis/go-redis/v9"
 )
 
 const (
-	rateLimitWindow         = 60 * time.Second
-	rateLimitCount          = int64(80)
-	benchmarkWriteTargetURL = "https://bench.vercount.one/gurt"
-	readCountsTimeout       = 5 * time.Second
-	writeCountsTimeout      = 5 * time.Second
+	rateLimitWindow           = 60 * time.Second
+	rateLimitCount            = int64(80)
+	rateLimitRedisFailureMode = "fail_open"
+	benchmarkWriteTargetURL   = "https://bench.vercount.one/gurt"
+	readCountsTimeout         = 5 * time.Second
+	writeCountsTimeout        = 5 * time.Second
 )
 
-var suspiciousUA = regexp.MustCompile(`python-requests|python/|requests/|curl/|wget/|go-http-client/|httpie/|postman/|axios/|node-fetch/|empty|unknown|bot|crawl|spider`)
+var (
+	suspiciousUA    = regexp.MustCompile(`python-requests|python/|requests/|curl/|wget/|go-http-client/|httpie/|postman/|axios/|node-fetch/|empty|unknown|bot|crawl|spider`)
+	benchmarkTarget = counter.NormalizeTarget("bench.vercount.one", "/gurt")
+)
+
+type responseShape int
+
+const (
+	shapeV1 responseShape = iota
+	shapeV2
+)
 
 type LogHandler struct {
 	log     Logger
@@ -58,11 +68,6 @@ type ErrorResponse struct {
 	Details map[string]any `json:"details,omitempty"`
 }
 
-type targetURL struct {
-	Host string
-	Path string
-}
-
 type rateLimitResult struct {
 	Success   bool
 	Limit     int64
@@ -86,12 +91,106 @@ func NewLogHandler(log Logger, counterService *counter.Service, redisClient *red
 }
 
 func (h *LogHandler) V1Options(w http.ResponseWriter, _ *http.Request) {
-	applyCORSHeaders(w)
-	writeJSON(w, http.StatusOK, map[string]string{"message": "OK"})
+	h.writeOptions(w, shapeV1)
 }
 
 func (h *LogHandler) V2Options(w http.ResponseWriter, _ *http.Request) {
+	h.writeOptions(w, shapeV2)
+}
+
+func (h *LogHandler) V1Get(w http.ResponseWriter, r *http.Request) {
+	h.handleGet(w, r, shapeV1)
+}
+
+func (h *LogHandler) V1Post(w http.ResponseWriter, r *http.Request) {
+	h.handlePost(w, r, shapeV1)
+}
+
+func (h *LogHandler) V2Get(w http.ResponseWriter, r *http.Request) {
+	h.handleGet(w, r, shapeV2)
+}
+
+func (h *LogHandler) V2Post(w http.ResponseWriter, r *http.Request) {
+	h.handlePost(w, r, shapeV2)
+}
+
+func (h *LogHandler) BenchmarkWrite(w http.ResponseWriter, r *http.Request) {
 	applyCORSHeaders(w)
+	applyNoStoreHeaders(w)
+	if !h.allowRequest(w, r, shapeV2) {
+		return
+	}
+
+	counts, err := h.writeScoped(r.Context(), benchmarkTarget, true)
+	if err != nil {
+		h.log.Error("benchmark counter update failed", requestLogFields(r, "counter.benchmark_write_failed", mergeFields(targetLogFields(benchmarkWriteTargetURL, benchmarkTarget), map[string]any{"status": http.StatusInternalServerError, "error": err.Error()})))
+		h.writeV2Error(w, http.StatusInternalServerError, "Internal server error", nil)
+		return
+	}
+
+	h.log.Debug("benchmark counter update completed", requestLogFields(r, "counter.benchmark_write_completed", map[string]any{"host": benchmarkTarget.Host, "target_path": benchmarkTarget.Path, "target_url": benchmarkWriteTargetURL, "is_new_uv": true, "site_uv": counts.SiteUV, "site_pv": counts.SitePV, "page_pv": counts.PagePV}))
+	h.writeV2Success(w, http.StatusOK, "Benchmark data updated successfully", counts)
+}
+
+func (h *LogHandler) handleGet(w http.ResponseWriter, r *http.Request, shape responseShape) {
+	applyCORSHeaders(w)
+	if !h.allowRequest(w, r, shape) {
+		return
+	}
+
+	target, rawTarget, ok := h.readQueryTarget(w, r, shape)
+	if !ok {
+		return
+	}
+
+	data, err := h.readCounts(r.Context(), target)
+	if err != nil {
+		h.log.Error("counter read failed", requestLogFields(r, "counter.read_failed", mergeFields(targetLogFields(rawTarget, target), map[string]any{"status": http.StatusInternalServerError, "error": err.Error()})))
+		h.writeInternalError(w, shape)
+		return
+	}
+
+	h.log.Debug("counter read completed", requestLogFields(r, "counter.read_completed", map[string]any{"host": target.Host, "target_path": target.Path, "site_uv": data.SiteUV, "site_pv": data.SitePV, "page_pv": data.PagePV}))
+	h.writeReadSuccess(w, shape, data)
+}
+
+func (h *LogHandler) handlePost(w http.ResponseWriter, r *http.Request, shape responseShape) {
+	applyCORSHeaders(w)
+	if !h.allowRequest(w, r, shape) {
+		return
+	}
+
+	requestData, ok := h.readBody(w, r, shape)
+	if !ok {
+		return
+	}
+
+	rawTarget := strings.TrimSpace(requestData.URL)
+	target, message := parseTarget(rawTarget)
+	if message != "" {
+		h.log.Warn("invalid tracked url", requestLogFields(r, "target_url.invalid", map[string]any{"status": http.StatusOK, "target_url": rawTarget, "reason": message}))
+		h.writeInvalidTarget(w, shape, message)
+		return
+	}
+
+	counts, err := h.writeDetached(r.Context(), target, requestData.IsNewUV)
+	if err != nil {
+		h.logWriteFailure(r, rawTarget, target, requestData.IsNewUV, err)
+		h.writeInternalError(w, shape)
+		return
+	}
+
+	h.logWriteSuccess(r, rawTarget, target, requestData.IsNewUV, counts)
+	h.writeWriteSuccess(w, shape, counts)
+}
+
+func (h *LogHandler) writeOptions(w http.ResponseWriter, shape responseShape) {
+	applyCORSHeaders(w)
+	if shape == shapeV1 {
+		writeJSON(w, http.StatusOK, map[string]string{"message": "OK"})
+		return
+	}
+
 	writeJSON(w, http.StatusOK, SuccessResponse{
 		Status:  "success",
 		Message: "CORS preflight successful",
@@ -99,224 +198,75 @@ func (h *LogHandler) V2Options(w http.ResponseWriter, _ *http.Request) {
 	})
 }
 
-func (h *LogHandler) V1Get(w http.ResponseWriter, r *http.Request) {
-	applyCORSHeaders(w)
-	if !h.allowV1Request(w, r) {
-		return
-	}
-
-	targetURL := r.URL.Query().Get("url")
-	if targetURL == "" {
-		h.log.Warn("missing tracked url parameter", requestLogFields(r, "request.invalid", map[string]any{"status": http.StatusBadRequest, "reason": "missing_url"}))
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "Missing url parameter"})
-		return
-	}
-
-	target, message := validateTargetURL(targetURL)
-	if message != "" {
-		h.log.Warn("invalid tracked url", requestLogFields(r, "target_url.invalid", map[string]any{"status": http.StatusOK, "target_url": strings.TrimSpace(targetURL), "reason": message}))
-		writeJSON(w, http.StatusOK, map[string]any{
-			"error":   message,
-			"site_uv": 0,
-			"site_pv": 0,
-			"page_pv": 0,
-		})
-		return
-	}
-
-	data, err := h.readCounts(r.Context(), target.Host, target.Path)
-	if err != nil {
-		h.log.Error("counter read failed", requestLogFields(r, "counter.read_failed", mergeFields(targetLogFields(strings.TrimSpace(targetURL), target), map[string]any{"status": http.StatusInternalServerError, "error": err.Error()})))
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "Internal server error"})
-		return
-	}
-
-	h.log.Debug("counter read completed", requestLogFields(r, "counter.read_completed", map[string]any{"host": target.Host, "target_path": target.Path, "site_uv": data.SiteUV, "site_pv": data.SitePV, "page_pv": data.PagePV}))
-	writeJSON(w, http.StatusOK, data)
-}
-
-func (h *LogHandler) V1Post(w http.ResponseWriter, r *http.Request) {
-	applyCORSHeaders(w)
-	if !h.allowV1Request(w, r) {
-		return
-	}
-
-	data, ok := h.decodeCountRequest(w, r, false)
-	if !ok {
-		return
-	}
-
-	target, message := validateTargetURL(data.URL)
-	if message != "" {
-		h.log.Warn("invalid tracked url", requestLogFields(r, "target_url.invalid", map[string]any{"status": http.StatusOK, "target_url": strings.TrimSpace(data.URL), "reason": message}))
-		writeJSON(w, http.StatusOK, map[string]any{
-			"error":   message,
-			"site_uv": 0,
-			"site_pv": 0,
-			"page_pv": 0,
-		})
-		return
-	}
-
-	counts, err := h.writeAcceptedCounts(r.Context(), target.Host, target.Path, data.IsNewUV)
-	if err != nil {
-		h.logWriteFailure(r, strings.TrimSpace(data.URL), target, data.IsNewUV, err)
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "Internal server error"})
-		return
-	}
-
-	h.logWriteSuccess(r, strings.TrimSpace(data.URL), target, data.IsNewUV, counts)
-	writeJSON(w, http.StatusOK, counts)
-}
-
-func (h *LogHandler) V2Get(w http.ResponseWriter, r *http.Request) {
-	applyCORSHeaders(w)
-	if !h.allowV2Request(w, r) {
-		return
-	}
-
-	targetURL := r.URL.Query().Get("url")
-	if targetURL == "" {
-		h.log.Warn("missing tracked url parameter", requestLogFields(r, "request.invalid", map[string]any{"status": http.StatusBadRequest, "reason": "missing_url"}))
-		h.writeV2Error(w, http.StatusBadRequest, "Missing url parameter", nil)
-		return
-	}
-
-	target, message := validateTargetURL(targetURL)
-	if message != "" {
-		h.log.Warn("invalid tracked url", requestLogFields(r, "target_url.invalid", map[string]any{"status": http.StatusOK, "target_url": strings.TrimSpace(targetURL), "reason": message}))
-		h.writeV2Success(w, http.StatusOK, message, zeroCounters())
-		return
-	}
-
-	data, err := h.readCounts(r.Context(), target.Host, target.Path)
-	if err != nil {
-		h.log.Error("counter read failed", requestLogFields(r, "counter.read_failed", mergeFields(targetLogFields(strings.TrimSpace(targetURL), target), map[string]any{"status": http.StatusInternalServerError, "error": err.Error()})))
-		h.writeV2Error(w, http.StatusInternalServerError, "Internal server error", nil)
-		return
-	}
-
-	h.log.Debug("counter read completed", requestLogFields(r, "counter.read_completed", map[string]any{"host": target.Host, "target_path": target.Path, "site_uv": data.SiteUV, "site_pv": data.SitePV, "page_pv": data.PagePV}))
-	h.writeV2Success(w, http.StatusOK, "Data retrieved successfully", data)
-}
-
-func (h *LogHandler) V2Post(w http.ResponseWriter, r *http.Request) {
-	applyCORSHeaders(w)
-	if !h.allowV2Request(w, r) {
-		return
-	}
-
-	data, ok := h.decodeCountRequest(w, r, true)
-	if !ok {
-		return
-	}
-
-	target, message := validateTargetURL(data.URL)
-	if message != "" {
-		h.log.Warn("invalid tracked url", requestLogFields(r, "target_url.invalid", map[string]any{"status": http.StatusOK, "target_url": strings.TrimSpace(data.URL), "reason": message}))
-		h.writeV2Success(w, http.StatusOK, message, zeroCounters())
-		return
-	}
-
-	counts, err := h.writeAcceptedCounts(r.Context(), target.Host, target.Path, data.IsNewUV)
-	if err != nil {
-		h.logWriteFailure(r, strings.TrimSpace(data.URL), target, data.IsNewUV, err)
-		h.writeV2Error(w, http.StatusInternalServerError, "Internal server error", nil)
-		return
-	}
-
-	h.logWriteSuccess(r, strings.TrimSpace(data.URL), target, data.IsNewUV, counts)
-	h.writeV2Success(w, http.StatusOK, "Data updated successfully", counts)
-}
-
-func (h *LogHandler) BenchmarkWrite(w http.ResponseWriter, r *http.Request) {
-	applyCORSHeaders(w)
-	applyNoStoreHeaders(w)
-	if !h.allowV2Request(w, r) {
-		return
-	}
-
-	target, message := validateTargetURL(benchmarkWriteTargetURL)
-	if message != "" {
-		h.log.Error("benchmark target configuration invalid", requestLogFields(r, "benchmark.target.invalid", map[string]any{"status": http.StatusInternalServerError, "target_url": benchmarkWriteTargetURL, "reason": message}))
-		h.writeV2Error(w, http.StatusInternalServerError, "Benchmark target configuration invalid", nil)
-		return
-	}
-
-	counts, err := h.writeRequestScopedCounts(r.Context(), target.Host, target.Path, true)
-	if err != nil {
-		h.log.Error("benchmark counter update failed", requestLogFields(r, "counter.benchmark_write_failed", mergeFields(targetLogFields(benchmarkWriteTargetURL, target), map[string]any{"status": http.StatusInternalServerError, "error": err.Error()})))
-		h.writeV2Error(w, http.StatusInternalServerError, "Internal server error", nil)
-		return
-	}
-
-	h.log.Debug("benchmark counter update completed", requestLogFields(r, "counter.benchmark_write_completed", map[string]any{"host": target.Host, "target_path": target.Path, "target_url": benchmarkWriteTargetURL, "is_new_uv": true, "site_uv": counts.SiteUV, "site_pv": counts.SitePV, "page_pv": counts.PagePV}))
-	h.writeV2Success(w, http.StatusOK, "Benchmark data updated successfully", counts)
-}
-
-func (h *LogHandler) allowV1Request(w http.ResponseWriter, r *http.Request) bool {
+func (h *LogHandler) allowRequest(w http.ResponseWriter, r *http.Request, shape responseShape) bool {
 	result := h.limit.Check(r.Context(), r)
-	if !result.Success {
+	if result.Success {
+		return true
+	}
+
+	if shape == shapeV1 {
 		writeJSON(w, http.StatusTooManyRequests, map[string]string{"error": result.Error})
 		return false
 	}
 
-	return true
+	h.writeV2Error(w, http.StatusTooManyRequests, result.Error, map[string]any{
+		"limit":     result.Limit,
+		"remaining": result.Remaining,
+	})
+	return false
 }
 
-func (h *LogHandler) allowV2Request(w http.ResponseWriter, r *http.Request) bool {
-	result := h.limit.Check(r.Context(), r)
-	if !result.Success {
-		h.writeV2Error(w, http.StatusTooManyRequests, result.Error, map[string]any{
-			"limit":     result.Limit,
-			"remaining": result.Remaining,
-		})
-		return false
+func (h *LogHandler) readQueryTarget(w http.ResponseWriter, r *http.Request, shape responseShape) (counter.Target, string, bool) {
+	rawTarget := strings.TrimSpace(r.URL.Query().Get("url"))
+	if rawTarget == "" {
+		h.log.Warn("missing tracked url parameter", requestLogFields(r, "request.invalid", map[string]any{"status": http.StatusBadRequest, "reason": "missing_url"}))
+		h.writeRequestError(w, shape, http.StatusBadRequest, "Missing url parameter")
+		return counter.Target{}, "", false
 	}
 
-	return true
+	target, message := parseTarget(rawTarget)
+	if message != "" {
+		h.log.Warn("invalid tracked url", requestLogFields(r, "target_url.invalid", map[string]any{"status": http.StatusOK, "target_url": rawTarget, "reason": message}))
+		h.writeInvalidTarget(w, shape, message)
+		return counter.Target{}, "", false
+	}
+
+	return target, rawTarget, true
 }
 
-func (h *LogHandler) decodeCountRequest(w http.ResponseWriter, r *http.Request, v2 bool) (countRequest, bool) {
+func (h *LogHandler) readBody(w http.ResponseWriter, r *http.Request, shape responseShape) (countRequest, bool) {
 	var data countRequest
 	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
 		h.log.Warn("invalid JSON request body", requestLogFields(r, "request.invalid", map[string]any{"status": http.StatusBadRequest, "reason": "invalid_json", "error": err.Error()}))
-		if v2 {
-			h.writeV2Error(w, http.StatusBadRequest, "Invalid JSON body", nil)
-		} else {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "Invalid JSON body"})
-		}
+		h.writeRequestError(w, shape, http.StatusBadRequest, "Invalid JSON body")
 		return countRequest{}, false
 	}
 
+	data.URL = strings.TrimSpace(data.URL)
 	if data.URL == "" {
 		h.log.Warn("missing tracked url parameter", requestLogFields(r, "request.invalid", map[string]any{"status": http.StatusBadRequest, "reason": "missing_url"}))
-		if v2 {
-			h.writeV2Error(w, http.StatusBadRequest, "Missing url", nil)
-		} else {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "Missing url"})
-		}
+		h.writeRequestError(w, shape, http.StatusBadRequest, "Missing url")
 		return countRequest{}, false
 	}
 
 	return data, true
 }
 
-func (h *LogHandler) readCounts(ctx context.Context, host string, path string) (CounterData, error) {
+func (h *LogHandler) readCounts(ctx context.Context, target counter.Target) (CounterData, error) {
 	ctx, cancel := context.WithTimeout(ctx, readCountsTimeout)
 	defer cancel()
 
-	siteUV, err := h.counter.FetchSiteUV(ctx, host, path)
+	siteUV, err := h.counter.FetchSiteUV(ctx, target)
 	if err != nil {
 		return CounterData{}, err
 	}
 
-	sitePV, err := h.counter.FetchSitePV(ctx, host, path)
+	sitePV, err := h.counter.FetchSitePV(ctx, target)
 	if err != nil {
 		return CounterData{}, err
 	}
 
-	pagePV, err := h.counter.FetchPagePV(ctx, host, path)
+	pagePV, err := h.counter.FetchPagePV(ctx, target)
 	if err != nil {
 		return CounterData{}, err
 	}
@@ -324,36 +274,80 @@ func (h *LogHandler) readCounts(ctx context.Context, host string, path string) (
 	return CounterData{SiteUV: siteUV, SitePV: sitePV, PagePV: pagePV}, nil
 }
 
-func (h *LogHandler) writeAcceptedCounts(ctx context.Context, host string, path string, isNewUV bool) (CounterData, error) {
+func (h *LogHandler) writeDetached(ctx context.Context, target counter.Target, isNewUV bool) (CounterData, error) {
 	detachedCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), writeCountsTimeout)
 	defer cancel()
-	return h.writeCounts(detachedCtx, host, path, isNewUV)
+	return h.writeCounts(detachedCtx, target, isNewUV)
 }
 
-func (h *LogHandler) writeRequestScopedCounts(ctx context.Context, host string, path string, isNewUV bool) (CounterData, error) {
+func (h *LogHandler) writeScoped(ctx context.Context, target counter.Target, isNewUV bool) (CounterData, error) {
 	timeoutCtx, cancel := context.WithTimeout(ctx, writeCountsTimeout)
 	defer cancel()
-	return h.writeCounts(timeoutCtx, host, path, isNewUV)
+	return h.writeCounts(timeoutCtx, target, isNewUV)
 }
 
-func (h *LogHandler) writeCounts(ctx context.Context, host string, path string, isNewUV bool) (CounterData, error) {
-
-	siteUV, err := h.counter.RecordSiteUV(ctx, host, isNewUV)
+func (h *LogHandler) writeCounts(ctx context.Context, target counter.Target, isNewUV bool) (CounterData, error) {
+	siteUV, err := h.counter.RecordSiteUV(ctx, target, isNewUV)
 	if err != nil {
 		return CounterData{}, err
 	}
 
-	sitePV, err := h.counter.IncrementSitePV(ctx, host)
+	sitePV, err := h.counter.IncrementSitePV(ctx, target)
 	if err != nil {
 		return CounterData{}, err
 	}
 
-	pagePV, err := h.counter.IncrementPagePV(ctx, host, path)
+	pagePV, err := h.counter.IncrementPagePV(ctx, target)
 	if err != nil {
 		return CounterData{}, err
 	}
 
 	return CounterData{SiteUV: siteUV, SitePV: sitePV, PagePV: pagePV}, nil
+}
+
+func (h *LogHandler) writeReadSuccess(w http.ResponseWriter, shape responseShape, data CounterData) {
+	if shape == shapeV1 {
+		writeJSON(w, http.StatusOK, data)
+		return
+	}
+
+	h.writeV2Success(w, http.StatusOK, "Data retrieved successfully", data)
+}
+
+func (h *LogHandler) writeWriteSuccess(w http.ResponseWriter, shape responseShape, data CounterData) {
+	if shape == shapeV1 {
+		writeJSON(w, http.StatusOK, data)
+		return
+	}
+
+	h.writeV2Success(w, http.StatusOK, "Data updated successfully", data)
+}
+
+func (h *LogHandler) writeInvalidTarget(w http.ResponseWriter, shape responseShape, message string) {
+	if shape == shapeV1 {
+		writeJSON(w, http.StatusOK, map[string]any{
+			"error":   message,
+			"site_uv": 0,
+			"site_pv": 0,
+			"page_pv": 0,
+		})
+		return
+	}
+
+	h.writeV2Success(w, http.StatusOK, message, zeroCounters())
+}
+
+func (h *LogHandler) writeRequestError(w http.ResponseWriter, shape responseShape, status int, message string) {
+	if shape == shapeV1 {
+		writeJSON(w, status, map[string]string{"error": message})
+		return
+	}
+
+	h.writeV2Error(w, status, message, nil)
+}
+
+func (h *LogHandler) writeInternalError(w http.ResponseWriter, shape responseShape) {
+	h.writeRequestError(w, shape, http.StatusInternalServerError, "Internal server error")
 }
 
 func (h *LogHandler) writeV2Success(w http.ResponseWriter, status int, message string, data any) {
@@ -368,24 +362,23 @@ func zeroCounters() CounterData {
 	return CounterData{}
 }
 
-func validateTargetURL(raw string) (targetURL, string) {
-	raw = strings.TrimSpace(raw)
-	parsed, err := url.Parse(raw)
+func parseTarget(raw string) (counter.Target, string) {
+	parsed, err := url.Parse(strings.TrimSpace(raw))
 	if err != nil {
-		return targetURL{}, "Invalid URL format"
+		return counter.Target{}, "Invalid URL format"
 	}
 
 	if parsed.Scheme != "http" && parsed.Scheme != "https" {
-		return targetURL{}, "Invalid URL protocol. Only HTTP and HTTPS are supported."
+		return counter.Target{}, "Invalid URL protocol. Only HTTP and HTTPS are supported."
 	}
 
 	if parsed.Host == "" {
-		return targetURL{}, "Invalid URL host"
+		return counter.Target{}, "Invalid URL host"
 	}
 
 	host := strings.ToLower(parsed.Hostname())
 	if host == "" {
-		return targetURL{}, "Invalid URL host"
+		return counter.Target{}, "Invalid URL host"
 	}
 
 	port := parsed.Port()
@@ -393,15 +386,14 @@ func validateTargetURL(raw string) (targetURL, string) {
 		host = net.JoinHostPort(host, port)
 	}
 
-	normalized := counter.NormalizeTarget(host, parsed.Path)
-	return targetURL{Host: normalized.Host, Path: normalized.Path}, ""
+	return counter.NormalizeTarget(host, parsed.Path), ""
 }
 
 func isDefaultPort(scheme string, port string) bool {
 	return (scheme == "http" && port == "80") || (scheme == "https" && port == "443")
 }
 
-func (h *LogHandler) logWriteSuccess(r *http.Request, rawTarget string, target targetURL, isNewUV bool, counts CounterData) {
+func (h *LogHandler) logWriteSuccess(r *http.Request, rawTarget string, target counter.Target, isNewUV bool, counts CounterData) {
 	fields := mergeFields(targetLogFields(rawTarget, target), map[string]any{
 		"is_new_uv": isNewUV,
 		"site_uv":   counts.SiteUV,
@@ -418,7 +410,7 @@ func (h *LogHandler) logWriteSuccess(r *http.Request, rawTarget string, target t
 	h.log.Debug("counter update completed", requestLogFields(r, "counter.write_completed", fields))
 }
 
-func (h *LogHandler) logWriteFailure(r *http.Request, rawTarget string, target targetURL, isNewUV bool, err error) {
+func (h *LogHandler) logWriteFailure(r *http.Request, rawTarget string, target counter.Target, isNewUV bool, err error) {
 	fields := mergeFields(targetLogFields(rawTarget, target), map[string]any{
 		"status":    http.StatusInternalServerError,
 		"error":     err.Error(),
@@ -434,7 +426,7 @@ func (h *LogHandler) logWriteFailure(r *http.Request, rawTarget string, target t
 	h.log.Error("counter update failed", requestLogFields(r, "counter.write_failed", fields))
 }
 
-func targetLogFields(raw string, target targetURL) map[string]any {
+func targetLogFields(raw string, target counter.Target) map[string]any {
 	fields := map[string]any{
 		"host":        target.Host,
 		"target_path": target.Path,
@@ -475,14 +467,14 @@ func (l *rateLimiter) Check(ctx context.Context, r *http.Request) rateLimitResul
 		return nil
 	})
 	if err != nil {
-		l.log.Warn("rate limit cleanup failed", requestLogFields(r, "rate_limit.cleanup_failed", map[string]any{"ip": ip, "ua": ua, "error": err.Error()}))
-		return rateLimitResult{Success: true, Limit: rateLimitCount, Remaining: rateLimitCount, Reset: reset}
+		l.log.Warn("rate limit cleanup failed", requestLogFields(r, "rate_limit.cleanup_failed", map[string]any{"ip": ip, "ua": ua, "error": err.Error(), "policy": rateLimitRedisFailureMode}))
+		return failOpenRateLimit(reset)
 	}
 
 	count, err := countCmd.Result()
 	if err != nil {
-		l.log.Warn("rate limit count failed", requestLogFields(r, "rate_limit.count_failed", map[string]any{"ip": ip, "ua": ua, "error": err.Error()}))
-		return rateLimitResult{Success: true, Limit: rateLimitCount, Remaining: rateLimitCount, Reset: reset}
+		l.log.Warn("rate limit count failed", requestLogFields(r, "rate_limit.count_failed", map[string]any{"ip": ip, "ua": ua, "error": err.Error(), "policy": rateLimitRedisFailureMode}))
+		return failOpenRateLimit(reset)
 	}
 
 	if count >= rateLimitCount {
@@ -503,8 +495,8 @@ func (l *rateLimiter) Check(ctx context.Context, r *http.Request) rateLimitResul
 		return nil
 	})
 	if err != nil {
-		l.log.Warn("rate limit state update failed", requestLogFields(r, "rate_limit.persist_failed", map[string]any{"ip": ip, "ua": ua, "error": err.Error()}))
-		return rateLimitResult{Success: true, Limit: rateLimitCount, Remaining: rateLimitCount, Reset: reset}
+		l.log.Warn("rate limit state update failed", requestLogFields(r, "rate_limit.persist_failed", map[string]any{"ip": ip, "ua": ua, "error": err.Error(), "policy": rateLimitRedisFailureMode}))
+		return failOpenRateLimit(reset)
 	}
 
 	remaining := rateLimitCount - (count + 1)
@@ -518,6 +510,10 @@ func (l *rateLimiter) Check(ctx context.Context, r *http.Request) rateLimitResul
 	}
 
 	return rateLimitResult{Success: true, Limit: rateLimitCount, Remaining: remaining, Reset: reset}
+}
+
+func failOpenRateLimit(reset int64) rateLimitResult {
+	return rateLimitResult{Success: true, Limit: rateLimitCount, Remaining: rateLimitCount, Reset: reset}
 }
 
 func clientIP(r *http.Request) string {
@@ -541,7 +537,7 @@ func clientIP(r *http.Request) string {
 		return host
 	}
 
-	return "127.0.0.1"
+	return "unknown"
 }
 
 func requestLogFields(r *http.Request, event string, fields map[string]any) map[string]any {
@@ -549,7 +545,7 @@ func requestLogFields(r *http.Request, event string, fields map[string]any) map[
 		"event":      event,
 		"request_id": middleware.GetReqID(r.Context()),
 		"method":     r.Method,
-		"route":      routePattern(r),
+		"route":      RoutePattern(r),
 		"path":       r.URL.Path,
 	}
 
@@ -558,14 +554,4 @@ func requestLogFields(r *http.Request, event string, fields map[string]any) map[
 	}
 
 	return out
-}
-
-func routePattern(r *http.Request) string {
-	if routeContext := chi.RouteContext(r.Context()); routeContext != nil {
-		if pattern := routeContext.RoutePattern(); pattern != "" {
-			return pattern
-		}
-	}
-
-	return r.URL.Path
 }
