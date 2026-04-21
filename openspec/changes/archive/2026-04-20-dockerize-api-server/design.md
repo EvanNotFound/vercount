@@ -35,13 +35,13 @@ The deployable artifact will be a Docker image for `apps/api`, and the image bui
 - **Alternative considered:** mount the built script at runtime instead of packaging it into the image. Rejected because it weakens artifact self-containment and makes deploy/runtime drift easier.
 
 ### 2. Keep Compose at the repository root with separate prod and local files
-Compose will live at the repository root, using `compose.yaml` for the production-like GHCR image path and `compose-local.yaml` for local development.
+Compose will live at the repository root, using `compose.yaml` for the production-like GHCR image path and `compose.local.yaml` for local development.
 
 - **Why:** The API image depends on a built asset from `apps/web`, and the root is the most natural place to express cross-app build context and developer entry points. Splitting prod and local Compose files also makes it obvious whether a developer is running the published image or a locally built image.
 - **Alternative considered:** put Compose under `apps/api`. Rejected because it would make the cross-app asset build and repo-level workflows less straightforward.
 
 ### 3. Use separate Compose files for remote and local Redis paths
-`compose.yaml` will run the API service against the existing external Redis backend through environment configuration, while `compose-local.yaml` will build the API locally and include a local Redis service for development.
+`compose.yaml` will run the API service against the existing external Redis backend through environment configuration, while `compose.local.yaml` will build the API locally and include a local Redis service for development.
 
 - **Why:** This keeps the default behavior aligned with current production assumptions while still allowing an all-local stack when needed, without mixing the published image and the local build path in one Compose file.
 - **Alternative considered:** always run local Redis in the default Compose file. Rejected because it would diverge from the production data path and add unnecessary services to the production-like workflow.

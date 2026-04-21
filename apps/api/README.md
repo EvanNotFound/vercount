@@ -90,7 +90,7 @@ To run the API against a local Redis container instead:
 pnpm api:compose:local
 ```
 
-This uses `compose-local.yaml`, builds the API image locally, and wires the API container to `redis://redis:6379/0`.
+This uses `compose.local.yaml`, builds the API image locally, and wires the API container to `redis://redis:6379/0`.
 It also defaults to the bundled in-image `/js` asset, with `SCRIPT_PATH` still available as a one-off shell override.
 The root `.env` file can still provide values like `API_PORT` and `DEBUG` for this workflow.
 Inside the container, the API still listens on `8080`; `API_PORT` only controls the host-side published port.
