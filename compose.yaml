@@ -1,6 +1,7 @@
 services:
   api:
     image: ghcr.io/evannotfound/vercount-api:edge
+    pull_policy: always
     environment:
       PORT: 8080
       REDIS_URL: ${REDIS_URL:-}

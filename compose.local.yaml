@@ -1,6 +1,7 @@
 services:
   api:
-    image: vercount-api:local
+    image: ghcr.io/evannotfound/vercount-api:edge
+    pull_policy: always
     build:
       context: .
       dockerfile: apps/api/Dockerfile
