@@ -107,37 +107,14 @@ async function scanStoredPageKeys(hostSanitized: string): Promise<string[]> {
   return pageKeys;
 }
 
-async function getLegacySiteUVTotal(
-  hostSanitized: string,
-): Promise<number | null> {
-  const legacySiteKey = `uv:site:${hostSanitized}`;
-  const legacyBaselineKey = `uv:baseline:${hostSanitized}`;
-
-  const [legacySetCount, legacyBaseline] = await Promise.all([
-    kv.scard(legacySiteKey),
-    kv.get(legacyBaselineKey),
-  ]);
-
-  if (Number(legacySetCount || 0) > 0 || legacyBaseline !== null) {
-    return Number(legacySetCount || 0) + Number(legacyBaseline || 0);
-  }
-
-  return null;
-}
-
 async function initializeSiteUVCount(
   hostSanitized: string,
   hostOriginal: string,
 ): Promise<number> {
   return initializeCounterValue(
     getSiteUVCountKey(hostSanitized),
-    async () => {
-      const legacyTotal = await getLegacySiteUVTotal(hostSanitized);
-      return (
-        legacyTotal ??
-        Number((await fetchBusuanziSiteUVValue(hostSanitized, hostOriginal)) || 0)
-      );
-    },
+    async () =>
+      Number((await fetchBusuanziSiteUVValue(hostSanitized, hostOriginal)) || 0),
   );
 }
 

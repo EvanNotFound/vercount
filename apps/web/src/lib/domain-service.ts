@@ -435,7 +435,7 @@ export const domainService = {
 
       // Update site UV in Redis if provided
       if (siteUv !== undefined) {
-        // Use the updateTotalUV function to properly update the UV adjustment
+        // Persist the direct numeric site UV value
         await updateTotalUV(normalizedDomain, siteUv);
       }
 

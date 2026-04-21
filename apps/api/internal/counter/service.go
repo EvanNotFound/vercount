@@ -214,10 +214,6 @@ func (s *Service) initializePagePV(ctx context.Context, hostSanitized string, pa
 func (s *Service) initializeSiteUV(ctx context.Context, hostSanitized string, hostOriginal string) (int64, error) {
 	key := getSiteUVCountKey(hostSanitized)
 	return s.initializeCounter(ctx, key, func(ctx context.Context) int64 {
-		legacy, ok, err := s.getLegacySiteUVTotal(ctx, hostSanitized)
-		if err == nil && ok {
-			return legacy
-		}
 		return s.fetchBusuanziSiteUV(ctx, hostSanitized, hostOriginal)
 	}, nil)
 }
@@ -258,47 +254,6 @@ func (s *Service) addStoredPage(ctx context.Context, hostSanitized string, pathS
 		return nil
 	})
 	return err
-}
-
-func (s *Service) getLegacySiteUVTotal(ctx context.Context, hostSanitized string) (int64, bool, error) {
-	legacySiteKey := "uv:site:" + hostSanitized
-	legacyBaselineKey := "uv:baseline:" + hostSanitized
-
-	var setCountCmd *redis.IntCmd
-	var baselineCmd *redis.StringCmd
-	_, err := s.redis.Pipelined(ctx, func(pipe redis.Pipeliner) error {
-		setCountCmd = pipe.SCard(ctx, legacySiteKey)
-		baselineCmd = pipe.Get(ctx, legacyBaselineKey)
-		return nil
-	})
-	if err != nil && err != redis.Nil {
-		return 0, false, err
-	}
-
-	setCount, err := setCountCmd.Result()
-	if err != nil {
-		return 0, false, err
-	}
-
-	baselineValue, err := baselineCmd.Result()
-	if err != nil {
-		if err == redis.Nil {
-			return setCount, setCount > 0, nil
-		}
-		return 0, false, err
-	}
-
-	baseline := int64(0)
-	baseline, err = parseInt(baselineValue)
-	if err != nil {
-		return 0, false, err
-	}
-
-	if setCount > 0 || baselineValue != "" {
-		return setCount + baseline, true, nil
-	}
-
-	return 0, false, nil
 }
 
 func getSiteUVCountKey(host string) string {
