@@ -38,6 +38,15 @@
 - `apps/web/next.config.js` still owns the old Next.js-side CORS and rewrite config for `/log`, `/api/v1/log`, and `/api/v2/log`, but the dedicated public host now lives in `apps/api/`.
 - Rate limiting is implemented in `apps/web/src/lib/rate-limit.ts` as an 80 requests/minute sliding window per IP. Suspicious user-agent detection only logs warnings; IP blocking helpers exist but are not currently enabled.
 
+## Code Style Preferences
+
+- Prefer short, direct, human-like names for functions and helpers. Avoid awkwardly formal, overly clever, or uncommon wording when a simpler name would read more naturally.
+- Prefer straightforward code over unnecessary abstraction. Add functionality to existing files when that keeps the code simpler; do not introduce generic helper layers or callback-heavy flows unless they clearly improve the code.
+- Keep implementations small and readable. Avoid abstraction for its own sake, avoid overengineering, and avoid turning simple flows into systems.
+- Preserve backward compatibility only when it is an intentional product or API requirement. Do not keep compatibility wrappers, fallback paths, or extra indirection just because older code happened to work that way.
+- Avoid redundant fallback logic after inputs have already been validated. Do not add sentinel values or defensive fallback syntax unless there is a real runtime need.
+- The Busuanzi fallback/bootstrapping path is intentional and should be preserved when changing counter initialization logic.
+
 ## Repo-local OpenCode Context
 
 - The repo includes OpenSpec/OpenCode scaffolding under `.opencode/command/*`, `.opencode/skills/*`, and `openspec/config.yaml`.
