@@ -1,8 +1,4 @@
-## Purpose
-
-Define the canonical redirects and readiness endpoints exposed by the public Go events host.
-
-## Requirements
+## ADDED Requirements
 
 ### Requirement: Public events host SHALL redirect service root to canonical web homepage
 
@@ -59,18 +55,10 @@ The system SHALL keep machine-facing events-host endpoints available without can
 - **THEN** the system SHALL treat the request as an API-host miss
 - **AND** the system SHALL NOT redirect the request to the canonical web host
 
-### Requirement: Public events host SHALL expose a Redis-backed readiness endpoint
+## REMOVED Requirements
 
-The system SHALL expose `GET /healthz` as a readiness endpoint that reflects whether the service can reach Redis.
+### Requirement: Public events host SHALL expose a service metadata root endpoint
 
-#### Scenario: Redis is reachable
+**Reason**: The public events host is no longer the canonical human-facing site, and returning service metadata at `/` causes search engines and users to land on an API response instead of the Vercount homepage.
 
-- **WHEN** a client sends a `GET` request to `/healthz` and Redis is reachable
-- **THEN** the system SHALL return a success response indicating the service is ready
-- **AND** the response SHALL be machine-readable JSON
-
-#### Scenario: Redis is unavailable
-
-- **WHEN** a client sends a `GET` request to `/healthz` and Redis is not reachable
-- **THEN** the system SHALL return a non-success readiness response
-- **AND** the response SHALL indicate that Redis is the dependency preventing readiness
+**Migration**: Use `/healthz` for machine-readable service readiness and `https://www.vercount.one/` for the canonical homepage.

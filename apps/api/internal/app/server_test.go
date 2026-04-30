@@ -16,37 +16,82 @@ import (
 	redis "github.com/redis/go-redis/v9"
 )
 
-func TestRootEndpointReturnsServiceMetadata(t *testing.T) {
+func TestRootRedirectsToCanonicalHomepage(t *testing.T) {
+	handler := newTestHandler(t, mustStartMiniRedis(t).Addr())
+
+	for _, method := range []string{http.MethodGet, http.MethodHead} {
+		t.Run(method, func(t *testing.T) {
+			recorder := httptest.NewRecorder()
+			handler.ServeHTTP(recorder, httptest.NewRequest(method, "/", nil))
+
+			assertRedirectLocation(t, recorder, "https://www.vercount.one/")
+		})
+	}
+}
+
+func TestSelectedPageRoutesRedirectToCanonicalWebHost(t *testing.T) {
+	handler := newTestHandler(t, mustStartMiniRedis(t).Addr())
+
+	for _, tc := range []struct {
+		path string
+		want string
+	}{
+		{path: "/dashboard", want: "https://www.vercount.one/dashboard"},
+		{path: "/dashboard/analytics", want: "https://www.vercount.one/dashboard/analytics"},
+		{path: "/dashboard/domains", want: "https://www.vercount.one/dashboard/domains"},
+		{path: "/auth/signin", want: "https://www.vercount.one/auth/signin"},
+		{
+			path: "/dashboard/domains?from=events&next=%2Fsettings",
+			want: "https://www.vercount.one/dashboard/domains?from=events&next=%2Fsettings",
+		},
+	} {
+		t.Run(tc.path, func(t *testing.T) {
+			recorder := httptest.NewRecorder()
+			handler.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, tc.path, nil))
+
+			assertRedirectLocation(t, recorder, tc.want)
+		})
+	}
+}
+
+func TestKnownMachineRoutesDoNotRedirectToCanonicalWebHost(t *testing.T) {
+	handler, scriptContents := newTestHandlerWithScript(t, mustStartMiniRedis(t).Addr(), "console.log('vercount');")
+
+	for _, path := range []string{
+		"/healthz",
+		"/js",
+		"/log?url=file:///bad",
+		"/api/v1/log?url=file:///bad",
+		"/api/v2/log?url=file:///bad",
+	} {
+		t.Run(path, func(t *testing.T) {
+			recorder := httptest.NewRecorder()
+			handler.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, path, nil))
+
+			if recorder.Code == http.StatusMovedPermanently {
+				t.Fatalf("expected machine route not to redirect, got location %q", recorder.Header().Get("Location"))
+			}
+			if strings.HasPrefix(recorder.Header().Get("Location"), "https://www.vercount.one") {
+				t.Fatalf("expected no canonical redirect, got %q", recorder.Header().Get("Location"))
+			}
+			if path == "/js" && recorder.Body.String() != scriptContents {
+				t.Fatalf("expected script contents %q, got %q", scriptContents, recorder.Body.String())
+			}
+		})
+	}
+}
+
+func TestUnknownAPIPathDoesNotRedirectToCanonicalWebHost(t *testing.T) {
 	handler := newTestHandler(t, mustStartMiniRedis(t).Addr())
 	recorder := httptest.NewRecorder()
 
-	handler.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/", nil))
+	handler.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/api/v3/log", nil))
 
-	if recorder.Code != http.StatusOK {
-		t.Fatalf("expected 200, got %d", recorder.Code)
+	if recorder.Code != http.StatusNotFound {
+		t.Fatalf("expected 404, got %d", recorder.Code)
 	}
-
-	var payload map[string]any
-	if err := json.Unmarshal(recorder.Body.Bytes(), &payload); err != nil {
-		t.Fatalf("unmarshal root response: %v", err)
-	}
-
-	if payload["service"] != "vercount-events-api" {
-		t.Fatalf("expected service name, got %#v", payload["service"])
-	}
-
-	routes, ok := payload["routes"].([]any)
-	if !ok || len(routes) == 0 {
-		t.Fatalf("expected routes array, got %#v", payload["routes"])
-	}
-
-	if !containsRoute(routes, "/bench/write") {
-		t.Fatalf("expected benchmark route in metadata, got %#v", routes)
-	}
-	for _, route := range []string{"/log", "/api/v1/log", "/api/v2/log"} {
-		if !containsRoute(routes, route) {
-			t.Fatalf("expected route %q in metadata, got %#v", route, routes)
-		}
+	if recorder.Header().Get("Location") != "" {
+		t.Fatalf("expected no redirect location, got %q", recorder.Header().Get("Location"))
 	}
 }
 
@@ -649,14 +694,15 @@ func hasLogEvent(output string, event string) bool {
 	return false
 }
 
-func containsRoute(routes []any, want string) bool {
-	for _, route := range routes {
-		if route == want {
-			return true
-		}
-	}
+func assertRedirectLocation(t *testing.T, recorder *httptest.ResponseRecorder, want string) {
+	t.Helper()
 
-	return false
+	if recorder.Code != http.StatusMovedPermanently {
+		t.Fatalf("expected 301, got %d", recorder.Code)
+	}
+	if recorder.Header().Get("Location") != want {
+		t.Fatalf("expected redirect to %q, got %q", want, recorder.Header().Get("Location"))
+	}
 }
 
 func seedBenchmarkNamespace(t *testing.T, client *redis.Client) {

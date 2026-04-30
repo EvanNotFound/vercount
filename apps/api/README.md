@@ -4,13 +4,12 @@ Minimal Go service for the public `events.vercount.one` surface.
 
 ## What it serves
 
-- `/`
-- `/healthz`
-- `/js`
-- `/bench/write`
-- `/log`
-- `/api/v1/log`
-- `/api/v2/log`
+- `/` redirects to the canonical homepage at `https://www.vercount.one/`
+- `/dashboard`, `/dashboard/analytics`, `/dashboard/domains`, and `/auth/signin` redirect to the same path on `https://www.vercount.one`
+- `/healthz` exposes Redis-backed readiness JSON
+- `/js` serves the public browser counter script
+- `/bench/write` exposes the benchmark write helper
+- `/log`, `/api/v1/log`, and `/api/v2/log` serve the public counter API
 
 `GET /bench/write` is a public benchmark helper for external probe tools. It always writes to the fixed synthetic target `https://bench.vercount.one/gurt`, returns the same v2-style JSON envelope used by the modern public API, and sends no-store cache headers so latency checks hit the Go service instead of cached content.
 
@@ -20,7 +19,7 @@ The Go API stays intentionally small and is organized by runtime surface instead
 
 - `internal/app/runtime.go` - env/config loading and logger setup
 - `internal/app/server.go` - dependency wiring and chi route registration
-- `internal/api/public.go` - `/`, `/healthz`, and `/js`
+- `internal/api/public.go` - canonical redirects, `/healthz`, and `/js`
 - `internal/api/log.go` - `/bench/write`, `/log`, `/api/v1/log`, and `/api/v2/log`
 - `internal/counter/*` - counter reads/writes and Redis-backed counting behavior
 
@@ -126,7 +125,7 @@ If GHCR creates the package with private visibility on first publish, update the
 
 1. Build the web app script so `apps/web/public/js/client.min.js` is up to date.
 2. Deploy this service behind `events.vercount.one`.
-3. Verify `/js`, `/bench/write`, `/log`, `/api/v1/log`, and `/api/v2/log` on the new host.
+3. Verify `/` redirects to `https://www.vercount.one/`, and verify `/js`, `/bench/write`, `/log`, `/api/v1/log`, and `/api/v2/log` on the new host.
 4. Confirm `/bench/write` writes only to the fixed synthetic benchmark target `https://bench.vercount.one/gurt` and returns an uncached v2-style success envelope.
 5. Confirm the dashboard in `apps/web` still reads the shared Redis data correctly.
 

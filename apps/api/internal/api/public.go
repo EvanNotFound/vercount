@@ -12,7 +12,10 @@ import (
 	redis "github.com/redis/go-redis/v9"
 )
 
-const publicServiceName = "vercount-events-api"
+const (
+	publicServiceName  = "vercount-events-api"
+	canonicalWebOrigin = "https://www.vercount.one"
+)
 
 type Logger interface {
 	Debug(message string, data any)
@@ -31,23 +34,17 @@ func NewPublicHandler(scriptPath string, log Logger, redisClient *redis.Client) 
 	return &PublicHandler{scriptPath: scriptPath, log: log, redis: redisClient}
 }
 
-func (h *PublicHandler) Root(w http.ResponseWriter, _ *http.Request) {
-	writeJSON(w, http.StatusOK, map[string]any{
-		"service":     publicServiceName,
-		"description": "Straightforward, Fast, and Reliable Website Visitor Counter.",
-		"status":      "ok",
-		"routes": []string{
-			"/",
-			"/healthz",
-			"/js",
-			"/bench/write",
-			"/log",
-			"/api/v1/log",
-			"/api/v2/log",
-		},
-		"github":   "https://github.com/EvanNotFound/vercount",
-		"homepage": "https://www.vercount.one",
-	})
+func (h *PublicHandler) Root(w http.ResponseWriter, r *http.Request) {
+	h.CanonicalRedirect(w, r)
+}
+
+func (h *PublicHandler) CanonicalRedirect(w http.ResponseWriter, r *http.Request) {
+	target := canonicalWebOrigin + r.URL.EscapedPath()
+	if r.URL.RawQuery != "" {
+		target += "?" + r.URL.RawQuery
+	}
+
+	http.Redirect(w, r, target, http.StatusMovedPermanently)
 }
 
 func (h *PublicHandler) Healthz(w http.ResponseWriter, r *http.Request) {
